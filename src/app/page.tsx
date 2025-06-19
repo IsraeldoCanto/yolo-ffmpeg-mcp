@@ -32,6 +32,9 @@ export default function LoginPage() {
       <h1 className="text-5xl font-bold text-primary font-headline mb-4">
         Kompost Mixer
       </h1>
+      <button className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold animate-pulse mb-4">
+        HELLO
+      </button>
       <p className="text-xl text-foreground mb-12 max-w-md">
         Your personal multimedia database. Organize, find, and manage your audio effortlessly.
       </p>

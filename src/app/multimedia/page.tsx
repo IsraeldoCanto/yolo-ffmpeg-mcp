@@ -165,6 +165,11 @@ export default function MultimediaPage() {
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-3xl font-bold text-primary font-headline">My Multimedia</h1>
         <div className="flex gap-2">
+          <Link href="/kompostedit" passHref>
+            <Button variant="outline" className="bg-green-600 hover:bg-green-700 text-white">
+              🎵 KompostEdit
+            </Button>
+          </Link>
            <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="mr-2 h-4 w-4" />
             {showFilters ? 'Hide' : 'Show'} Filters
