@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, googleProvider } from '@/lib/firebase/firebase';
-import { signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, UserCredential } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -24,50 +24,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log('Auth state changed, current user:', currentUser);
-      console.log('Effective authDomain from SDK:', auth.config.authDomain); // Diagnostic log
+      // console.log('Effective authDomain from SDK:', auth.config.authDomain); // Diagnostic log
       setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Check for redirect result on initial load
-  useEffect(() => {
-    const checkRedirect = async () => {
-      try {
-        setLoading(true);
-        // The redirect result is null if the app is not loaded after a redirect from Google.
-        // It contains user credential if the app is loaded after a redirect from Google.
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          setUser(result.user);
-          // router.push('/tracks'); // onAuthStateChanged should handle this too
-        }
-      } catch (error) {
-        console.error("Error handling redirect result:", error);
-        // Handle specific errors like auth/account-exists-with-different-credential if needed
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkRedirect();
-  }, [router]);
-
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      // No need to await signInWithRedirect as it navigates away
-      await signInWithRedirect(auth, googleProvider);
-      // The user will be redirected to Google.
-      // After successful sign-in, they will be redirected back to your app.
-      // The onAuthStateChanged listener and getRedirectResult will handle the user state.
+      const result: UserCredential = await signInWithPopup(auth, googleProvider);
+      setUser(result.user);
+      // router.push('/tracks'); // onAuthStateChanged should handle this if user becomes non-null
     } catch (error) {
-      console.error("Error initiating sign in with Google redirect:", error);
+      console.error("Error signing in with Google popup:", error);
       // Optionally show a toast message here
-      setLoading(false); // Only set loading to false if an error occurs *before* redirect
+    } finally {
+      setLoading(false);
     }
-    // setLoading(false) is not typically needed here as the page will redirect.
-    // If there's an immediate error before redirect, catch block handles it.
   };
 
   const signOut = async () => {
@@ -97,4 +72,3 @@ export function useAuth() {
   }
   return context;
 }
-
