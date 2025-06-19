@@ -116,7 +116,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
+                <Link href={item.href}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={pathname === item.href || (item.href !== '/tracks' && pathname.startsWith(item.href))}
