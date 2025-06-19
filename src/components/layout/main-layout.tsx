@@ -118,14 +118,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton 
-                    asChild 
+                    // REMOVED asChild here: Link provides the <a>, SidebarMenuButton provides content (button)
                     isActive={pathname === item.href || (item.href !== '/tracks' && pathname.startsWith(item.href))}
                     tooltip={item.label}
                   >
-                    <a>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </a>
+                    {/* Direct children, not wrapped in <a> here */}
+                    <item.icon />
+                    <span>{item.label}</span>
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>
