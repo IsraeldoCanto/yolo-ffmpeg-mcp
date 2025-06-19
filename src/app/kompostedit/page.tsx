@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import Script from 'next/script';
 
 interface ElmApp {
   ports?: {
@@ -23,6 +22,44 @@ export default function KompostEditPage() {
   const [isElmLoaded, setIsElmLoaded] = useState(false);
   const [elmError, setElmError] = useState<string | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
+  const [elmScriptLoaded, setElmScriptLoaded] = useState(false);
+
+  // Load ELM script dynamically
+  useEffect(() => {
+    const loadElmScript = () => {
+      if (document.querySelector('script[src="/elm/kompost.js"]')) {
+        setElmScriptLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = '/elm/kompost.js';
+      script.onload = () => {
+        // Set up global config after script loads
+        (window as any).KOMPOST_CONFIG = {
+          elm: {
+            available: typeof (window as any).Elm !== 'undefined' && (window as any).Elm.Main,
+            version: '1.0.0'
+          },
+          integration: {
+            type: 'nextjs-elm-hybrid',
+            firebase: true,
+            couchdb_compatible: true
+          }
+        };
+        
+        console.log('ELM script loaded, Elm available:', !!(window as any).Elm?.Main);
+        setElmScriptLoaded(true);
+      };
+      script.onerror = () => {
+        setElmError('Failed to load ELM script');
+        setElmScriptLoaded(false);
+      };
+      document.head.appendChild(script);
+    };
+
+    loadElmScript();
+  }, []);
 
   // Get Firebase ID token when user changes
   useEffect(() => {
@@ -122,8 +159,8 @@ export default function KompostEditPage() {
       }
     };
 
-    // Only load Elm when we have a Firebase token (or no user)
-    if (firebaseToken || !user) {
+    // Only load Elm when we have a Firebase token (or no user) AND the script is loaded
+    if ((firebaseToken || !user) && elmScriptLoaded) {
       loadElmApp();
     }
 
@@ -135,7 +172,7 @@ export default function KompostEditPage() {
         setIsElmLoaded(false);
       }
     };
-  }, [user, firebaseToken]);
+  }, [user, firebaseToken, elmScriptLoaded]);
 
   if (!user) {
     return (
@@ -152,31 +189,7 @@ export default function KompostEditPage() {
   }
 
   return (
-    <>
-      {/* ELM Scripts - Load only on this page */}
-      <Script src="/elm/kompost.js" strategy="beforeInteractive" />
-      <Script id="elm-config" strategy="beforeInteractive">
-        {`
-          // Global configuration for Elm integration
-          window.KOMPOST_CONFIG = {
-            elm: {
-              available: typeof window !== 'undefined' && typeof window.Elm !== 'undefined' && window.Elm.Main,
-              version: '1.0.0'
-            },
-            integration: {
-              type: 'nextjs-elm-hybrid',
-              firebase: true,
-              couchdb_compatible: true
-            }
-          };
-          
-          if (typeof window !== 'undefined' && !window.KOMPOST_CONFIG.elm.available) {
-            console.warn('Elm application not loaded. Elm editor will show integration instructions.');
-          }
-        `}
-      </Script>
-      
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         {/* Header */}
       <header className="bg-card shadow-sm border-b">
         <div className="container mx-auto px-4 py-3">
@@ -268,7 +281,6 @@ export default function KompostEditPage() {
           </div>
         </div>
       </footer>
-      </div>
-    </>
+    </div>
   );
 }
