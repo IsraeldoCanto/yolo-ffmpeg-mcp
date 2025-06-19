@@ -9,6 +9,7 @@ import { addTrack } from '@/lib/firebase/firestore';
 import { uploadAudioFile } from '@/lib/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Timestamp } from 'firebase/firestore';
+import { Progress } from '@/components/ui/progress';
 
 export default function AddTrackPage() {
   const { user } = useAuth();
