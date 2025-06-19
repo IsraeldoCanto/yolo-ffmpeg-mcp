@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -5,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: 'Kompost Mixer',
-  description: 'A music track database and mixer application.',
+  description: 'A multimedia database and mixer application.',
 };
 
 export default function RootLayout({

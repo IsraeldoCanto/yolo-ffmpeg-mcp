@@ -1,11 +1,11 @@
 
 'use client';
 
-import type { Multimedia } from '@/types/multimedia'; // Changed from Track
+import type { Multimedia } from '@/types/multimedia';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
-import { getMultimediaItems, deleteMultimediaItem, getUniqueGenres } from '@/lib/firebase/firestore'; // Changed functions
+import { getMultimediaItems, deleteMultimediaItem, getUniqueGenres } from '@/lib/firebase/firestore';
 import { deleteAudioFile } from '@/lib/firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,11 +35,11 @@ import { formatDuration } from '@/lib/utils';
 
 const PAGE_SIZE = 10;
 
-export default function TracksPage() { // Page component name can remain for this file path
+export default function MultimediaPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [items, setItems] = useState<Multimedia[]>([]); // Changed from tracks: Track[]
+  const [items, setItems] = useState<Multimedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [genreFilter, setGenreFilter] = useState<string>('');
@@ -48,22 +48,22 @@ export default function TracksPage() { // Page component name can remain for thi
   const [showFilters, setShowFilters] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Multimedia | null>(null); // Changed from trackToDelete: Track | null
+  const [itemToDelete, setItemToDelete] = useState<Multimedia | null>(null);
 
-  const [sortBy, setSortBy] = useState<keyof Multimedia>('createdAt'); // Changed from keyof Track
+  const [sortBy, setSortBy] = useState<keyof Multimedia>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const [lastVisibleItem, setLastVisibleItem] = useState<Multimedia | null>(null); // Changed from lastVisibleTrack
+  const [lastVisibleItem, setLastVisibleItem] = useState<Multimedia | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
 
-  const fetchItems = useCallback(async (loadMore = false) => { // Renamed from fetchTracks
+  const fetchItems = useCallback(async (loadMore = false) => {
     if (!user) return;
     if (loadMore) setIsFetchingMore(true); else setIsLoading(true);
 
     try {
-      const result = await getMultimediaItems({ // Changed from getTracks
+      const result = await getMultimediaItems({
         userId: user.uid,
         searchTerm: searchTerm,
         genreFilter: genreFilter || undefined,
@@ -71,13 +71,13 @@ export default function TracksPage() { // Page component name can remain for thi
         sortBy,
         sortOrder,
         pageSize: PAGE_SIZE,
-        lastVisible: loadMore ? lastVisibleItem : null, // Changed from lastVisibleTrack
+        lastVisible: loadMore ? lastVisibleItem : null,
       });
-      setItems(prevItems => loadMore ? [...prevItems, ...result.items] : result.items); // Changed from result.tracks
+      setItems(prevItems => loadMore ? [...prevItems, ...result.items] : result.items);
       setHasMore(result.hasMore);
-      setLastVisibleItem(result.lastVisibleItem); // Changed from result.lastVisibleTrack
+      setLastVisibleItem(result.lastVisibleItem);
     } catch (error) {
-      console.error('Error fetching multimedia items:', error); // Updated error message
+      console.error('Error fetching multimedia items:', error);
       toast({ title: 'Error', description: 'Failed to fetch multimedia items.', variant: 'destructive' });
     } finally {
       if (loadMore) setIsFetchingMore(false); else setIsLoading(false);
@@ -90,13 +90,12 @@ export default function TracksPage() { // Page component name can remain for thi
 
   useEffect(() => {
     if (user) {
-      // getUniqueGenres should still work as it queries by userId and field 'genre'
       getUniqueGenres(user.uid).then(setAvailableGenres);
     }
   }, [user]);
 
   const handleDelete = async () => {
-    if (!itemToDelete || !user) return; // Changed from trackToDelete
+    if (!itemToDelete || !user) return;
     setIsDeleting(itemToDelete.id!);
     try {
       if (itemToDelete.audioFileName && itemToDelete.userId) {
@@ -104,25 +103,25 @@ export default function TracksPage() { // Page component name can remain for thi
             await deleteAudioFile(itemToDelete.audioFileName);
          }
       }
-      await deleteMultimediaItem(itemToDelete.id!, user.uid); // Changed from deleteTrack
+      await deleteMultimediaItem(itemToDelete.id!, user.uid);
       setItems(items.filter(t => t.id !== itemToDelete.id));
-      toast({ title: 'Success', description: 'Multimedia item deleted successfully.' }); // Updated message
+      toast({ title: 'Success', description: 'Multimedia item deleted successfully.' });
     } catch (error) {
-      console.error('Error deleting multimedia item:', error); // Updated error message
+      console.error('Error deleting multimedia item:', error);
       toast({ title: 'Error', description: 'Failed to delete multimedia item.', variant: 'destructive' });
     } finally {
       setIsDeleting(null);
       setDeleteDialogOpen(false);
-      setItemToDelete(null); // Changed from setTrackToDelete
+      setItemToDelete(null);
     }
   };
 
-  const openDeleteDialog = (item: Multimedia) => { // Changed parameter from track: Track
-    setItemToDelete(item); // Changed from setTrackToDelete
+  const openDeleteDialog = (item: Multimedia) => {
+    setItemToDelete(item);
     setDeleteDialogOpen(true);
   };
   
-  const handleSort = (column: keyof Multimedia) => { // Changed from keyof Track
+  const handleSort = (column: keyof Multimedia) => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -132,7 +131,7 @@ export default function TracksPage() { // Page component name can remain for thi
      setLastVisibleItem(null); 
   };
 
-  const SortableHeader = ({ label, column }: { label: string; column: keyof Multimedia }) => ( // Changed from keyof Track
+  const SortableHeader = ({ label, column }: { label: string; column: keyof Multimedia }) => (
     <TableHead onClick={() => handleSort(column)} className="cursor-pointer hover:bg-muted/50">
       <div className="flex items-center gap-2">
         {label}
@@ -164,17 +163,13 @@ export default function TracksPage() { // Page component name can remain for thi
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        {/* Visual naming still "Tracks" for this specific page file, as per user's last big request to change "Track" to "Multimedia" */}
-        {/* This will be inconsistent if user doesn't delete /tracks route. Best to keep it as "Multimedia Items" for consistency if this page is to be kept. */}
-        {/* For now, fixing the error, but the header should align with the multimedia refactor ideally. */}
-        <h1 className="text-3xl font-bold text-primary font-headline">My Multimedia Items (from /tracks)</h1>
+        <h1 className="text-3xl font-bold text-primary font-headline">My Multimedia</h1>
         <div className="flex gap-2">
            <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="mr-2 h-4 w-4" />
             {showFilters ? 'Hide' : 'Show'} Filters
           </Button>
-          {/* Link still points to /tracks/new which is also an old path */}
-          <Link href="/tracks/new" passHref> 
+          <Link href="/multimedia/new" passHref>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
             </Button>
@@ -233,7 +228,7 @@ export default function TracksPage() { // Page component name can remain for thi
           <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold">No multimedia items found</h3>
           <p className="text-muted-foreground">Get started by adding your first multimedia item.</p>
-          <Link href="/tracks/new" passHref className="mt-4 inline-block">
+          <Link href="/multimedia/new" passHref className="mt-4 inline-block">
             <Button><PlusCircle className="mr-2 h-4 w-4" />Add New Item</Button>
           </Link>
         </div>
@@ -254,7 +249,7 @@ export default function TracksPage() { // Page component name can remain for thi
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map(item => ( // Changed from track
+              {items.map(item => (
                 <TableRow key={item.id} className={isDeleting === item.id ? 'opacity-50' : ''}>
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell>{item.artist}</TableCell>
@@ -276,13 +271,12 @@ export default function TracksPage() { // Page component name can remain for thi
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                           {/* Link still points to /tracks/... which is an old path */}
-                          <Link href={`/tracks/${item.id}`}>
+                          <Link href={`/multimedia/${item.id}`}>
                             <Eye className="mr-2 h-4 w-4" /> View
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/tracks/${item.id}/edit`}>
+                          <Link href={`/multimedia/${item.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>

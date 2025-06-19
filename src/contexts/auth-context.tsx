@@ -4,7 +4,7 @@
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, googleProvider } from '@/lib/firebase/firebase';
-import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log('Auth state changed, current user:', currentUser);
-      // console.log('Effective authDomain from SDK:', auth.config.authDomain); // Diagnostic log
+      // console.log('Effective authDomain from SDK:', auth.config.authDomain); 
       setUser(currentUser);
       setLoading(false);
     });
@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
-      // router.push('/tracks'); // onAuthStateChanged should also handle this
+      // router.push('/multimedia'); // onAuthStateChanged should also handle this
     } catch (error) {
       console.error("Error signing in with Google popup:", error);
       // Optionally show a toast message here
@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/'); 
     } catch (error) {
       console.error("Error signing out:", error);
-      // Optionally show a toast message here
     } finally {
       setLoading(false);
     }

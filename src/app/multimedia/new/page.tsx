@@ -1,17 +1,17 @@
 
 'use client';
 
-import type { Multimedia } from '@/types/multimedia'; // Changed from Track
+import type { Multimedia } from '@/types/multimedia';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import { MultimediaForm } from '@/components/multimedia/multimedia-form'; // Changed from TrackForm
-import { addMultimediaItem } from '@/lib/firebase/firestore'; // Changed from addTrack
+import { MultimediaForm } from '@/components/multimedia/multimedia-form';
+import { addMultimediaItem } from '@/lib/firebase/firestore';
 import { uploadAudioFile } from '@/lib/firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 
-export default function AddMultimediaItemPageFromTracks() { // Renamed for clarity, though route is still /tracks/new
+export default function AddMultimediaPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -20,7 +20,7 @@ export default function AddMultimediaItemPageFromTracks() { // Renamed for clari
 
   const handleSubmit = async (data: any, audioFileToUpload?: File | null) => {
     if (!user) {
-      toast({ title: 'Error', description: 'You must be logged in to add an item.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'You must be logged in to add a multimedia item.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
@@ -40,7 +40,7 @@ export default function AddMultimediaItemPageFromTracks() { // Renamed for clari
       
       setUploadProgress(100); 
 
-      const multimediaData: Omit<Multimedia, 'id' | 'createdAt' | 'updatedAt'> = { // Changed from trackData and Track
+      const multimediaData: Omit<Multimedia, 'id' | 'createdAt' | 'updatedAt'> = {
         userId: user.uid,
         title: data.title,
         artist: data.artist,
@@ -54,12 +54,12 @@ export default function AddMultimediaItemPageFromTracks() { // Renamed for clari
         audioFileName: audioFileName,
       };
 
-      await addMultimediaItem(multimediaData); // Changed from addTrack
-      toast({ title: 'Success', description: 'Multimedia item added successfully.' }); // Changed from Track
-      router.push('/multimedia'); // Changed from /tracks
+      await addMultimediaItem(multimediaData);
+      toast({ title: 'Success', description: 'Multimedia item added successfully.' });
+      router.push('/multimedia');
     } catch (error) {
-      console.error('Error adding multimedia item:', error); // Changed from track
-      toast({ title: 'Error', description: 'Failed to add multimedia item. Please try again.', variant: 'destructive' }); // Changed from track
+      console.error('Error adding multimedia item:', error);
+      toast({ title: 'Error', description: 'Failed to add multimedia item. Please try again.', variant: 'destructive' });
       setIsSubmitting(false);
       setUploadProgress(null);
     }
@@ -67,9 +67,8 @@ export default function AddMultimediaItemPageFromTracks() { // Renamed for clari
 
   return (
     <div className="container mx-auto py-6">
-      {/* Title is kept general, as this page is under /tracks/new path */}
-      <h1 className="text-3xl font-bold text-primary font-headline mb-6">Add New Item (from /tracks/new)</h1>
-      <MultimediaForm onSubmit={handleSubmit} isSubmitting={isSubmitting} /> {/* Changed from TrackForm */}
+      <h1 className="text-3xl font-bold text-primary font-headline mb-6">Add New Multimedia Item</h1>
+      <MultimediaForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
       {uploadProgress !== null && uploadProgress < 100 && (
         <div className="fixed bottom-4 right-4 bg-card p-4 rounded-lg shadow-lg w-64">
             <p className="text-sm font-medium">Uploading audio...</p>

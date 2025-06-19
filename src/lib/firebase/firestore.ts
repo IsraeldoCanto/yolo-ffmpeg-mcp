@@ -1,3 +1,4 @@
+
 import {
   addDoc,
   collection,
@@ -12,49 +13,48 @@ import {
   orderBy,
   limit,
   startAfter,
-  getCountFromServer,
   QueryConstraint
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Track } from '@/types/track';
+import type { Multimedia } from '@/types/multimedia';
 
-const TRACKS_COLLECTION = 'tracks';
+const MULTIMEDIA_COLLECTION = 'multimedia_items'; // Changed from 'tracks'
 
-export async function addTrack(trackData: Omit<Track, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const newTrackData = {
-    ...trackData,
+export async function addMultimediaItem(multimediaData: Omit<Multimedia, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  const newMultimediaData = {
+    ...multimediaData,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
-  const docRef = await addDoc(collection(db, TRACKS_COLLECTION), newTrackData);
+  const docRef = await addDoc(collection(db, MULTIMEDIA_COLLECTION), newMultimediaData);
   return docRef.id;
 }
 
-export async function getTrack(trackId: string, userId: string): Promise<Track | null> {
-  const docRef = doc(db, TRACKS_COLLECTION, trackId);
+export async function getMultimediaItem(multimediaId: string, userId: string): Promise<Multimedia | null> {
+  const docRef = doc(db, MULTIMEDIA_COLLECTION, multimediaId);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    const track = { id: docSnap.id, ...docSnap.data() } as Track;
-    if (track.userId === userId) {
-      return track;
+    const item = { id: docSnap.id, ...docSnap.data() } as Multimedia;
+    if (item.userId === userId) {
+      return item;
     }
   }
   return null;
 }
 
-export interface GetTracksParams {
+export interface GetMultimediaItemsParams {
   userId: string;
-  sortBy?: keyof Track;
+  sortBy?: keyof Multimedia;
   sortOrder?: 'asc' | 'desc';
   searchTerm?: string;
   genreFilter?: string;
   bpmRangeFilter?: [number, number];
   pageSize?: number;
-  lastVisible?: Track | null;
+  lastVisible?: Multimedia | null;
 }
 
-export async function getTracks(params: GetTracksParams): Promise<{ tracks: Track[]; hasMore: boolean; lastVisibleTrack: Track | null }> {
+export async function getMultimediaItems(params: GetMultimediaItemsParams): Promise<{ items: Multimedia[]; hasMore: boolean; lastVisibleItem: Multimedia | null }> {
   const { 
     userId, 
     sortBy = 'createdAt', 
@@ -76,85 +76,70 @@ export async function getTracks(params: GetTracksParams): Promise<{ tracks: Trac
     constraints.push(where('bpm', '<=', bpmRangeFilter[1]));
   }
   
-  // Note: Firestore requires composite indexes for multiple range/inequality filters or orderBy on a different field than where.
-  // Simple text search like this is limited. For advanced search, consider Algolia or Typesense.
-  // This basic search will only work if title/artist/tags are specifically indexed or if we fetch all and filter client-side (not recommended for large datasets).
-  // For this implementation, we'll keep it simple and assume basic sorting/filtering.
-  // A true text search across multiple fields usually requires a different approach or filtering client-side after a broader query.
-
   constraints.push(orderBy(sortBy, sortOrder));
   
   if (lastVisible) {
-     // This assumes lastVisible is the actual document snapshot from the previous query.
-     // For simplicity, if it's just the track object, we need to re-fetch the document to use as startAfter,
-     // or construct the startAfter value based on the sorted field.
-     // Let's assume lastVisible[sortBy] can be used if it's a simple field.
-     // For Timestamp fields:
      if (lastVisible[sortBy] instanceof Timestamp) {
         constraints.push(startAfter(lastVisible[sortBy] as Timestamp));
      } else {
         constraints.push(startAfter(lastVisible[sortBy]));
      }
   }
-  constraints.push(limit(pageSize + 1)); // Fetch one more to check if there are more pages
+  constraints.push(limit(pageSize + 1)); 
 
-  const q = query(collection(db, TRACKS_COLLECTION), ...constraints);
+  const q = query(collection(db, MULTIMEDIA_COLLECTION), ...constraints);
   const querySnapshot = await getDocs(q);
   
-  let tracks = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Track));
+  let items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Multimedia));
 
-  // Implementing searchTerm filtering client-side for this example due to Firestore limitations on complex text search.
-  // This is not efficient for large datasets.
   if (searchTerm) {
     const lowerSearchTerm = searchTerm.toLowerCase();
-    tracks = tracks.filter(track => 
-      track.title.toLowerCase().includes(lowerSearchTerm) ||
-      track.artist.toLowerCase().includes(lowerSearchTerm) ||
-      (track.tags && track.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
+    items = items.filter(item => 
+      item.title.toLowerCase().includes(lowerSearchTerm) ||
+      item.artist.toLowerCase().includes(lowerSearchTerm) ||
+      (item.tags && item.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
     );
   }
   
-  const hasMore = tracks.length > pageSize;
+  const hasMore = items.length > pageSize;
   if (hasMore) {
-    tracks.pop(); // Remove the extra item
+    items.pop(); 
   }
 
-  const lastVisibleTrack = tracks.length > 0 ? tracks[tracks.length - 1] : null;
+  const lastVisibleItem = items.length > 0 ? items[items.length - 1] : null;
 
-  return { tracks, hasMore, lastVisibleTrack };
+  return { items, hasMore, lastVisibleItem };
 }
 
 
-export async function updateTrack(trackId: string, userId: string, trackData: Partial<Omit<Track, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
-  const trackRef = doc(db, TRACKS_COLLECTION, trackId);
-  // Optional: Verify ownership before update if not handled by security rules thoroughly
-  const currentTrack = await getTrack(trackId, userId);
-  if (!currentTrack) {
-    throw new Error("Track not found or access denied.");
+export async function updateMultimediaItem(multimediaId: string, userId: string, multimediaData: Partial<Omit<Multimedia, 'id' | 'userId' | 'createdAt'>>): Promise<void> {
+  const itemRef = doc(db, MULTIMEDIA_COLLECTION, multimediaId);
+  const currentItem = await getMultimediaItem(multimediaId, userId);
+  if (!currentItem) {
+    throw new Error("Multimedia item not found or access denied.");
   }
 
-  const updatedTrackData = {
-    ...trackData,
+  const updatedMultimediaData = {
+    ...multimediaData,
     updatedAt: Timestamp.now(),
   };
-  await updateDoc(trackRef, updatedTrackData);
+  await updateDoc(itemRef, updatedMultimediaData);
 }
 
-export async function deleteTrack(trackId: string, userId: string): Promise<void> {
-  // Optional: Verify ownership before delete if not handled by security rules thoroughly
-  const currentTrack = await getTrack(trackId, userId);
-  if (!currentTrack) {
-    throw new Error("Track not found or access denied.");
+export async function deleteMultimediaItem(multimediaId: string, userId: string): Promise<void> {
+  const currentItem = await getMultimediaItem(multimediaId, userId);
+  if (!currentItem) {
+    throw new Error("Multimedia item not found or access denied.");
   }
-  await deleteDoc(doc(db, TRACKS_COLLECTION, trackId));
+  await deleteDoc(doc(db, MULTIMEDIA_COLLECTION, multimediaId));
 }
 
 export async function getUniqueGenres(userId: string): Promise<string[]> {
-  const q = query(collection(db, TRACKS_COLLECTION), where('userId', '==', userId));
+  const q = query(collection(db, MULTIMEDIA_COLLECTION), where('userId', '==', userId));
   const querySnapshot = await getDocs(q);
   const genres = new Set<string>();
   querySnapshot.forEach(doc => {
-    const data = doc.data() as Track;
+    const data = doc.data() as Multimedia;
     if (data.genre) {
       genres.add(data.genre);
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -12,7 +13,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/tracks');
+      router.push('/multimedia');
     }
   }, [user, loading, router]);
 
@@ -32,7 +33,7 @@ export default function LoginPage() {
         Kompost Mixer
       </h1>
       <p className="text-xl text-foreground mb-12 max-w-md">
-        Your personal music track database. Organize, find, and manage your audio effortlessly.
+        Your personal multimedia database. Organize, find, and manage your audio effortlessly.
       </p>
       <GoogleSignInButton />
        <footer className="absolute bottom-8 text-sm text-muted-foreground">

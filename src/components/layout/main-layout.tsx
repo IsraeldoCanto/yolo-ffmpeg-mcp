@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { User } from 'firebase/auth';
@@ -36,8 +37,8 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/tracks', label: 'My Tracks', icon: LayoutGrid },
-  { href: '/tracks/new', label: 'Add New Track', icon: PlusCircle },
+  { href: '/multimedia', label: 'My Multimedia', icon: LayoutGrid },
+  { href: '/multimedia/new', label: 'Add New Item', icon: PlusCircle },
 ];
 
 function UserNav({ user, onSignOut }: { user: User; onSignOut: () => void }) {
@@ -59,10 +60,6 @@ function UserNav({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {/* <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem> */}
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
@@ -105,7 +102,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader className="p-4 flex items-center gap-2">
-           <Link href="/tracks" className="flex items-center gap-2">
+           <Link href="/multimedia" className="flex items-center gap-2">
             <Music2 className="h-8 w-8 text-sidebar-primary" />
             <span className="text-xl font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
               Kompost Mixer
@@ -118,11 +115,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton 
-                    // REMOVED asChild here: Link provides the <a>, SidebarMenuButton provides content (button)
-                    isActive={pathname === item.href || (item.href !== '/tracks' && pathname.startsWith(item.href))}
+                    isActive={pathname === item.href || (item.href !== '/multimedia' && pathname.startsWith(item.href))}
                     tooltip={item.label}
                   >
-                    {/* Direct children, not wrapped in <a> here */}
                     <item.icon />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
@@ -131,9 +126,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             ))}
           </SidebarMenu>
         </SidebarContent>
-        {/* <SidebarFooter className="p-2">
-           You can add footer items here
-        </SidebarFooter> */}
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
