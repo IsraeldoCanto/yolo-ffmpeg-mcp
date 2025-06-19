@@ -18,6 +18,11 @@ import {
 import { db } from './firebase';
 import type { Multimedia } from '@/types/multimedia';
 
+// IMPORTANT: "FirebaseError: Missing or insufficient permissions" errors
+// are typically resolved by updating your Firestore Security Rules in the Firebase Console,
+// not by changing client-side code. Ensure your rules allow the authenticated user
+// (request.auth.uid) to perform the intended operations on the collections.
+
 const MULTIMEDIA_COLLECTION = 'multimedia_items'; // Changed from 'tracks'
 
 export async function addMultimediaItem(multimediaData: Omit<Multimedia, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
