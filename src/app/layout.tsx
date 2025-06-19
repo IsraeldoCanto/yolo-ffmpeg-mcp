@@ -22,7 +22,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         
         {/* ELM KompostEdit Integration */}
-        <script src="/elm/kompost-demo.js"></script>
         <script src="/elm/kompost.js"></script>
         <script dangerouslySetInnerHTML={{
           __html: `
