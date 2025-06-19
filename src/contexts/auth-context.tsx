@@ -36,14 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: 'https://placehold.co/100x100.png',
         emailVerified: true,
         isAnonymous: false,
-        // Mock essential methods if your app uses them, otherwise they can be simple no-ops or throw errors if called unexpectedly
         getIdToken: async () => 'mock-id-token-for-test-automation',
         getIdTokenResult: async () => ({
           token: 'mock-id-token-for-test-automation',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          claims: {} as any, // Cast to any if Claims type is complex
+          claims: {} as any, 
           authTime: new Date().toISOString(),
-          expirationTime: new Date(Date.now() + 3600 * 1000).toISOString(), // Expires in 1 hour
+          expirationTime: new Date(Date.now() + 3600 * 1000).toISOString(), 
           issuedAtTime: new Date().toISOString(),
           signInProvider: 'test',
           signInSecondFactor: null,
@@ -58,39 +57,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAnonymous: false,
         }),
         delete: async () => {},
-        // Add any other properties from 'firebase/auth' User type that your app might directly access
-        // For many apps, the above properties are sufficient for UI display and basic checks.
-      } as User; // Cast to User type to satisfy TypeScript
+      } as User; 
 
       setUser(mockUser);
       setLoading(false);
-      // Automatically navigate to the main app page if on the login page
-      if (router.pathname === '/') {
+      if (typeof window !== 'undefined' && window.location.pathname === '/') {
         router.push('/multimedia');
       }
-      return; // Skip Firebase auth listener setup
+      return; 
     }
 
     // Standard Firebase auth listener
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log('Auth state changed, current user:', currentUser);
+      // console.log('Auth state changed, current user:', currentUser);
       // console.log('Effective authDomain from SDK:', auth.config.authDomain);
       setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [router]); // Added router to dependency array
+  }, [router]); 
 
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      setUser(result.user);
-      // onAuthStateChanged should also handle this
+      // onAuthStateChanged will handle setting the user
     } catch (error) {
       console.error("Error signing in with Google popup:", error);
+      // Consider showing a toast to the user
     } finally {
-      setLoading(false);
+      // setLoading(false); // onAuthStateChanged will set loading to false
     }
   };
 
@@ -102,8 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/'); 
     } catch (error) {
       console.error("Error signing out:", error);
+      // Consider showing a toast to the user
     } finally {
-      setLoading(false);
+      // setLoading(false); // onAuthStateChanged handles this
     }
   };
 
