@@ -1,49 +1,49 @@
+
 'use client';
 
-import type { Track } from '@/types/track';
+import type { Multimedia } from '@/types/multimedia'; // Changed from Track
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
-import { getTrack } from '@/lib/firebase/firestore';
+import { getMultimediaItem } from '@/lib/firebase/firestore'; // Changed from getTrack
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Edit, Music, CalendarDays, Tag, BarChart, KeyRound, Clock, UserCircle, Album, ListMusic } from 'lucide-react';
 import { formatDuration } from '@/lib/utils';
-import { format } from 'date-fns'; // For formatting Firestore Timestamps
+import { format } from 'date-fns'; 
 
-export default function TrackDetailPage() {
+export default function MultimediaItemDetailPageFromTracks() { // Renamed for clarity
   const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
-  const trackId = params.id as string;
+  const itemId = params.id as string; // Changed from trackId
 
-  const [track, setTrack] = useState<Track | null>(null);
+  const [item, setItem] = useState<Multimedia | null>(null); // Changed from track, Track
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTrackData = useCallback(async () => {
-    if (!user || !trackId) return;
+  const fetchItemData = useCallback(async () => { // Renamed from fetchTrackData
+    if (!user || !itemId) return;
     setIsLoading(true);
     try {
-      const fetchedTrack = await getTrack(trackId, user.uid);
-      if (fetchedTrack) {
-        setTrack(fetchedTrack);
+      const fetchedItem = await getMultimediaItem(itemId, user.uid); // Changed from getTrack
+      if (fetchedItem) {
+        setItem(fetchedItem);
       } else {
-        notFound(); // Or redirect with toast
+        notFound(); 
       }
     } catch (error) {
-      console.error('Error fetching track:', error);
-      // Consider showing a toast message here
+      console.error('Error fetching multimedia item:', error);
       notFound();
     } finally {
       setIsLoading(false);
     }
-  }, [user, trackId]);
+  }, [user, itemId]);
 
   useEffect(() => {
-    fetchTrackData();
-  }, [fetchTrackData]);
+    fetchItemData();
+  }, [fetchItemData]);
 
   if (isLoading) {
     return (
@@ -53,9 +53,8 @@ export default function TrackDetailPage() {
     );
   }
 
-  if (!track) {
-    // This case should be handled by notFound() or could be a specific "Track not found" component
-    return <div className="text-center py-10">Track not found.</div>;
+  if (!item) {
+    return <div className="text-center py-10">Multimedia item not found. (from /tracks)</div>;
   }
 
   const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: React.ReactNode }) => (
@@ -75,47 +74,48 @@ export default function TrackDetailPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div>
-              <CardTitle className="text-3xl font-bold text-primary font-headline mb-1">{track.title}</CardTitle>
+              <CardTitle className="text-3xl font-bold text-primary font-headline mb-1">{item.title}</CardTitle>
               <CardDescription className="text-lg text-muted-foreground flex items-center">
-                <UserCircle className="h-5 w-5 mr-2" /> {track.artist}
+                <UserCircle className="h-5 w-5 mr-2" /> {item.artist}
               </CardDescription>
             </div>
-            <Link href={`/tracks/${track.id}/edit`} passHref>
+            {/* Link still points to /tracks/... which is an old path, but correcting its immediate error */}
+            <Link href={`/tracks/${item.id}/edit`} passHref> 
               <Button variant="outline" className="mt-4 sm:mt-0">
-                <Edit className="mr-2 h-4 w-4" /> Edit Track
+                <Edit className="mr-2 h-4 w-4" /> Edit Item
               </Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {track.audioUrl && (
+          {item.audioUrl && (
             <div className="my-4">
-              <audio controls src={track.audioUrl} className="w-full rounded-md shadow">
+              <audio controls src={item.audioUrl} className="w-full rounded-md shadow">
                 Your browser does not support the audio element.
               </audio>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DetailItem icon={Album} label="Album" value={track.album} />
-            <DetailItem icon={ListMusic} label="Genre" value={track.genre} />
-            <DetailItem icon={BarChart} label="BPM" value={track.bpm} />
-            <DetailItem icon={KeyRound} label="Key" value={track.key} />
-            <DetailItem icon={Clock} label="Duration" value={track.duration ? formatDuration(track.duration) : '-'} />
+            <DetailItem icon={Album} label="Album" value={item.album} />
+            <DetailItem icon={ListMusic} label="Genre" value={item.genre} />
+            <DetailItem icon={BarChart} label="BPM" value={item.bpm} />
+            <DetailItem icon={KeyRound} label="Key" value={item.key} />
+            <DetailItem icon={Clock} label="Duration" value={item.duration ? formatDuration(item.duration) : '-'} />
              <DetailItem 
               icon={CalendarDays} 
               label="Created At" 
-              value={track.createdAt ? format(track.createdAt.toDate(), 'PPP p') : '-'} 
+              value={item.createdAt ? format(item.createdAt.toDate(), 'PPP p') : '-'} 
             />
           </div>
           
-          {track.tags && track.tags.length > 0 && (
+          {item.tags && item.tags.length > 0 && (
             <div>
                <div className="flex items-center mb-2">
                 <Tag className="h-5 w-5 text-primary mr-3" />
                 <p className="text-sm text-muted-foreground">Tags</p>
                </div>
               <div className="flex flex-wrap gap-2">
-                {track.tags.map(tag => (
+                {item.tags.map(tag => (
                   <Badge key={tag} variant="secondary">{tag}</Badge>
                 ))}
               </div>
@@ -125,11 +125,10 @@ export default function TrackDetailPage() {
         </CardContent>
          <CardFooter className="mt-4">
             <p className="text-xs text-muted-foreground">
-              Last updated: {track.updatedAt ? format(track.updatedAt.toDate(), 'PPP p') : '-'}
+              Last updated: {item.updatedAt ? format(item.updatedAt.toDate(), 'PPP p') : '-'}
             </p>
           </CardFooter>
       </Card>
     </div>
   );
 }
-
