@@ -35,6 +35,10 @@ export default function KompostEditPage() {
       const script = document.createElement('script');
       script.src = '/elm/kompost.js';
       script.onload = () => {
+        console.log('🟢 ELM script onload triggered');
+        console.log('🟢 window.Elm:', (window as any).Elm);
+        console.log('🟢 window.Elm.Main:', (window as any).Elm?.Main);
+        
         // Set up global config after script loads
         (window as any).KOMPOST_CONFIG = {
           elm: {
@@ -48,7 +52,7 @@ export default function KompostEditPage() {
           }
         };
         
-        console.log('ELM script loaded, Elm available:', !!(window as any).Elm?.Main);
+        console.log('🟢 ELM script loaded, Elm available:', !!(window as any).Elm?.Main);
         setElmScriptLoaded(true);
       };
       script.onerror = () => {
@@ -225,6 +229,14 @@ export default function KompostEditPage() {
               <div className="flex-1">
                 <h3 className="font-semibold text-destructive">Elm Editor Error</h3>
                 <p className="text-destructive/80 mt-1">{elmError}</p>
+                <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                  <strong>Debug Info:</strong><br/>
+                  Script Loaded: {String(elmScriptLoaded)}<br/>
+                  Firebase Token: {firebaseToken ? 'Available' : 'Not Available'}<br/>
+                  User: {user ? 'Signed In' : 'Not Signed In'}<br/>
+                  Window.Elm: {String(typeof (window as any)?.Elm)}<br/>
+                  Elm.Main: {String(typeof (window as any)?.Elm?.Main)}
+                </div>
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm font-medium">Integration Instructions</summary>
                   <div className="mt-2 text-sm text-muted-foreground space-y-2">
