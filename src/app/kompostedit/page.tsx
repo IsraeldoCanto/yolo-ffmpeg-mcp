@@ -36,24 +36,51 @@ export default function KompostEditPage() {
       script.src = '/elm/kompost.js';
       script.onload = () => {
         console.log('🟢 ELM script onload triggered');
-        console.log('🟢 window.Elm:', (window as any).Elm);
-        console.log('🟢 window.Elm.Main:', (window as any).Elm?.Main);
         
-        // Set up global config after script loads
-        (window as any).KOMPOST_CONFIG = {
-          elm: {
-            available: typeof (window as any).Elm !== 'undefined' && (window as any).Elm.Main,
-            version: '1.0.0'
-          },
-          integration: {
-            type: 'nextjs-elm-hybrid',
-            firebase: true,
-            couchdb_compatible: true
+        // Wait a bit for the script to execute and export
+        setTimeout(() => {
+          console.log('🟢 Checking after timeout...');
+          console.log('🟢 window.Elm:', (window as any).Elm);
+          console.log('🟢 window.Elm.Main:', (window as any).Elm?.Main);
+          console.log('🟢 typeof window.Elm:', typeof (window as any).Elm);
+          console.log('🟢 Object.keys(window):', Object.keys(window).filter(k => k.includes('Elm') || k.includes('elm')));
+          
+          // Check if ELM is available in any form
+          const elmAvailable = !!(window as any).Elm?.Main;
+          
+          if (!elmAvailable) {
+            console.log('🔴 ELM not found in window, checking script execution...');
+            // Try to manually trigger the script's IIFE
+            try {
+              // The script might need the global `this` context
+              eval(`
+                console.log('🟡 Attempting manual execution...');
+                if (typeof Elm !== 'undefined') {
+                  window.Elm = Elm;
+                  console.log('🟡 Found Elm in local scope, assigned to window');
+                }
+              `);
+            } catch (e) {
+              console.log('🔴 Manual execution failed:', e);
+            }
           }
-        };
-        
-        console.log('🟢 ELM script loaded, Elm available:', !!(window as any).Elm?.Main);
-        setElmScriptLoaded(true);
+          
+          // Set up global config after script loads
+          (window as any).KOMPOST_CONFIG = {
+            elm: {
+              available: !!(window as any).Elm?.Main,
+              version: '1.0.0'
+            },
+            integration: {
+              type: 'nextjs-elm-hybrid',
+              firebase: true,
+              couchdb_compatible: true
+            }
+          };
+          
+          console.log('🟢 Final ELM status:', !!(window as any).Elm?.Main);
+          setElmScriptLoaded(true);
+        }, 100);
       };
       script.onerror = () => {
         setElmError('Failed to load ELM script');
