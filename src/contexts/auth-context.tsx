@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
       // onAuthStateChanged will handle setting the user
     } catch (error) {
       console.error("Error signing in with Google popup:", error);
