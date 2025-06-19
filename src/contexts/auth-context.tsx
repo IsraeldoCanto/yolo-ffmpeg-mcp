@@ -1,9 +1,10 @@
+
 'use client';
 
 import type { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth, googleProvider } from '@/lib/firebase/firebase';
-import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -28,17 +29,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  // Check for redirect result on initial load
+  useEffect(() => {
+    const checkRedirect = async () => {
+      try {
+        setLoading(true);
+        // The redirect result is null if the app is not loaded after a redirect from Google.
+        // It contains user credential if the app is loaded after a redirect from Google.
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          setUser(result.user);
+          // router.push('/tracks'); // onAuthStateChanged should handle this too
+        }
+      } catch (error) {
+        console.error("Error handling redirect result:", error);
+        // Handle specific errors like auth/account-exists-with-different-credential if needed
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkRedirect();
+  }, [router]);
+
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      // Auth state change will handle user update and redirect if necessary
+      // No need to await signInWithRedirect as it navigates away
+      await signInWithRedirect(auth, googleProvider);
+      // The user will be redirected to Google.
+      // After successful sign-in, they will be redirected back to your app.
+      // The onAuthStateChanged listener and getRedirectResult will handle the user state.
     } catch (error) {
-      console.error("Error signing in with Google:", error);
+      console.error("Error initiating sign in with Google redirect:", error);
       // Optionally show a toast message here
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only set loading to false if an error occurs *before* redirect
     }
+    // setLoading(false) is not typically needed here as the page will redirect.
+    // If there's an immediate error before redirect, catch block handles it.
   };
 
   const signOut = async () => {
