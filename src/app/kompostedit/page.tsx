@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import Script from 'next/script';
 
 interface ElmApp {
   ports?: {
@@ -151,8 +152,32 @@ export default function KompostEditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <>
+      {/* ELM Scripts - Load only on this page */}
+      <Script src="/elm/kompost.js" strategy="beforeInteractive" />
+      <Script id="elm-config" strategy="beforeInteractive">
+        {`
+          // Global configuration for Elm integration
+          window.KOMPOST_CONFIG = {
+            elm: {
+              available: typeof window !== 'undefined' && typeof window.Elm !== 'undefined' && window.Elm.Main,
+              version: '1.0.0'
+            },
+            integration: {
+              type: 'nextjs-elm-hybrid',
+              firebase: true,
+              couchdb_compatible: true
+            }
+          };
+          
+          if (typeof window !== 'undefined' && !window.KOMPOST_CONFIG.elm.available) {
+            console.warn('Elm application not loaded. Elm editor will show integration instructions.');
+          }
+        `}
+      </Script>
+      
+      <div className="min-h-screen bg-background">
+        {/* Header */}
       <header className="bg-card shadow-sm border-b">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -243,6 +268,7 @@ export default function KompostEditPage() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
