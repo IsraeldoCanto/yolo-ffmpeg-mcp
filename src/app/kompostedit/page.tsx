@@ -46,28 +46,61 @@ export default function KompostEditPage() {
       script.src = '/elm/kompost.js';
       
       script.onload = () => {
-        console.log('ELM script onload triggered. Checking for Elm.Main.init after a brief delay...');
+        console.log('🟢 ELM script onload triggered');
+        
+        // Wait a bit for the script to execute and export
         setTimeout(() => {
-            if ((window as any).Elm?.Main?.init) {
-                console.log('Elm.Main.init found.');
+          console.log('🟢 Checking after timeout...');
+          console.log('🟢 window.Elm:', (window as any).Elm);
+          console.log('🟢 window.Elm.Main:', (window as any).Elm?.Main);
+          console.log('🟢 typeof window.Elm:', typeof (window as any).Elm);
+          
+          if ((window as any).Elm?.Main?.init) {
+            console.log('🟢 Elm.Main.init found successfully');
+            (window as any).KOMPOST_CONFIG = {
+              elm: {
+                available: true,
+                version: '1.0.0'
+              },
+              integration: {
+                type: 'nextjs-elm-hybrid',
+                firebase: true,
+                couchdb_compatible: true
+              }
+            };
+            setElmScriptLoaded(true);
+          } else {
+            console.log('🔴 ELM not found in window, checking script execution...');
+            // Try to manually trigger the script's IIFE if needed
+            try {
+              eval(`
+                console.log('🟡 Attempting manual execution check...');
+                if (typeof Elm !== 'undefined') {
+                  window.Elm = Elm;
+                  console.log('🟡 Found Elm in local scope, assigned to window');
+                }
+              `);
+              
+              // Check again after manual assignment
+              if ((window as any).Elm?.Main?.init) {
+                console.log('🟢 Elm.Main.init found after manual assignment');
                 (window as any).KOMPOST_CONFIG = {
-                    elm: {
-                        available: true,
-                        version: '1.0.0' 
-                    },
-                    integration: {
-                        type: 'nextjs-elm-hybrid',
-                        firebase: true,
-                        couchdb_compatible: true
-                    }
+                  elm: { available: true, version: '1.0.0' },
+                  integration: { type: 'nextjs-elm-hybrid', firebase: true, couchdb_compatible: true }
                 };
                 setElmScriptLoaded(true);
-            } else {
-                console.error('Elm.Main.init NOT found after script load and delay. Check kompost.js contents and export.');
+              } else {
+                console.error('🔴 Elm.Main.init still not found after all attempts');
                 setElmError('Elm application (Elm.Main.init) not found after script load. Ensure kompost.js is valid and exports Elm.Main.init globally.');
-                setElmScriptLoaded(false); 
+                setElmScriptLoaded(false);
+              }
+            } catch (e) {
+              console.log('🔴 Manual execution failed:', e);
+              setElmError('Elm application (Elm.Main.init) not found after script load. Script execution error: ' + e);
+              setElmScriptLoaded(false);
             }
-        }, 0); 
+          }
+        }, 100);
       };
       
       script.onerror = () => {
