@@ -7,9 +7,38 @@
 
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import '@testing-library/jest-dom'
 import { useAuth } from '@/contexts/auth-context'
 import KompostEditPage from '../page'
 import { elmPortHandler } from '@/services/elmPortHandler'
+import type { User } from 'firebase/auth'
+
+interface MockUser extends Partial<User> {
+  uid: string
+  email: string
+  getIdToken: jest.Mock
+  emailVerified: boolean
+  isAnonymous: boolean
+  metadata: any
+  providerData: any[]
+  refreshToken: string
+  tenantId: string | null
+  delete: jest.Mock
+  getIdTokenResult: jest.Mock
+  reload: jest.Mock
+  toJSON: jest.Mock
+  displayName: string | null
+  photoURL: string | null
+  phoneNumber: string | null
+  providerId: string
+}
+
+interface MockAuthContextType {
+  user: MockUser | null
+  loading: boolean
+  signInWithGoogle: jest.Mock
+  signOut: jest.Mock
+}
 
 // Mock the auth context
 jest.mock('@/contexts/auth-context')
@@ -48,7 +77,21 @@ describe('KompostEditPage Component Integration Tests', () => {
     uid: 'test-user-123',
     email: 'test@example.com',
     getIdToken: jest.fn().mockResolvedValue('mock-firebase-token'),
-  }
+    emailVerified: true,
+    isAnonymous: false,
+    metadata: {},
+    providerData: [],
+    refreshToken: 'mock-refresh-token',
+    tenantId: null,
+    delete: jest.fn(),
+    getIdTokenResult: jest.fn(),
+    reload: jest.fn(),
+    toJSON: jest.fn(),
+    displayName: 'Test User',
+    photoURL: null,
+    phoneNumber: null,
+    providerId: 'google.com',
+  } as MockUser
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -66,9 +109,10 @@ describe('KompostEditPage Component Integration Tests', () => {
       onload: null,
       onerror: null,
     })
-    global.document.head = {
-      appendChild: jest.fn(),
-    } as any
+    Object.defineProperty(global.document, 'head', {
+      value: { appendChild: jest.fn() },
+      writable: true,
+    })
     global.document.querySelector = jest.fn().mockReturnValue(null)
   })
 
@@ -77,7 +121,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: null,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
 
       render(<KompostEditPage />)
@@ -91,7 +136,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: null,
         loading: true,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
 
       render(<KompostEditPage />)
@@ -104,7 +150,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
 
       render(<KompostEditPage />)
@@ -119,7 +166,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
     })
 
@@ -192,7 +240,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
 
       // Mock ELM as loaded
@@ -229,7 +278,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
 
       // Mock ELM as fully loaded
@@ -285,7 +335,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
     })
 
@@ -316,7 +367,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
     })
 
@@ -349,7 +401,8 @@ describe('KompostEditPage Component Integration Tests', () => {
       mockUseAuth.mockReturnValue({
         user: mockUser,
         loading: false,
-        error: null,
+        signInWithGoogle: jest.fn(),
+        signOut: jest.fn(),
       })
     })
 
