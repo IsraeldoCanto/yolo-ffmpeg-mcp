@@ -185,18 +185,10 @@ export default function KompostEditPage() {
           // ELM app uses Json.Decode.string - expects a simple string, not JSON object
           const apiToken = firebaseToken || 'anonymous';
           
-          console.log('🎯 Initializing ELM with simple string flag (API token):', apiToken);
-          console.log('🎯 ELM container node:', elmRef.current);
-          console.log('🎯 ELM init params:', { node: elmRef.current, flags: apiToken || "" });
-          
           const app = (window as any).Elm.Main.init({
             node: elmRef.current,
             flags: apiToken || ""  // Simple string as expected by Json.Decode.string, ensure not undefined
           });
-
-          console.log('🎉 ELM app initialized successfully:', app);
-          console.log('🎯 ELM container content after init:', elmRef.current?.innerHTML);
-          console.log('🎯 ELM container children count:', elmRef.current?.children.length);
           elmAppRef.current = app;
 
           if (app.ports) {
@@ -215,27 +207,13 @@ export default function KompostEditPage() {
             }
           }
 
-          console.log('🎯 Setting isElmLoaded to true');
           setIsElmLoaded(true);
           setElmError(null);
-          console.log('🎯 ELM initialization complete!');
-          
-          // Check ELM UI rendering after a short delay
-          setTimeout(() => {
-            console.log('🔍 ELM UI check after 2 seconds:', {
-              containerHTML: elmRef.current?.innerHTML,
-              childrenCount: elmRef.current?.children.length,
-              hasContent: (elmRef.current?.innerHTML?.length || 0) > 0
-            });
-          }, 2000);
         } else {
-          console.log('❌ ELM container check failed - not initializing');
+          // Retry if DOM element not ready yet
           if (!elmRef.current) {
-            console.log('🔄 elmRef.current is null, retrying in 100ms...');
             setTimeout(() => {
-              console.log('🔄 Retry attempt - elmRef.current:', !!elmRef.current);
               if (elmRef.current && !elmAppRef.current) {
-                console.log('🔄 Retrying ELM initialization...');
                 loadElmApp();
               }
             }, 100);
@@ -365,18 +343,20 @@ export default function KompostEditPage() {
               )}
             </div>
           </div>
-        ) : (
-          <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
-            <div 
-              ref={elmRef} 
-              className="elm-editor"
-              style={{ 
-                width: '100%', 
-                minHeight: '600px'
-              }}
-            />
-          </div>
-        )}
+        ) : null}
+        
+        {/* ELM Editor Container - Always present for initialization */}
+        <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
+          <div 
+            ref={elmRef} 
+            className="elm-editor"
+            style={{ 
+              width: '100%', 
+              minHeight: '600px',
+              display: isElmLoaded ? 'block' : 'none'
+            }}
+          />
+        </div>
       </main>
 
       <footer className="bg-muted border-t">
