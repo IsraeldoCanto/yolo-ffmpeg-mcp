@@ -4,8 +4,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Save, FolderOpen, Search } from 'lucide-react';
 import Link from 'next/link';
+import { elmPortHandler } from '@/services/elmPortHandler';
+import { firebaseKompostService } from '@/services/firebaseKompostService';
 
 interface ElmApp {
   ports?: {
@@ -204,20 +206,21 @@ export default function KompostEditPage() {
           });
           elmAppRef.current = app;
 
+          // Set up Firebase integration through ELM ports
           if (app.ports) {
-            if (app.ports.kompositionUpdated) {
-              app.ports.kompositionUpdated.subscribe((updatedKomposition: any) => {
-                console.log('Received komposition update from Elm:', updatedKomposition);
-              });
-            }
-            if (app.ports.saveKomposition) {
-              app.ports.saveKomposition.subscribe((kompositionData: any) => {
-                console.log('Elm requested save:', kompositionData);
-              });
-            }
+            console.log('🔌 Setting up Firebase port integration...');
+            
+            // Initialize ELM port handler with Firebase services
+            elmPortHandler.setupPorts(app);
+            
+            // Send Firebase token if available (legacy compatibility)
             if (app.ports.firebaseTokenUpdated && firebaseToken) {
               app.ports.firebaseTokenUpdated.send(firebaseToken);
             }
+            
+            console.log('✅ Firebase port integration complete');
+          } else {
+            console.warn('⚠️ ELM app has no ports - Firebase integration unavailable');
           }
 
           setIsElmLoaded(true);
@@ -254,11 +257,14 @@ export default function KompostEditPage() {
     }
 
     return () => {
+      // Cleanup Firebase port subscriptions
+      elmPortHandler.cleanup();
+      
       if (elmAppRef.current && elmRef.current) {
         elmRef.current.innerHTML = '';
         elmAppRef.current = null;
         setIsElmLoaded(false);
-        console.log('Elm app node cleared.');
+        console.log('Elm app node cleared and Firebase subscriptions cleaned up.');
       }
     };
   }, [user, firebaseToken, elmScriptLoaded]);
@@ -295,10 +301,61 @@ export default function KompostEditPage() {
                   ✓ Active
                 </span>
               )}
+              {firebaseToken && (
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                  🔥 Firebase Connected
+                </span>
+              )}
             </div>
             
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span>Elm Editor Integration</span>
+            <div className="flex items-center space-x-2">
+              {isElmLoaded && firebaseToken && (
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      console.log('🔄 Creating new komposition...');
+                      elmPortHandler.createNewKomposition('New Music Video');
+                    }}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    New
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      console.log('🔍 Loading recent kompositions...');
+                      firebaseKompostService.getRecentKompositions().then(kompositions => {
+                        console.log('📋 Recent kompositions:', kompositions);
+                      });
+                    }}
+                  >
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    Recent
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const query = prompt('Search kompositions:');
+                      if (query) {
+                        console.log('🔍 Searching for:', query);
+                        firebaseKompostService.searchKompositions(query).then(results => {
+                          console.log('🔍 Search results:', results);
+                        });
+                      }
+                    }}
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </Button>
+                </div>
+              )}
+              <div className="text-sm text-muted-foreground">
+                <span>Elm Editor Integration</span>
+              </div>
             </div>
           </div>
         </div>
