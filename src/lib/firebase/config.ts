@@ -1,5 +1,10 @@
-// TODO: Add your Firebase project configuration here
+// Firebase configuration and initialization
 // See: https://firebase.google.com/docs/web/setup#available-libraries
+
+import { initializeApp, getApps, getApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "YOUR_API_KEY",
@@ -9,3 +14,14 @@ export const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "YOUR_APP_ID",
 };
+
+// Initialize Firebase (avoid multiple initialization in development)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()
+
+// Initialize Firebase services
+export const auth = getAuth(app)
+export const db = getFirestore(app)
+export const storage = getStorage(app)
+
+// Export the app instance
+export default app
