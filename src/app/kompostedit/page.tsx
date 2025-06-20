@@ -29,14 +29,6 @@ export default function KompostEditPage() {
   useEffect(() => {
     const loadElmScript = () => {
       if (document.querySelector('script[src="/elm/kompost.js"]')) {
-        // If script tag exists, assume it might already be loaded or in process
-        // We'll rely on the check for Elm.Main.init to confirm.
-        // Forcing elmScriptLoaded to true here might be too early if script is still fetching/executing.
-        // Let's ensure the check below still happens.
-        // If Elm.Main.init is already there, the onload handler logic can set elmScriptLoaded.
-        // If not, and the script is already in DOM, this effect won't re-add it.
-        // This scenario needs careful handling.
-        // A simple approach: if script tag exists, check Elm.Main.init directly.
         if ((window as any).Elm?.Main?.init) {
             console.log('Elm script tag already exists and Elm.Main.init is available.');
              (window as any).KOMPOST_CONFIG = {
@@ -47,10 +39,6 @@ export default function KompostEditPage() {
             return;
         } else if (document.querySelector('script[src="/elm/kompost.js"]')) {
             console.log('Elm script tag already exists but Elm.Main.init is not yet available. Waiting for its onload or error.');
-            // The script's own onload should handle setting elmScriptLoaded.
-            // If it's already loaded and failed, this won't help.
-            // This is complex. For now, we assume if script tag is there, its onload will eventually fire or has fired.
-            // The main logic below will add it if it's not.
         }
       }
 
@@ -59,7 +47,6 @@ export default function KompostEditPage() {
       
       script.onload = () => {
         console.log('ELM script onload triggered. Checking for Elm.Main.init after a brief delay...');
-        // Defer this check slightly to give Elm script a chance to fully execute its internal setup.
         setTimeout(() => {
             if ((window as any).Elm?.Main?.init) {
                 console.log('Elm.Main.init found.');
@@ -80,7 +67,7 @@ export default function KompostEditPage() {
                 setElmError('Elm application (Elm.Main.init) not found after script load. Ensure kompost.js is valid and exports Elm.Main.init globally.');
                 setElmScriptLoaded(false); 
             }
-        }, 0); // Zero-delay setTimeout to allow event loop to process.
+        }, 0); 
       };
       
       script.onerror = () => {
@@ -93,9 +80,6 @@ export default function KompostEditPage() {
 
     loadElmScript();
     
-    // Cleanup: remove script if component unmounts before it loads?
-    // This can be tricky; for now, we assume the script is small and loads quickly,
-    // or if it fails, onerror handles it.
   }, []);
 
   // Get Firebase ID token when user changes
@@ -121,11 +105,24 @@ export default function KompostEditPage() {
     // Load Elm application
     const loadElmApp = async () => {
       try {
-        // Check if Elm is available globally
-        if (typeof window === 'undefined' || !(window as any).Elm?.Main?.init) {
-          // This error is now more likely if script.onload logic determined Elm.Main.init wasn't truly ready.
-          throw new Error('Elm application not found. Please ensure kompost.js is loaded and initialized correctly.');
+        // Wait for script to be loaded first
+        if (!elmScriptLoaded) {
+          console.log('⏳ Waiting for ELM script to load...');
+          return;
         }
+
+        // Check if Elm is available globally  
+        if (typeof window === 'undefined' || !(window as any).Elm?.Main?.init) {
+          console.log('❌ ELM not available if Elm.Main.init check fails in loadElmApp:', {
+            window: typeof window,
+            Elm: typeof (window as any)?.Elm,
+            Main: typeof (window as any)?.Elm?.Main,
+            init: typeof (window as any)?.Elm?.Main?.init
+          });
+          throw new Error('Elm application (Elm.Main.init) not found. Please ensure kompost.js is loaded and Elm.Main.init is globally available.');
+        }
+
+        console.log('✅ ELM ready, initializing...');
 
         if (elmRef.current && !elmAppRef.current) {
           // Initialize Elm app with Firebase auth context
@@ -191,8 +188,6 @@ export default function KompostEditPage() {
 
     return () => {
       if (elmAppRef.current && elmRef.current) {
-        // Elm apps don't typically have a formal 'destroy' or 'unmount' method.
-        // Clearing the innerHTML of the node is a common way to clean up.
         elmRef.current.innerHTML = '';
         elmAppRef.current = null;
         setIsElmLoaded(false);
@@ -250,7 +245,7 @@ export default function KompostEditPage() {
               <div className="flex-1">
                 <h3 className="font-semibold text-destructive">Elm Editor Error</h3>
                 <p className="text-destructive/80 mt-1">{elmError}</p>
-                <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                <div className="mt-2 p-2 bg-muted text-foreground/70 rounded text-xs">
                   <strong>Debug Info:</strong><br/>
                   Script Loaded State (elmScriptLoaded): {String(elmScriptLoaded)}<br/>
                   Firebase Token: {firebaseToken ? 'Available' : 'Not Available'}<br/>
@@ -280,11 +275,18 @@ export default function KompostEditPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading Elm Editor...</p>
-              <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                  Script Loaded State (elmScriptLoaded): {String(elmScriptLoaded)}<br/>
-                  Firebase Token: {firebaseToken ? 'Available' : 'Not Available'}<br/>
-               </div>
+              <p className="text-muted-foreground">
+                {!elmScriptLoaded ? 'Loading ELM script...' : elmError ? 'Error loading Elm' : 'Initializing Elm Editor...'}
+              </p>
+              {elmScriptLoaded && !elmError && (
+                <p className="text-xs text-green-600 mt-2">✅ Script loaded, attempting initialization</p>
+              )}
+              {!isElmLoaded && !elmError && (
+                 <div className="mt-2 p-2 bg-muted text-foreground/70 rounded text-xs">
+                    Script Loaded: {String(elmScriptLoaded)} | Firebase Token: {firebaseToken ? 'Ready' : 'Waiting'}<br/>
+                    User: {user ? 'Available' : 'Waiting'} | Elm.Main.init: {String(typeof (window as any)?.Elm?.Main?.init !== 'undefined')}
+                 </div>
+              )}
             </div>
           </div>
         ) : (
