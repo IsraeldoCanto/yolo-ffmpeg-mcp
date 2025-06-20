@@ -115,10 +115,24 @@ export default function KompostEditPage() {
     // Load Elm application
     const loadElmApp = async () => {
       try {
-        // Check if Elm is available globally
+        // Wait for script to be loaded first
+        if (!elmScriptLoaded) {
+          console.log('⏳ Waiting for ELM script to load...');
+          return;
+        }
+
+        // Check if Elm is available globally  
         if (typeof window === 'undefined' || !(window as any).Elm?.Main?.init) {
+          console.log('❌ ELM not available even after script loaded:', {
+            window: typeof window,
+            Elm: typeof (window as any)?.Elm,
+            Main: typeof (window as any)?.Elm?.Main,
+            init: typeof (window as any)?.Elm?.Main?.init
+          });
           throw new Error('Elm application not found. Please ensure kompost.js is loaded.');
         }
+
+        console.log('✅ ELM ready, initializing...');
 
         if (elmRef.current && !elmAppRef.current) {
           // Initialize Elm app with Firebase auth context
@@ -285,7 +299,12 @@ export default function KompostEditPage() {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading Elm Editor...</p>
+              <p className="text-muted-foreground">
+                {!elmScriptLoaded ? 'Loading ELM script...' : 'Initializing Elm Editor...'}
+              </p>
+              {elmScriptLoaded && (
+                <p className="text-xs text-green-600 mt-2">✅ Script loaded successfully</p>
+              )}
             </div>
           </div>
         ) : (
