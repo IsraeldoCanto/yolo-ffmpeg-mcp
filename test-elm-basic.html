@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic ELM Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        #elm-app {
+            border: 2px dashed #ccc;
+            min-height: 400px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .debug {
+            font-family: monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Basic ELM Loading Test</h1>
+        
+        <div id="status" class="status info">
+            Initializing...
+        </div>
+        
+        <div class="debug">
+            <strong>Debug Info:</strong><br>
+            <span id="debug-info">Loading...</span>
+        </div>
+        
+        <div id="elm-app">
+            ELM app will load here...
+        </div>
+        
+        <button onclick="testElmLoad()">Test ELM Load</button>
+        <button onclick="showDebugInfo()">Show Debug Info</button>
+    </div>
+
+    <script>
+        console.log('🔵 Starting basic ELM test');
+        
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            console.log(`📊 Status: ${message}`);
+        }
+        
+        function updateDebugInfo() {
+            const debugEl = document.getElementById('debug-info');
+            debugEl.innerHTML = `
+                window.Elm: ${typeof window.Elm}<br>
+                window.Elm.Main: ${typeof window.Elm?.Main}<br>
+                window.Elm.Main.init: ${typeof window.Elm?.Main?.init}<br>
+                Script tags: ${document.querySelectorAll('script[src*="kompost"]').length}<br>
+                Timestamp: ${new Date().toLocaleTimeString()}
+            `;
+        }
+        
+        function showDebugInfo() {
+            console.log('🔍 Debug Info:');
+            console.log('window.Elm:', window.Elm);
+            console.log('window.Elm?.Main:', window.Elm?.Main);
+            console.log('window.Elm?.Main?.init:', window.Elm?.Main?.init);
+            console.log('Script tags:', document.querySelectorAll('script'));
+            updateDebugInfo();
+        }
+        
+        function testElmLoad() {
+            console.log('🧪 Testing ELM load...');
+            updateStatus('Testing ELM load...', 'info');
+            
+            // Clear any existing scripts
+            const existingScripts = document.querySelectorAll('script[src*="kompost"]');
+            existingScripts.forEach(script => {
+                console.log('🗑️ Removing existing script:', script.src);
+                script.remove();
+            });
+            
+            // Clear window.Elm
+            if (window.Elm) {
+                console.log('🗑️ Clearing window.Elm');
+                delete window.Elm;
+            }
+            
+            // Load the script
+            const script = document.createElement('script');
+            script.src = '/elm/kompost.js';
+            
+            script.onload = () => {
+                console.log('✅ Script loaded successfully');
+                updateStatus('Script loaded, checking ELM...', 'info');
+                
+                setTimeout(() => {
+                    if (window.Elm?.Main?.init) {
+                        console.log('✅ ELM found, initializing...');
+                        updateStatus('ELM found, initializing app...', 'success');
+                        
+                        try {
+                            const app = window.Elm.Main.init({
+                                node: document.getElementById('elm-app'),
+                                flags: {
+                                    apiToken: 'test-token',
+                                    userProfile: null,
+                                    kompoUrl: 'http://localhost:3000/api/test',
+                                    metaUrl: 'http://localhost:3000/api/meta',
+                                    cacheUrl: 'http://localhost:3000/api/cache',
+                                    integrationDestination: 'http://localhost:3000/api/process',
+                                    integrationFormat: 'json',
+                                    authMode: 'test',
+                                    skipAuth: true
+                                }
+                            });
+                            
+                            console.log('🎉 ELM app initialized:', app);
+                            updateStatus('ELM app initialized successfully!', 'success');
+                            
+                        } catch (error) {
+                            console.error('❌ ELM initialization failed:', error);
+                            updateStatus(`ELM initialization failed: ${error.message}`, 'error');
+                        }
+                    } else {
+                        console.error('❌ ELM not found after script load');
+                        updateStatus('ELM not found after script load', 'error');
+                        showDebugInfo();
+                    }
+                    updateDebugInfo();
+                }, 200);
+            };
+            
+            script.onerror = () => {
+                console.error('❌ Script failed to load');
+                updateStatus('Failed to load ELM script', 'error');
+                updateDebugInfo();
+            };
+            
+            console.log('📥 Loading script:', script.src);
+            document.head.appendChild(script);
+        }
+        
+        // Auto-run on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, starting test');
+            updateDebugInfo();
+            setTimeout(testElmLoad, 1000);
+        });
+        
+        // Update debug info every 2 seconds
+        setInterval(updateDebugInfo, 2000);
+    </script>
+</body>
+</html>

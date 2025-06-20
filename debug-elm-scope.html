@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug ELM Scope</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Debug ELM Scope Issue</h1>
+    
+    <div class="debug">
+        <h3>Before loading script:</h3>
+        <div>window === this: <span id="window-this-before"></span></div>
+        <div>typeof window.Elm: <span id="window-elm-before"></span></div>
+        <div>typeof this.Elm: <span id="this-elm-before"></span></div>
+    </div>
+    
+    <div class="debug">
+        <h3>Script loading...</h3>
+        <div id="loading-status">Not started</div>
+    </div>
+    
+    <div class="debug">
+        <h3>After loading script:</h3>
+        <div>typeof window.Elm: <span id="window-elm-after"></span></div>
+        <div>typeof this.Elm: <span id="this-elm-after"></span></div>
+        <div>window.Elm === this.Elm: <span id="elm-equality"></span></div>
+    </div>
+    
+    <script>
+        // Test before loading
+        document.getElementById('window-this-before').textContent = (window === this).toString();
+        document.getElementById('window-elm-before').textContent = typeof window.Elm;
+        document.getElementById('this-elm-before').textContent = typeof this.Elm;
+        
+        console.log('🔍 Before loading ELM script:');
+        console.log('window === this:', window === this);
+        console.log('typeof window.Elm:', typeof window.Elm);
+        console.log('typeof this.Elm:', typeof this.Elm);
+        
+        // Intercept the _Platform_export function to see what's happening
+        window._original_Platform_export = window._Platform_export;
+        
+        // Load the script
+        document.getElementById('loading-status').textContent = 'Loading...';
+        
+        const script = document.createElement('script');
+        script.src = './public/elm/kompost.js';
+        
+        script.onload = function() {
+            console.log('✅ Script loaded');
+            document.getElementById('loading-status').textContent = 'Script loaded';
+            
+            setTimeout(() => {
+                console.log('🔍 After loading ELM script:');
+                console.log('typeof window.Elm:', typeof window.Elm);
+                console.log('typeof this.Elm:', typeof this.Elm);
+                console.log('window.Elm:', window.Elm);
+                console.log('this.Elm:', this.Elm);
+                
+                document.getElementById('window-elm-after').textContent = typeof window.Elm;
+                document.getElementById('this-elm-after').textContent = typeof this.Elm;
+                document.getElementById('elm-equality').textContent = (window.Elm === this.Elm).toString();
+                
+                // Check if ELM is available anywhere in the global scope
+                const globalThis = (function() { return this; })();
+                console.log('globalThis.Elm:', globalThis.Elm);
+                console.log('globalThis === window:', globalThis === window);
+                
+                // Try to find Elm in various places
+                console.log('Checking for Elm in various scopes...');
+                for (let prop in window) {
+                    if (prop.toLowerCase().includes('elm')) {
+                        console.log(`Found ${prop} in window:`, window[prop]);
+                    }
+                }
+                
+                // Manual test of the IIFE scope issue
+                try {
+                    console.log('Testing IIFE scope manually...');
+                    eval(`
+                        (function(scope) {
+                            console.log('Inside IIFE - scope === window:', scope === window);
+                            console.log('Inside IIFE - scope === this:', scope === this);
+                            console.log('Inside IIFE - typeof scope:', typeof scope);
+                            scope.TestElm = { test: 'working' };
+                        })(this);
+                    `);
+                    console.log('Manual IIFE test result - window.TestElm:', window.TestElm);
+                } catch (e) {
+                    console.error('Manual IIFE test failed:', e);
+                }
+                
+            }, 500);
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load script');
+            document.getElementById('loading-status').textContent = 'Failed to load';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

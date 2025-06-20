@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ELM Fixed Flags Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        #elm-container { border: 2px solid #ccc; min-height: 400px; padding: 20px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>ELM Fixed Flags Test</h1>
+    
+    <div class="debug">
+        <div>Status: <span id="status">Loading...</span></div>
+        <div>Flags Type: <span id="flags-type">Not set</span></div>
+    </div>
+    
+    <div id="elm-container">
+        ELM app will appear here
+    </div>
+    
+    <script>
+        console.log('🔍 Testing ELM with corrected flags...');
+        
+        // Load the ELM script
+        const script = document.createElement('script');
+        script.src = './public/elm/kompost.js';
+        
+        script.onload = function() {
+            console.log('✅ ELM script loaded');
+            document.getElementById('status').textContent = 'Script loaded';
+            
+            setTimeout(() => {
+                if (window.Elm && window.Elm.Main && window.Elm.Main.init) {
+                    console.log('✅ ELM available, trying different flag formats...');
+                    
+                    // Test 1: String flags
+                    try {
+                        console.log('🧪 Test 1: String flags');
+                        document.getElementById('flags-type').textContent = 'Testing string flags';
+                        
+                        const app = window.Elm.Main.init({
+                            node: document.getElementById('elm-container'),
+                            flags: "test-string-flag"
+                        });
+                        
+                        console.log('🎉 SUCCESS with string flags!', app);
+                        document.getElementById('status').textContent = 'SUCCESS with string flags!';
+                        document.getElementById('status').className = 'success';
+                        
+                    } catch (error) {
+                        console.log('❌ String flags failed, trying JSON string...');
+                        
+                        // Test 2: JSON string flags
+                        try {
+                            console.log('🧪 Test 2: JSON string flags');
+                            document.getElementById('flags-type').textContent = 'Testing JSON string flags';
+                            
+                            const flagsJson = JSON.stringify({
+                                apiToken: 'test-token',
+                                userProfile: null,
+                                kompoUrl: '',
+                                metaUrl: '',
+                                cacheUrl: '',
+                                integrationDestination: '',
+                                integrationFormat: 'json',
+                                authMode: 'standalone',
+                                skipAuth: true
+                            });
+                            
+                            const app = window.Elm.Main.init({
+                                node: document.getElementById('elm-container'),
+                                flags: flagsJson
+                            });
+                            
+                            console.log('🎉 SUCCESS with JSON string flags!', app);
+                            document.getElementById('status').textContent = 'SUCCESS with JSON string flags!';
+                            document.getElementById('status').className = 'success';
+                            
+                        } catch (error2) {
+                            console.log('❌ JSON string flags failed, trying empty string...');
+                            
+                            // Test 3: Empty string
+                            try {
+                                console.log('🧪 Test 3: Empty string flags');
+                                document.getElementById('flags-type').textContent = 'Testing empty string flags';
+                                
+                                const app = window.Elm.Main.init({
+                                    node: document.getElementById('elm-container'),
+                                    flags: ""
+                                });
+                                
+                                console.log('🎉 SUCCESS with empty string flags!', app);
+                                document.getElementById('status').textContent = 'SUCCESS with empty string flags!';
+                                document.getElementById('status').className = 'success';
+                                
+                            } catch (error3) {
+                                console.error('❌ All flag formats failed');
+                                console.error('String error:', error);
+                                console.error('JSON string error:', error2);
+                                console.error('Empty string error:', error3);
+                                
+                                document.getElementById('status').textContent = 'All flag formats failed';
+                                document.getElementById('status').className = 'error';
+                            }
+                        }
+                    }
+                } else {
+                    console.error('❌ ELM not found');
+                    document.getElementById('status').textContent = 'ELM not found';
+                    document.getElementById('status').className = 'error';
+                }
+            }, 500);
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load ELM script');
+            document.getElementById('status').textContent = 'Failed to load script';
+            document.getElementById('status').className = 'error';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

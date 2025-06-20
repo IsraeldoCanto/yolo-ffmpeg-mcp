@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Standalone ELM Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        #elm-container { border: 1px solid #ccc; min-height: 300px; padding: 20px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Standalone ELM Test</h1>
+    
+    <div class="debug">
+        <div>Current directory: <span id="current-dir"></span></div>
+        <div>Script path: <span id="script-path"></span></div>
+        <div>Elm status: <span id="elm-status">Not loaded</span></div>
+    </div>
+    
+    <div id="elm-container">
+        ELM app will appear here
+    </div>
+    
+    <script>
+        // Show current location info
+        document.getElementById('current-dir').textContent = window.location.href;
+        document.getElementById('script-path').textContent = './public/elm/kompost.js';
+        
+        console.log('🔍 Testing ELM from:', window.location.href);
+        
+        // Try to load the ELM script
+        const script = document.createElement('script');
+        script.src = './public/elm/kompost.js';
+        
+        script.onload = function() {
+            console.log('✅ ELM script loaded');
+            document.getElementById('elm-status').textContent = 'Script loaded';
+            
+            // Wait a bit for script to execute
+            setTimeout(() => {
+                console.log('🔍 Checking for Elm...');
+                console.log('window.Elm:', window.Elm);
+                
+                if (window.Elm && window.Elm.Main && window.Elm.Main.init) {
+                    console.log('✅ ELM available!');
+                    document.getElementById('elm-status').textContent = 'ELM ready';
+                    document.getElementById('elm-status').className = 'success';
+                    
+                    try {
+                        const app = window.Elm.Main.init({
+                            node: document.getElementById('elm-container'),
+                            flags: {
+                                apiToken: 'standalone-test',
+                                userProfile: null,
+                                kompoUrl: '',
+                                metaUrl: '',
+                                cacheUrl: '',
+                                integrationDestination: '',
+                                integrationFormat: 'json',
+                                authMode: 'standalone',
+                                skipAuth: true
+                            }
+                        });
+                        
+                        console.log('🎉 ELM app started:', app);
+                        document.getElementById('elm-status').textContent = 'ELM app running!';
+                        
+                    } catch (error) {
+                        console.error('❌ ELM init failed:', error);
+                        document.getElementById('elm-status').textContent = 'ELM init failed: ' + error.message;
+                        document.getElementById('elm-status').className = 'error';
+                    }
+                } else {
+                    console.error('❌ ELM not found');
+                    document.getElementById('elm-status').textContent = 'ELM not found in window';
+                    document.getElementById('elm-status').className = 'error';
+                }
+            }, 500);
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load ELM script');
+            document.getElementById('elm-status').textContent = 'Failed to load script';
+            document.getElementById('elm-status').className = 'error';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

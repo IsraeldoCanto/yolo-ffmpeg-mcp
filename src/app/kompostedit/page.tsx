@@ -176,33 +176,37 @@ export default function KompostEditPage() {
         console.log('✅ ELM ready, initializing...');
 
         if (elmRef.current && !elmAppRef.current) {
-          // Initialize Elm app with Firebase auth context
+          // Initialize Elm app with Firebase auth context as JSON string
+          const flagsData = {
+            apiToken: firebaseToken || 'anonymous',
+            userProfile: user ? {
+              id: user.uid,
+              email: user.email,
+              displayName: user.displayName || user.email,
+              photoURL: user.photoURL || ''
+            } : null,
+            kompoUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
+              `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/kompositions` : 
+              'http://localhost:5001/kompost-mixer/us-central1/api/kompositions',
+            metaUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
+              `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/meta` : 
+              'http://localhost:5001/kompost-mixer/us-central1/api/meta',
+            cacheUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
+              `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/cache` : 
+              'http://localhost:5001/kompost-mixer/us-central1/api/cache',
+            integrationDestination: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
+              `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/process` : 
+              'http://localhost:5001/kompost-mixer/us-central1/api/process',
+            integrationFormat: 'json',
+            authMode: 'firebase_shell',
+            skipAuth: true
+          };
+
+          console.log('🎯 Initializing ELM with JSON string flags:', flagsData);
+          
           const app = (window as any).Elm.Main.init({
             node: elmRef.current,
-            flags: {
-              apiToken: firebaseToken || 'anonymous',
-              userProfile: user ? {
-                id: user.uid,
-                email: user.email,
-                displayName: user.displayName || user.email,
-                photoURL: user.photoURL || ''
-              } : null,
-              kompoUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
-                `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/kompositions` : 
-                'http://localhost:5001/kompost-mixer/us-central1/api/kompositions',
-              metaUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
-                `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/meta` : 
-                'http://localhost:5001/kompost-mixer/us-central1/api/meta',
-              cacheUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
-                `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/cache` : 
-                'http://localhost:5001/kompost-mixer/us-central1/api/cache',
-              integrationDestination: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
-                `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/process` : 
-                'http://localhost:5001/kompost-mixer/us-central1/api/process',
-              integrationFormat: 'json',
-              authMode: 'firebase_shell',
-              skipAuth: true
-            }
+            flags: JSON.stringify(flagsData)
           });
 
           elmAppRef.current = app;
