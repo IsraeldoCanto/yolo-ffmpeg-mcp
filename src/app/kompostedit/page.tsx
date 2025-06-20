@@ -16,7 +16,7 @@ interface ElmApp {
   };
 }
 
-const BUILD_TIMESTAMP = "2025-06-20T09:28:00Z-CONTAINER-DEBUG";
+const BUILD_TIMESTAMP = "2025-06-20T09:30:00Z-RETRY-FIX";
 
 export default function KompostEditPage() {
   const { user } = useAuth();
@@ -223,6 +223,16 @@ export default function KompostEditPage() {
           console.log('🎯 ELM initialization complete!');
         } else {
           console.log('❌ ELM container check failed - not initializing');
+          if (!elmRef.current) {
+            console.log('🔄 elmRef.current is null, retrying in 100ms...');
+            setTimeout(() => {
+              console.log('🔄 Retry attempt - elmRef.current:', !!elmRef.current);
+              if (elmRef.current && !elmAppRef.current) {
+                console.log('🔄 Retrying ELM initialization...');
+                loadElmApp();
+              }
+            }, 100);
+          }
         }
       } catch (error) {
         console.error('Failed to load Elm application:', error);
