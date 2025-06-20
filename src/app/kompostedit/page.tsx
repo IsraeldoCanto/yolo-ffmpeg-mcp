@@ -352,7 +352,10 @@ export default function KompostEditPage() {
             className="elm-editor"
             style={{ 
               width: '100%', 
-              minHeight: '600px',
+              height: '800px',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              position: 'relative',
               display: isElmLoaded ? 'block' : 'none'
             }}
           />
