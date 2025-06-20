@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,68 +29,73 @@ export default function KompostEditPage() {
   useEffect(() => {
     const loadElmScript = () => {
       if (document.querySelector('script[src="/elm/kompost.js"]')) {
-        setElmScriptLoaded(true);
-        return;
+        // If script tag exists, assume it might already be loaded or in process
+        // We'll rely on the check for Elm.Main.init to confirm.
+        // Forcing elmScriptLoaded to true here might be too early if script is still fetching/executing.
+        // Let's ensure the check below still happens.
+        // If Elm.Main.init is already there, the onload handler logic can set elmScriptLoaded.
+        // If not, and the script is already in DOM, this effect won't re-add it.
+        // This scenario needs careful handling.
+        // A simple approach: if script tag exists, check Elm.Main.init directly.
+        if ((window as any).Elm?.Main?.init) {
+            console.log('Elm script tag already exists and Elm.Main.init is available.');
+             (window as any).KOMPOST_CONFIG = {
+                elm: { available: true, version: '1.0.0' },
+                integration: { type: 'nextjs-elm-hybrid', firebase: true, couchdb_compatible: true }
+            };
+            setElmScriptLoaded(true);
+            return;
+        } else if (document.querySelector('script[src="/elm/kompost.js"]')) {
+            console.log('Elm script tag already exists but Elm.Main.init is not yet available. Waiting for its onload or error.');
+            // The script's own onload should handle setting elmScriptLoaded.
+            // If it's already loaded and failed, this won't help.
+            // This is complex. For now, we assume if script tag is there, its onload will eventually fire or has fired.
+            // The main logic below will add it if it's not.
+        }
       }
 
       const script = document.createElement('script');
       script.src = '/elm/kompost.js';
+      
       script.onload = () => {
-        console.log('🟢 ELM script onload triggered');
-        
-        // Wait a bit for the script to execute and export
+        console.log('ELM script onload triggered. Checking for Elm.Main.init after a brief delay...');
+        // Defer this check slightly to give Elm script a chance to fully execute its internal setup.
         setTimeout(() => {
-          console.log('🟢 Checking after timeout...');
-          console.log('🟢 window.Elm:', (window as any).Elm);
-          console.log('🟢 window.Elm.Main:', (window as any).Elm?.Main);
-          console.log('🟢 typeof window.Elm:', typeof (window as any).Elm);
-          console.log('🟢 Object.keys(window):', Object.keys(window).filter(k => k.includes('Elm') || k.includes('elm')));
-          
-          // Check if ELM is available in any form
-          const elmAvailable = !!(window as any).Elm?.Main;
-          
-          if (!elmAvailable) {
-            console.log('🔴 ELM not found in window, checking script execution...');
-            // Try to manually trigger the script's IIFE
-            try {
-              // The script might need the global `this` context
-              eval(`
-                console.log('🟡 Attempting manual execution...');
-                if (typeof Elm !== 'undefined') {
-                  window.Elm = Elm;
-                  console.log('🟡 Found Elm in local scope, assigned to window');
-                }
-              `);
-            } catch (e) {
-              console.log('🔴 Manual execution failed:', e);
+            if ((window as any).Elm?.Main?.init) {
+                console.log('Elm.Main.init found.');
+                (window as any).KOMPOST_CONFIG = {
+                    elm: {
+                        available: true,
+                        version: '1.0.0' 
+                    },
+                    integration: {
+                        type: 'nextjs-elm-hybrid',
+                        firebase: true,
+                        couchdb_compatible: true
+                    }
+                };
+                setElmScriptLoaded(true);
+            } else {
+                console.error('Elm.Main.init NOT found after script load and delay. Check kompost.js contents and export.');
+                setElmError('Elm application (Elm.Main.init) not found after script load. Ensure kompost.js is valid and exports Elm.Main.init globally.');
+                setElmScriptLoaded(false); 
             }
-          }
-          
-          // Set up global config after script loads
-          (window as any).KOMPOST_CONFIG = {
-            elm: {
-              available: !!(window as any).Elm?.Main,
-              version: '1.0.0'
-            },
-            integration: {
-              type: 'nextjs-elm-hybrid',
-              firebase: true,
-              couchdb_compatible: true
-            }
-          };
-          
-          console.log('🟢 Final ELM status:', !!(window as any).Elm?.Main);
-          setElmScriptLoaded(true);
-        }, 100);
+        }, 0); // Zero-delay setTimeout to allow event loop to process.
       };
+      
       script.onerror = () => {
-        setElmError('Failed to load ELM script');
+        console.error('Failed to load ELM script from /elm/kompost.js');
+        setElmError('Failed to load ELM script. Check network and file path.');
         setElmScriptLoaded(false);
       };
       document.head.appendChild(script);
     };
 
     loadElmScript();
+    
+    // Cleanup: remove script if component unmounts before it loads?
+    // This can be tricky; for now, we assume the script is small and loads quickly,
+    // or if it fails, onerror handles it.
   }, []);
 
   // Get Firebase ID token when user changes
@@ -117,7 +123,8 @@ export default function KompostEditPage() {
       try {
         // Check if Elm is available globally
         if (typeof window === 'undefined' || !(window as any).Elm?.Main?.init) {
-          throw new Error('Elm application not found. Please ensure kompost.js is loaded.');
+          // This error is now more likely if script.onload logic determined Elm.Main.init wasn't truly ready.
+          throw new Error('Elm application not found. Please ensure kompost.js is loaded and initialized correctly.');
         }
 
         if (elmRef.current && !elmAppRef.current) {
@@ -125,16 +132,13 @@ export default function KompostEditPage() {
           const app = (window as any).Elm.Main.init({
             node: elmRef.current,
             flags: {
-              // Pass Firebase ID token for authentication
               apiToken: firebaseToken || 'anonymous',
-              // Pass user info to Elm
               userProfile: user ? {
                 id: user.uid,
                 email: user.email,
                 displayName: user.displayName || user.email,
                 photoURL: user.photoURL || ''
               } : null,
-              // Firebase API endpoints
               kompoUrl: process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL ? 
                 `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/kompositions` : 
                 'http://localhost:5001/kompost-mixer/us-central1/api/kompositions',
@@ -148,7 +152,6 @@ export default function KompostEditPage() {
                 `${process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_URL}/api/process` : 
                 'http://localhost:5001/kompost-mixer/us-central1/api/process',
               integrationFormat: 'json',
-              // Authentication mode
               authMode: 'firebase_shell',
               skipAuth: true
             }
@@ -156,25 +159,17 @@ export default function KompostEditPage() {
 
           elmAppRef.current = app;
 
-          // Set up Elm ports for communication
           if (app.ports) {
-            // Listen for komposition updates from Elm
             if (app.ports.kompositionUpdated) {
               app.ports.kompositionUpdated.subscribe((updatedKomposition: any) => {
                 console.log('Received komposition update from Elm:', updatedKomposition);
-                // Could save to Firebase here
               });
             }
-
-            // Listen for save requests from Elm
             if (app.ports.saveKomposition) {
               app.ports.saveKomposition.subscribe((kompositionData: any) => {
                 console.log('Elm requested save:', kompositionData);
-                // Could save to Firebase/Firestore here
               });
             }
-
-            // Send Firebase auth token updates to Elm
             if (app.ports.firebaseTokenUpdated && firebaseToken) {
               app.ports.firebaseTokenUpdated.send(firebaseToken);
             }
@@ -190,17 +185,18 @@ export default function KompostEditPage() {
       }
     };
 
-    // Only load Elm when we have a Firebase token (or no user) AND the script is loaded
     if ((firebaseToken || !user) && elmScriptLoaded) {
       loadElmApp();
     }
 
-    // Cleanup on unmount
     return () => {
       if (elmAppRef.current && elmRef.current) {
+        // Elm apps don't typically have a formal 'destroy' or 'unmount' method.
+        // Clearing the innerHTML of the node is a common way to clean up.
         elmRef.current.innerHTML = '';
         elmAppRef.current = null;
         setIsElmLoaded(false);
+        console.log('Elm app node cleared.');
       }
     };
   }, [user, firebaseToken, elmScriptLoaded]);
@@ -221,7 +217,6 @@ export default function KompostEditPage() {
 
   return (
     <div className="min-h-screen bg-background">
-        {/* Header */}
       <header className="bg-card shadow-sm border-b">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -247,7 +242,6 @@ export default function KompostEditPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         {elmError ? (
           <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6">
@@ -258,11 +252,12 @@ export default function KompostEditPage() {
                 <p className="text-destructive/80 mt-1">{elmError}</p>
                 <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
                   <strong>Debug Info:</strong><br/>
-                  Script Loaded: {String(elmScriptLoaded)}<br/>
+                  Script Loaded State (elmScriptLoaded): {String(elmScriptLoaded)}<br/>
                   Firebase Token: {firebaseToken ? 'Available' : 'Not Available'}<br/>
                   User: {user ? 'Signed In' : 'Not Signed In'}<br/>
-                  Window.Elm: {String(typeof (window as any)?.Elm)}<br/>
-                  Elm.Main: {String(typeof (window as any)?.Elm?.Main)}
+                  Window.Elm typeof: {String(typeof (window as any)?.Elm)}<br/>
+                  Window.Elm.Main typeof: {String(typeof (window as any)?.Elm?.Main)}<br/>
+                  Window.Elm.Main.init typeof: {String(typeof (window as any)?.Elm?.Main?.init)}
                 </div>
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm font-medium">Integration Instructions</summary>
@@ -270,11 +265,11 @@ export default function KompostEditPage() {
                     <p>To enable the Elm editor, you need to:</p>
                     <ol className="list-decimal list-inside space-y-1 ml-4">
                       <li>Build the Elm application: <code className="bg-muted px-1 rounded">elm make src/Main.elm --output=public/elm/kompost.js</code></li>
-                      <li>Ensure the Elm scripts are loaded in the layout</li>
-                      <li>Verify the Elm app exposes the required ports for Next.js communication</li>
+                      <li>Ensure the <code className="bg-muted px-1 rounded">kompost.js</code> file is in the <code className="bg-muted px-1 rounded">public/elm/</code> directory.</li>
+                      <li>Verify the Elm app (Main.elm) correctly initializes and exports the necessary ports and init function.</li>
                     </ol>
                     <p className="mt-2">
-                      The symlink to the Elm project should be: <code className="bg-muted px-1 rounded">elm-kompostedit → /Users/stiglau/utvikling/privat/ElmMoro/kompostedit</code>
+                      The symlink to the Elm project should be: <code className="bg-muted px-1 rounded">elm-kompostedit → /Users/stiglau/utvikling/privat/ElmMoro/kompostedit</code> (if applicable to your setup).
                     </p>
                   </div>
                 </details>
@@ -286,6 +281,10 @@ export default function KompostEditPage() {
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading Elm Editor...</p>
+              <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                  Script Loaded State (elmScriptLoaded): {String(elmScriptLoaded)}<br/>
+                  Firebase Token: {firebaseToken ? 'Available' : 'Not Available'}<br/>
+               </div>
             </div>
           </div>
         ) : (
@@ -302,14 +301,15 @@ export default function KompostEditPage() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="bg-muted border-t">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div>
               <span className="font-semibold">KompostEdit Integration:</span>
-              {isElmLoaded ? (
+              {isElmLoaded && !elmError ? (
                 <span className="ml-2 text-green-600">✓ Connected</span>
+              ) : elmError ? (
+                <span className="ml-2 text-red-600">✗ Error</span>
               ) : (
                 <span className="ml-2 text-yellow-600">⚡ Loading</span>
               )}
@@ -323,3 +323,5 @@ export default function KompostEditPage() {
     </div>
   );
 }
+
+    
