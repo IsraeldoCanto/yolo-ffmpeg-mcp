@@ -52,11 +52,11 @@ export default function KompostEditPage() {
             };
             setElmScriptLoaded(true);
           } else {
-            // Check again in 100ms
-            setTimeout(checkElmReady, 100);
+            // Check again in 500ms
+            setTimeout(checkElmReady, 500);
           }
         };
-        setTimeout(checkElmReady, 100);
+        setTimeout(checkElmReady, 500);
         return;
       }
 
@@ -118,7 +118,7 @@ export default function KompostEditPage() {
               setElmScriptLoaded(false);
             }
           }
-        }, 100);
+        }, 500);
       };
       
       script.onerror = () => {
@@ -216,7 +216,7 @@ export default function KompostEditPage() {
               if (elmRef.current && !elmAppRef.current) {
                 loadElmApp();
               }
-            }, 100);
+            }, 1000);
           }
         }
       } catch (error) {
