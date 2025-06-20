@@ -28,18 +28,36 @@ export default function KompostEditPage() {
   // Load ELM script dynamically
   useEffect(() => {
     const loadElmScript = () => {
-      if (document.querySelector('script[src="/elm/kompost.js"]')) {
-        if ((window as any).Elm?.Main?.init) {
-            console.log('Elm script tag already exists and Elm.Main.init is available.');
-             (window as any).KOMPOST_CONFIG = {
-                elm: { available: true, version: '1.0.0' },
-                integration: { type: 'nextjs-elm-hybrid', firebase: true, couchdb_compatible: true }
+      // Check if script already exists and if Elm is already loaded
+      const existingScript = document.querySelector('script[src="/elm/kompost.js"]');
+      if (existingScript && (window as any).Elm?.Main?.init) {
+        console.log('Elm script and module already available, skipping load');
+        (window as any).KOMPOST_CONFIG = {
+          elm: { available: true, version: '1.0.0' },
+          integration: { type: 'nextjs-elm-hybrid', firebase: true, couchdb_compatible: true }
+        };
+        setElmScriptLoaded(true);
+        return;
+      }
+      
+      // If script exists but Elm not ready, set up a polling mechanism
+      if (existingScript) {
+        console.log('Elm script tag already exists, waiting for it to load...');
+        const checkElmReady = () => {
+          if ((window as any).Elm?.Main?.init) {
+            console.log('Elm became available from existing script');
+            (window as any).KOMPOST_CONFIG = {
+              elm: { available: true, version: '1.0.0' },
+              integration: { type: 'nextjs-elm-hybrid', firebase: true, couchdb_compatible: true }
             };
             setElmScriptLoaded(true);
-            return;
-        } else if (document.querySelector('script[src="/elm/kompost.js"]')) {
-            console.log('Elm script tag already exists but Elm.Main.init is not yet available. Waiting for its onload or error.');
-        }
+          } else {
+            // Check again in 100ms
+            setTimeout(checkElmReady, 100);
+          }
+        };
+        setTimeout(checkElmReady, 100);
+        return;
       }
 
       const script = document.createElement('script');
