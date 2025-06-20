@@ -16,7 +16,7 @@ interface ElmApp {
   };
 }
 
-const BUILD_TIMESTAMP = "2025-06-20T09:25:00Z-LATEST";
+const BUILD_TIMESTAMP = "2025-06-20T09:28:00Z-CONTAINER-DEBUG";
 
 export default function KompostEditPage() {
   const { user } = useAuth();
@@ -180,6 +180,12 @@ export default function KompostEditPage() {
 
         console.log('✅ ELM ready, initializing...');
 
+        console.log('🔍 Checking ELM container conditions:', {
+          elmRefCurrent: !!elmRef.current,
+          elmAppRefCurrent: !!elmAppRef.current,
+          condition: elmRef.current && !elmAppRef.current
+        });
+
         if (elmRef.current && !elmAppRef.current) {
           // ELM app uses Json.Decode.string - expects a simple string, not JSON object
           const apiToken = firebaseToken || 'anonymous';
@@ -215,6 +221,8 @@ export default function KompostEditPage() {
           setIsElmLoaded(true);
           setElmError(null);
           console.log('🎯 ELM initialization complete!');
+        } else {
+          console.log('❌ ELM container check failed - not initializing');
         }
       } catch (error) {
         console.error('Failed to load Elm application:', error);
