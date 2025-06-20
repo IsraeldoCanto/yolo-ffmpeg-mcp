@@ -61,6 +61,10 @@ export class ElmPortHandler {
    * Set up handlers for ports that send data from ELM to Firebase
    */
   private setupOutgoingPorts(): void {
+    if (!this.elmApp?.ports) {
+      console.warn('⚠️ ELM app has no ports defined')
+      return
+    }
     
     // ==============================================
     // KOMPOSITION OPERATIONS
@@ -304,7 +308,7 @@ export class ElmPortHandler {
       code
     }
     
-    this.elmApp.ports.firebaseError?.send(error)
+    this.elmApp?.ports?.firebaseError?.send(error)
   }
 
   /**
@@ -313,7 +317,7 @@ export class ElmPortHandler {
   createNewKomposition(name?: string): void {
     try {
       const defaultKomposition = this.firebaseService.createDefaultKomposition(name)
-      this.elmApp.ports.kompositionLoaded.send(defaultKomposition)
+      this.elmApp?.ports?.kompositionLoaded?.send(defaultKomposition)
       console.log('✅ New default komposition created:', defaultKomposition.name)
     } catch (error: any) {
       console.error('❌ Error creating default komposition:', error)

@@ -11,7 +11,11 @@ help:
 	@echo "  make dev          - Start local development server"
 	@echo "  make dev-clean    - Clean restart dev server (kill existing)"
 	@echo "  make build        - Build for production"
-	@echo "  make test         - Run tests"
+	@echo "  make test         - Run all tests"
+	@echo "  make test-elm     - Run ELM integration tests only"
+	@echo "  make test-watch   - Run tests in watch mode"
+	@echo "  make test-coverage - Run tests with coverage report"
+	@echo "  make typecheck    - Run TypeScript type checking"
 	@echo ""
 	@echo "Deployment:"
 	@echo "  make deploy       - Deploy to Firebase (requires auth)"
@@ -47,8 +51,24 @@ build:
 	npm run build
 
 test:
-	@echo "🧪 Running tests..."
+	@echo "🧪 Running all tests..."
 	npm test
+
+test-elm:
+	@echo "🧪 Running ELM integration tests..."
+	npm test -- --testPathPattern=elmPortHandler
+
+test-watch:
+	@echo "👀 Running tests in watch mode..."
+	npm run test:watch
+
+test-coverage:
+	@echo "📊 Running tests with coverage..."
+	npm run test:coverage
+
+typecheck:
+	@echo "🔍 Running TypeScript type checking..."
+	npm run typecheck
 
 # Deployment commands
 deploy:

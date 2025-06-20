@@ -109,7 +109,7 @@ export class FirebaseKompostService {
         ...komposition,
         userId,
         updatedAt: serverTimestamp(),
-        lastModifiedBy: auth.currentUser.email || auth.currentUser.uid
+        lastModifiedBy: auth.currentUser?.email || auth.currentUser?.uid || userId
       }
       
       if (komposition.id) {
@@ -127,7 +127,7 @@ export class FirebaseKompostService {
         const docRef = await addDoc(collection(db, 'kompositions'), {
           ...kompoData,
           createdAt: serverTimestamp(),
-          createdBy: auth.currentUser.email || auth.currentUser.uid,
+          createdBy: auth.currentUser?.email || auth.currentUser?.uid || userId,
           isPublic: false,
           sharedWith: []
         })
@@ -325,14 +325,15 @@ export class FirebaseKompostService {
       }
       
       // Add media properties if it's video/image
+      const mediaSourceData: any = sourceData
       if (file.type.startsWith('video/') || file.type.startsWith('image/')) {
         // For now, we'll set placeholder dimensions
         // In a real implementation, you'd analyze the media file
-        sourceData.width = 1920
-        sourceData.height = 1080
+        mediaSourceData.width = 1920
+        mediaSourceData.height = 1080
       }
       
-      const docRef = await addDoc(collection(db, 'sources'), sourceData)
+      const docRef = await addDoc(collection(db, 'sources'), mediaSourceData)
       
       return {
         success: true,
