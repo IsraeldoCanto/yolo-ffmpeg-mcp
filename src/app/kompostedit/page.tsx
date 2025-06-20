@@ -218,8 +218,18 @@ export default function KompostEditPage() {
       }
     };
 
+    console.log('🔍 Checking loadElmApp conditions:', {
+      firebaseToken: !!firebaseToken,
+      user: !!user,
+      elmScriptLoaded,
+      condition: (firebaseToken || !user) && elmScriptLoaded
+    });
+    
     if ((firebaseToken || !user) && elmScriptLoaded) {
+      console.log('🚀 Calling loadElmApp...');
       loadElmApp();
+    } else {
+      console.log('❌ Not calling loadElmApp - conditions not met');
     }
 
     return () => {
