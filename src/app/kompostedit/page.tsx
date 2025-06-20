@@ -16,6 +16,14 @@ interface ElmApp {
   };
 }
 
+// Automatic build timestamp - gets updated at build time
+const BUILD_INFO = {
+  timestamp: new Date().toISOString(),
+  version: process.env.npm_package_version || '1.0.0',
+  commit: process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'local',
+  branch: process.env.VERCEL_GIT_COMMIT_REF || 'local'
+};
+
 export default function KompostEditPage() {
   const { user } = useAuth();
   const elmRef = useRef<HTMLDivElement>(null);
@@ -24,6 +32,11 @@ export default function KompostEditPage() {
   const [elmError, setElmError] = useState<string | null>(null);
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
   const [elmScriptLoaded, setElmScriptLoaded] = useState(false);
+
+  // Log build info on component mount
+  useEffect(() => {
+    console.log(`🏗️ KompostEdit BUILD INFO:`, BUILD_INFO);
+  }, []);
 
   // Load ELM script dynamically
   useEffect(() => {
@@ -376,7 +389,7 @@ export default function KompostEditPage() {
               )}
             </div>
             <div>
-              Next.js + Elm + Firebase
+              Next.js + Elm + Firebase | Build: {BUILD_INFO.timestamp.substring(0, 16)} ({BUILD_INFO.commit})
             </div>
           </div>
         </div>
