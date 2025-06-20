@@ -16,7 +16,7 @@ interface ElmApp {
   };
 }
 
-const BUILD_TIMESTAMP = "2025-06-20T09:20:00Z";
+const BUILD_TIMESTAMP = "2025-06-20T09:25:00Z-LATEST";
 
 export default function KompostEditPage() {
   const { user } = useAuth();
@@ -31,6 +31,7 @@ export default function KompostEditPage() {
 
   // Load ELM script dynamically
   useEffect(() => {
+    console.log(`🏗️ SCRIPT LOADING BUILD: ${BUILD_TIMESTAMP}`);
     const loadElmScript = () => {
       // Check if script already exists and if Elm is already loaded
       const existingScript = document.querySelector('script[src="/elm/kompost.js"]');
