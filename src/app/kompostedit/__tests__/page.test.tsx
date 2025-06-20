@@ -110,10 +110,41 @@ describe('KompostEditPage Component Integration Tests', () => {
       onerror: null,
     })
     Object.defineProperty(global.document, 'head', {
-      value: { appendChild: jest.fn() },
+      value: { 
+        appendChild: jest.fn()
+      },
       writable: true,
+      configurable: true
     })
+    
+    // Mock createElement to return proper mock elements
+    global.document.createElement = jest.fn().mockImplementation((tagName) => {
+      const element = {
+        tagName: tagName.toUpperCase(),
+        src: '',
+        onload: null,
+        onerror: null,
+        appendChild: jest.fn(),
+        innerHTML: '',
+        textContent: '',
+        style: {},
+        setAttribute: jest.fn(),
+        getAttribute: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        click: jest.fn(),
+        focus: jest.fn(),
+        blur: jest.fn(),
+        nodeType: 1,
+        childNodes: [],
+        parentNode: null,
+        ownerDocument: global.document
+      }
+      return element
+    })
+    
     global.document.querySelector = jest.fn().mockReturnValue(null)
+    global.document.getElementById = jest.fn().mockReturnValue(null)
   })
 
   describe('Authentication States', () => {

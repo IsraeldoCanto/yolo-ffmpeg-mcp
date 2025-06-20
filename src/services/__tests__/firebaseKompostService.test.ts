@@ -410,7 +410,9 @@ describe('FirebaseKompostService', () => {
 
       mockDoc.mockReturnValue('mock-doc-ref' as any)
       mockOnSnapshot.mockImplementation((ref, handler) => {
-        snapshotHandler = handler
+        if (typeof handler === 'function') {
+          snapshotHandler = handler
+        }
         return jest.fn()
       })
 
