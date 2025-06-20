@@ -180,12 +180,14 @@ export default function KompostEditPage() {
           const apiToken = firebaseToken || 'anonymous';
           
           console.log('🎯 Initializing ELM with simple string flag (API token):', apiToken);
+          console.log('🎯 ELM container node:', elmRef.current);
           
           const app = (window as any).Elm.Main.init({
             node: elmRef.current,
             flags: apiToken || ""  // Simple string as expected by Json.Decode.string, ensure not undefined
           });
 
+          console.log('🎉 ELM app initialized successfully:', app);
           elmAppRef.current = app;
 
           if (app.ports) {
@@ -204,8 +206,10 @@ export default function KompostEditPage() {
             }
           }
 
+          console.log('🎯 Setting isElmLoaded to true');
           setIsElmLoaded(true);
           setElmError(null);
+          console.log('🎯 ELM initialization complete!');
         }
       } catch (error) {
         console.error('Failed to load Elm application:', error);
