@@ -16,8 +16,6 @@ interface ElmApp {
   };
 }
 
-const BUILD_TIMESTAMP = "2025-06-20T09:30:00Z-RETRY-FIX";
-
 export default function KompostEditPage() {
   const { user } = useAuth();
   const elmRef = useRef<HTMLDivElement>(null);
@@ -27,11 +25,8 @@ export default function KompostEditPage() {
   const [firebaseToken, setFirebaseToken] = useState<string | null>(null);
   const [elmScriptLoaded, setElmScriptLoaded] = useState(false);
 
-  console.log(`🏗️ KompostEdit BUILD: ${BUILD_TIMESTAMP}`);
-
   // Load ELM script dynamically
   useEffect(() => {
-    console.log(`🏗️ SCRIPT LOADING BUILD: ${BUILD_TIMESTAMP}`);
     const loadElmScript = () => {
       // Check if script already exists and if Elm is already loaded
       const existingScript = document.querySelector('script[src="/elm/kompost.js"]');
@@ -192,6 +187,7 @@ export default function KompostEditPage() {
           
           console.log('🎯 Initializing ELM with simple string flag (API token):', apiToken);
           console.log('🎯 ELM container node:', elmRef.current);
+          console.log('🎯 ELM init params:', { node: elmRef.current, flags: apiToken || "" });
           
           const app = (window as any).Elm.Main.init({
             node: elmRef.current,
@@ -199,6 +195,8 @@ export default function KompostEditPage() {
           });
 
           console.log('🎉 ELM app initialized successfully:', app);
+          console.log('🎯 ELM container content after init:', elmRef.current?.innerHTML);
+          console.log('🎯 ELM container children count:', elmRef.current?.children.length);
           elmAppRef.current = app;
 
           if (app.ports) {
@@ -221,6 +219,15 @@ export default function KompostEditPage() {
           setIsElmLoaded(true);
           setElmError(null);
           console.log('🎯 ELM initialization complete!');
+          
+          // Check ELM UI rendering after a short delay
+          setTimeout(() => {
+            console.log('🔍 ELM UI check after 2 seconds:', {
+              containerHTML: elmRef.current?.innerHTML,
+              childrenCount: elmRef.current?.children.length,
+              hasContent: (elmRef.current?.innerHTML?.length || 0) > 0
+            });
+          }, 2000);
         } else {
           console.log('❌ ELM container check failed - not initializing');
           if (!elmRef.current) {
