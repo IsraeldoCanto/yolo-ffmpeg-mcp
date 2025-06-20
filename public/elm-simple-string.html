@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ELM Simple String Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        #elm-container { border: 2px solid #ccc; min-height: 300px; padding: 20px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>ELM Simple String Test</h1>
+    <p>Based on analysis: ELM app uses <code>$elm$json$Json$Decode$string</code> - expects a simple string</p>
+    
+    <div id="status" class="status info">Loading...</div>
+    
+    <div id="elm-container">
+        ELM app will appear here
+    </div>
+    
+    <script>
+        console.log('Testing ELM with simple string flags...');
+        
+        const script = document.createElement('script');
+        script.src = '/elm/kompost.js';  // Served from public/elm/ directory
+        
+        script.onload = function() {
+            console.log('ELM script loaded');
+            document.getElementById('status').textContent = 'Script loaded, testing simple string...';
+            
+            setTimeout(() => {
+                if (window.Elm && window.Elm.Main && window.Elm.Main.init) {
+                    try {
+                        console.log('Attempting with simple string flag...');
+                        
+                        // Use a simple string since the decoder expects Json.Decode.string
+                        const app = window.Elm.Main.init({
+                            node: document.getElementById('elm-container'),
+                            flags: "test-api-token"  // Simple string, not JSON
+                        });
+                        
+                        console.log('SUCCESS! ELM app initialized with simple string:', app);
+                        document.getElementById('status').textContent = 'SUCCESS! ELM app running with simple string flag.';
+                        document.getElementById('status').className = 'status success';
+                        
+                        // Check if ports are available
+                        if (app.ports) {
+                            console.log('App has ports:', Object.keys(app.ports));
+                        }
+                        
+                    } catch (error) {
+                        console.error('Failed with simple string:', error);
+                        document.getElementById('status').textContent = 'Failed: ' + error.message;
+                        document.getElementById('status').className = 'status error';
+                    }
+                } else {
+                    console.error('ELM not available');
+                    document.getElementById('status').textContent = 'ELM not available';
+                    document.getElementById('status').className = 'status error';
+                }
+            }, 500);
+        };
+        
+        script.onerror = function() {
+            console.error('Failed to load script');
+            document.getElementById('status').textContent = 'Failed to load script';
+            document.getElementById('status').className = 'status error';
+        };
+        
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
