@@ -61,6 +61,7 @@
 
 ## 📋 Workflow Decision Logic
 
+<<<<<<< HEAD
 ### CI Pipeline Features
 ```
 1. TypeScript compilation check
@@ -73,6 +74,8 @@
 8. Integration status reporting
 ```
 
+=======
+>>>>>>> origin/feature/github-actions-firebase
 ### Firebase Tests Workflow Logic
 ```
 1. Check if firebase.json exists → If no, skip Firebase tests
@@ -92,15 +95,23 @@
 ## 🎯 Branch-Specific Behavior
 
 ### Main Branch (Production)
+<<<<<<< HEAD
 - Full CI pipeline with all validations
 - Firebase tests (if infrastructure present)
 - Automatic deployment to production
 - Version tag deployment
 - Integration status reporting
+=======
+- Full CI pipeline
+- Firebase tests (if infrastructure present)
+- Automatic deployment to production
+- Version tag deployment
+>>>>>>> origin/feature/github-actions-firebase
 
 ### Feature Branches
 - CI pipeline without deployment
 - Firebase tests for Firebase-related branches
+<<<<<<< HEAD
 - Build verification and testing
 - Security validation
 
@@ -109,6 +120,14 @@
 - Firebase tests for relevant changes
 - No deployment
 - Artifact generation for review
+=======
+- Build verification only
+
+### Pull Requests
+- Full CI pipeline
+- Firebase tests for relevant changes
+- No deployment
+>>>>>>> origin/feature/github-actions-firebase
 
 ## 🚧 Development Workflow
 
@@ -122,13 +141,17 @@
 1. Standard CI pipeline execution
 2. Build and test verification
 3. No Firebase emulator overhead
+<<<<<<< HEAD
 4. Security rules validation
+=======
+>>>>>>> origin/feature/github-actions-firebase
 
 ## 📊 Monitoring and Reporting
 
 ### Test Reports
 - TypeScript compilation status
 - Lint check results
+<<<<<<< HEAD
 - Unit test coverage reports
 - Firebase integration test results
 - Build artifact status
@@ -178,3 +201,29 @@
 - Check Actions tab for real-time status
 - Review test coverage reports
 - Monitor deployment success/failures
+=======
+- Unit test coverage
+- Firebase integration test results
+- Build artifact status
+
+### Deployment Reports
+- Environment deployed to
+- Deployment URL
+- Git commit information
+- Deployment timestamp
+
+## 🔄 Future Enhancements
+
+### Planned Additions
+- Test coverage reporting
+- Performance testing integration
+- Security scanning
+- Multi-environment deployment strategies
+- Blue-green deployment patterns
+
+### Integration Opportunities
+- Slack/Discord deployment notifications
+- Automated changelog generation
+- Release management automation
+- Performance monitoring integration
+>>>>>>> origin/feature/github-actions-firebase
