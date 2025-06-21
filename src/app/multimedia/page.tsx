@@ -334,7 +334,7 @@ export default function MultimediaPage() {
       </AlertDialog>
       
       <footer className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
-        <div className="text-xs opacity-75">
+        <div className="text-xs bg-muted/50 rounded px-3 py-2 inline-block">
           Build: {getBuildDisplayString()}
         </div>
       </footer>

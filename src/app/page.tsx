@@ -37,11 +37,11 @@ export default function LoginPage() {
         Your personal multimedia database. Organize, find, and manage your audio effortlessly.
       </p>
       <GoogleSignInButton />
-       <footer className="absolute bottom-8 text-sm text-muted-foreground">
-        <div className="text-center">
+      <footer className="fixed bottom-4 left-0 right-0 text-center text-sm text-muted-foreground">
+        <div className="mb-1">
           &copy; {new Date().getFullYear()} Kompost Mixer. All rights reserved.
         </div>
-        <div className="text-center mt-1 text-xs opacity-75">
+        <div className="text-xs bg-black/20 rounded px-2 py-1 inline-block">
           Build: {getBuildDisplayString()}
         </div>
       </footer>
