@@ -14,8 +14,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "npm run typecheck && npm run lint && jest --ci --coverage && npm run build",
-    "test:firebase": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=firebase --setupFilesAfterEnv ./jest-firebase.setup.js\"",
-    "test:integration": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=integration --setupFilesAfterEnv ./jest-firebase.setup.js\"",
+    "test:firebase": "firebase emulators:exec --only auth,firestore,storage \"jest --config jest.config.firebase.js\"",
+    "test:integration": "firebase emulators:exec --only auth,firestore,storage \"jest --config jest.config.firebase.js\"",
     "emulators:start": "firebase emulators:start --only auth,firestore,storage",
     "emulators:kill": "firebase emulators:kill"
   },
