@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import '@testing-library/jest-dom'
 
 // Mock Firebase for tests
@@ -67,3 +68,11 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalError
 })
+=======
+// Optional: configure or set up a testing framework before each test.
+// If you delete this file, remove `setupFilesAfterEnv` from `jest.config.js`
+
+// Used for __tests__/testing-library.js
+// Learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom'
+>>>>>>> a9a1a5d (Complete GitHub Actions CI/CD pipeline integration and Firebase kompost functionality)

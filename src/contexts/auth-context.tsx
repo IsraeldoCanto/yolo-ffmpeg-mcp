@@ -39,8 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getIdToken: async () => 'mock-id-token-for-test-automation',
         getIdTokenResult: async () => ({
           token: 'mock-id-token-for-test-automation',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          claims: {} as any, 
+          claims: {} as Record<string, unknown>, 
           authTime: new Date().toISOString(),
           expirationTime: new Date(Date.now() + 3600 * 1000).toISOString(), 
           issuedAtTime: new Date().toISOString(),

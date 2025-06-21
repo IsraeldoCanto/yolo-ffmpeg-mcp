@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Mock for lucide-react icons in Jest tests
 export const ArrowLeft = () => 'ArrowLeft'
 export const Home = () => 'Home'
@@ -292,3 +293,98 @@ const MockIcon = ({ className, size, ...props }) => (
 )
 
 export default MockIcon
+=======
+// Mock lucide-react icons for Jest tests
+const React = require('react');
+
+// Create a generic mock component for all lucide icons
+const mockIcon = (iconName) => {
+  const MockIcon = React.forwardRef((props, ref) => {
+    return React.createElement('svg', {
+      ...props,
+      ref,
+      'data-testid': `${iconName}-icon`,
+      'data-lucide': iconName.toLowerCase(),
+    });
+  });
+  MockIcon.displayName = `MockIcon(${iconName})`;
+  return MockIcon;
+};
+
+// Export commonly used icons
+module.exports = {
+  ChevronDown: mockIcon('ChevronDown'),
+  ChevronUp: mockIcon('ChevronUp'),
+  ChevronLeft: mockIcon('ChevronLeft'),
+  ChevronRight: mockIcon('ChevronRight'),
+  X: mockIcon('X'),
+  Check: mockIcon('Check'),
+  Plus: mockIcon('Plus'),
+  Minus: mockIcon('Minus'),
+  Search: mockIcon('Search'),
+  Settings: mockIcon('Settings'),
+  User: mockIcon('User'),
+  Home: mockIcon('Home'),
+  Menu: mockIcon('Menu'),
+  Bell: mockIcon('Bell'),
+  Mail: mockIcon('Mail'),
+  Calendar: mockIcon('Calendar'),
+  Clock: mockIcon('Clock'),
+  Edit: mockIcon('Edit'),
+  Trash: mockIcon('Trash'),
+  Save: mockIcon('Save'),
+  Upload: mockIcon('Upload'),
+  Download: mockIcon('Download'),
+  Eye: mockIcon('Eye'),
+  EyeOff: mockIcon('EyeOff'),
+  Lock: mockIcon('Lock'),
+  Unlock: mockIcon('Unlock'),
+  Star: mockIcon('Star'),
+  Heart: mockIcon('Heart'),
+  Share: mockIcon('Share'),
+  Copy: mockIcon('Copy'),
+  Link: mockIcon('Link'),
+  ExternalLink: mockIcon('ExternalLink'),
+  ArrowUp: mockIcon('ArrowUp'),
+  ArrowDown: mockIcon('ArrowDown'),
+  ArrowLeft: mockIcon('ArrowLeft'),
+  ArrowRight: mockIcon('ArrowRight'),
+  Play: mockIcon('Play'),
+  Pause: mockIcon('Pause'),
+  Stop: mockIcon('Stop'),
+  Volume: mockIcon('Volume'),
+  VolumeOff: mockIcon('VolumeOff'),
+  Mic: mockIcon('Mic'),
+  MicOff: mockIcon('MicOff'),
+  Camera: mockIcon('Camera'),
+  Image: mockIcon('Image'),
+  File: mockIcon('File'),
+  Folder: mockIcon('Folder'),
+  FolderOpen: mockIcon('FolderOpen'),
+  Loader: mockIcon('Loader'),
+  Spinner: mockIcon('Spinner'),
+  AlertCircle: mockIcon('AlertCircle'),
+  AlertTriangle: mockIcon('AlertTriangle'),
+  Info: mockIcon('Info'),
+  HelpCircle: mockIcon('HelpCircle'),
+  CheckCircle: mockIcon('CheckCircle'),
+  XCircle: mockIcon('XCircle'),
+  
+  // Default export for any icon not listed above
+  __esModule: true,
+  default: mockIcon('DefaultIcon'),
+};
+
+// Handle dynamic imports
+const handler = {
+  get: function(target, prop) {
+    if (prop in target) {
+      return target[prop];
+    }
+    // Return a mock icon for any icon we haven't explicitly defined
+    return mockIcon(prop);
+  }
+};
+
+module.exports = new Proxy(module.exports, handler);
+>>>>>>> a9a1a5d (Complete GitHub Actions CI/CD pipeline integration and Firebase kompost functionality)

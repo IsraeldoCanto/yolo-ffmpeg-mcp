@@ -10,6 +10,10 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+<<<<<<< HEAD
+=======
+    // Mock lucide-react for tests
+>>>>>>> a9a1a5d (Complete GitHub Actions CI/CD pipeline integration and Firebase kompost functionality)
     'lucide-react': '<rootDir>/src/__mocks__/lucide-react.js',
   },
   testEnvironment: 'jest-environment-jsdom',
@@ -19,6 +23,7 @@ const customJestConfig = {
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
+<<<<<<< HEAD
     '!src/app/api/**',
     '!src/components/ui/**', // Exclude UI library components
     '!src/ai/**', // Exclude AI flows that require external services
@@ -46,10 +51,18 @@ const customJestConfig = {
       statements: 70
     }
   },
+=======
+    '!src/**/__tests__/**',
+    '!src/**/*.test.{js,jsx,ts,tsx}',
+  ],
+  coverageReporters: ['text', 'lcov', 'html'],
+  coverageDirectory: 'coverage',
+>>>>>>> a9a1a5d (Complete GitHub Actions CI/CD pipeline integration and Firebase kompost functionality)
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}'
   ],
+<<<<<<< HEAD
   testPathIgnorePatterns: [
     '/node_modules/',
     '<rootDir>/src/app/kompostedit/__tests__/page.test.tsx'
@@ -58,6 +71,8 @@ const customJestConfig = {
     'jest-watch-typeahead/filename',
     'jest-watch-typeahead/testname',
   ],
+=======
+>>>>>>> a9a1a5d (Complete GitHub Actions CI/CD pipeline integration and Firebase kompost functionality)
   verbose: true,
 }
 
