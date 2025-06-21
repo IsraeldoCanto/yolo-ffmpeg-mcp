@@ -14,8 +14,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "npm run typecheck && npm run lint && jest --ci --coverage && npm run build",
-    "test:firebase": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=firebase\"",
-    "test:integration": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=integration\"",
+    "test:firebase": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=firebase --setupFilesAfterEnv ./jest-firebase.setup.js\"",
+    "test:integration": "firebase emulators:exec --only auth,firestore,storage \"jest --testPathPattern=integration --setupFilesAfterEnv ./jest-firebase.setup.js\"",
     "emulators:start": "firebase emulators:start --only auth,firestore,storage",
     "emulators:kill": "firebase emulators:kill"
   },
@@ -52,6 +52,7 @@
     "genkit": "^1.8.0",
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
+    "node-fetch": "^3.3.2",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
@@ -60,6 +61,7 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "undici": "^7.10.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

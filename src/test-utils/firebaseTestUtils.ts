@@ -40,7 +40,7 @@ export const TEST_USERS = {
 // Firebase emulator ports
 const EMULATOR_PORTS = {
   auth: 9099,
-  firestore: 8080,
+  firestore: 8081,
   storage: 9199
 }
 
