@@ -16,6 +16,8 @@ help:
 	@echo "Testing (Continuous):"
 	@echo "  make test         - Run all tests once"
 	@echo "  make test-elm     - Run ELM integration tests only"
+	@echo "  make test-firebase - Run Firebase integration tests with emulator"
+	@echo "  make test-integration - Run all integration tests with Firebase emulator"
 	@echo "  make test-continuous - Run tests continuously (watch mode)"
 	@echo "  make test-coverage - Run tests with coverage report"
 	@echo "  make test-changed - Run tests for changed files only"
@@ -28,6 +30,8 @@ help:
 	@echo "  make deploy       - Deploy to Firebase (requires auth)"
 	@echo "  make deploy-force - Re-authenticate and deploy"
 	@echo "  make emulators    - Start Firebase emulators"
+	@echo "  make emulators-start - Start Firebase emulators for testing"
+	@echo "  make emulators-kill - Stop Firebase emulators"
 	@echo ""
 	@echo "Git Operations:"
 	@echo "  make status       - Show git status and branch info"
@@ -64,6 +68,14 @@ test:
 test-elm:
 	@echo "🧪 Running ELM integration tests..."
 	npm test -- --testPathPattern=elmPortHandler
+
+test-firebase:
+	@echo "🔥 Running Firebase integration tests with emulator..."
+	npm run test:firebase
+
+test-integration:
+	@echo "🧪 Running all integration tests with Firebase emulator..."
+	npm run test:integration
 
 test-watch:
 	@echo "👀 Running tests in watch mode..."
@@ -147,6 +159,14 @@ deploy-force:
 emulators:
 	@echo "🔧 Starting Firebase emulators..."
 	firebase emulators:start
+
+emulators-start:
+	@echo "🔧 Starting Firebase emulators for testing..."
+	npm run emulators:start
+
+emulators-kill:
+	@echo "🛑 Stopping Firebase emulators..."
+	npm run emulators:kill
 
 # Git operations
 status:
