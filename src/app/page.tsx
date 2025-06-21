@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Loader2, Music2 } from 'lucide-react';
+import { getBuildDisplayString } from '@/lib/build-info';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -37,7 +38,12 @@ export default function LoginPage() {
       </p>
       <GoogleSignInButton />
        <footer className="absolute bottom-8 text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Kompost Mixer. All rights reserved.
+        <div className="text-center">
+          &copy; {new Date().getFullYear()} Kompost Mixer. All rights reserved.
+        </div>
+        <div className="text-center mt-1 text-xs opacity-75">
+          Build: {getBuildDisplayString()}
+        </div>
       </footer>
     </div>
   );
