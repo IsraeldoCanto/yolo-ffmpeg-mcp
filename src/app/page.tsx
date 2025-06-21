@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { Loader2, Music2 } from 'lucide-react';
+import { getBuildDisplayString } from '@/lib/build-info';
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -36,8 +37,13 @@ export default function LoginPage() {
         Your personal multimedia database. Organize, find, and manage your audio effortlessly.
       </p>
       <GoogleSignInButton />
-       <footer className="absolute bottom-8 text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Kompost Mixer. All rights reserved.
+      <footer className="fixed bottom-4 left-0 right-0 text-center text-sm text-muted-foreground">
+        <div className="mb-1">
+          &copy; {new Date().getFullYear()} Kompost Mixer. All rights reserved.
+        </div>
+        <div className="text-xs bg-black/20 rounded px-2 py-1 inline-block">
+          Build: {getBuildDisplayString()}
+        </div>
       </footer>
     </div>
   );

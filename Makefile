@@ -1,7 +1,7 @@
 # Kompost Mixer / KompostEdit Development Makefile
 # Usage: make <target>
 
-.PHONY: help dev build deploy test clean status logs backup branch commit
+.PHONY: help dev build deploy test clean status logs backup branch commit test-api test-endpoints test-full-integration
 
 # Default target
 help:
@@ -18,6 +18,9 @@ help:
 	@echo "  make test-elm     - Run ELM integration tests only"
 	@echo "  make test-firebase - Run Firebase integration tests with emulator"
 	@echo "  make test-integration - Run all integration tests with Firebase emulator"
+	@echo "  make test-api     - Test API endpoints against running server"
+	@echo "  make test-endpoints - Test all endpoints with colored output"
+	@echo "  make test-full-integration - Complete integration test workflow"
 	@echo "  make test-continuous - Run tests continuously (watch mode)"
 	@echo "  make test-coverage - Run tests with coverage report"
 	@echo "  make test-changed - Run tests for changed files only"
@@ -76,6 +79,30 @@ test-firebase:
 test-integration:
 	@echo "🧪 Running all integration tests with Firebase emulator..."
 	npm run test:integration
+
+test-api:
+	@echo "🌐 Testing API endpoints against running server..."
+	@echo "💡 Make sure development server is running (make dev)"
+	node test-server.js
+
+test-endpoints:
+	@echo "🎯 Testing all API endpoints with comprehensive validation..."
+	@echo "Starting endpoint tests with colored output..."
+	@chmod +x test-server.js
+	node test-server.js
+
+test-full-integration:
+	@echo "🔥 Running complete integration test workflow..."
+	@echo "1. Starting Firebase emulators..."
+	@-make emulators-start &
+	@sleep 5
+	@echo "2. Running Firebase integration tests..."
+	@make test-firebase || true
+	@echo "3. Testing API endpoints..."
+	@make test-api || true
+	@echo "4. Stopping emulators..."
+	@make emulators-kill
+	@echo "✅ Full integration test workflow complete!"
 
 test-watch:
 	@echo "👀 Running tests in watch mode..."

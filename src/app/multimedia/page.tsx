@@ -32,6 +32,7 @@ import { MoreHorizontal, Edit, Trash2, Eye, PlusCircle, Search, Filter, Loader2,
 import { useToast } from '@/hooks/use-toast';
 import { Slider } from '@/components/ui/slider';
 import { formatDuration } from '@/lib/utils';
+import { getBuildDisplayString } from '@/lib/build-info';
 
 const PAGE_SIZE = 10;
 
@@ -331,6 +332,12 @@ export default function MultimediaPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <footer className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
+        <div className="text-xs bg-muted/50 rounded px-3 py-2 inline-block">
+          Build: {getBuildDisplayString()}
+        </div>
+      </footer>
     </div>
   );
 }
