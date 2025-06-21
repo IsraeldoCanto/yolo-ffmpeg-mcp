@@ -8,5 +8,6 @@ export const BUILD_INFO = {
 };
 
 export const getBuildDisplayString = (): string => {
-  return `v${BUILD_INFO.version}-${BUILD_INFO.buildNumber} (${BUILD_INFO.gitCommit})`;
+  const buildTime = new Date(BUILD_INFO.buildTime).toLocaleString();
+  return `v${BUILD_INFO.version}-${BUILD_INFO.buildNumber} (${BUILD_INFO.gitCommit}) - ${buildTime}`;
 };
