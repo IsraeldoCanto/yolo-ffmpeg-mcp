@@ -10,8 +10,19 @@ help:
 	@echo "Development:"
 	@echo "  make dev          - Start local development server"
 	@echo "  make dev-clean    - Clean restart dev server (kill existing)"
+	@echo "  make dev-with-tests - Start dev server + continuous testing"
 	@echo "  make build        - Build for production"
-	@echo "  make test         - Run tests"
+	@echo ""
+	@echo "Testing (Continuous):"
+	@echo "  make test         - Run all tests once"
+	@echo "  make test-elm     - Run ELM integration tests only"
+	@echo "  make test-continuous - Run tests continuously (watch mode)"
+	@echo "  make test-coverage - Run tests with coverage report"
+	@echo "  make test-changed - Run tests for changed files only"
+	@echo "  make test-specific PATTERN='name' - Run specific test pattern"
+	@echo "  make test-quality - Comprehensive test quality check"
+	@echo "  make test-ci      - Run full CI test suite"
+	@echo "  make typecheck    - Run TypeScript type checking"
 	@echo ""
 	@echo "Deployment:"
 	@echo "  make deploy       - Deploy to Firebase (requires auth)"
@@ -47,8 +58,78 @@ build:
 	npm run build
 
 test:
-	@echo "🧪 Running tests..."
+	@echo "🧪 Running all tests..."
 	npm test
+
+test-elm:
+	@echo "🧪 Running ELM integration tests..."
+	npm test -- --testPathPattern=elmPortHandler
+
+test-watch:
+	@echo "👀 Running tests in watch mode..."
+	npm run test:watch
+
+test-coverage:
+	@echo "📊 Running tests with coverage..."
+	npm run test:coverage
+
+typecheck:
+	@echo "🔍 Running TypeScript type checking..."
+	npm run typecheck
+
+# Continuous testing commands
+test-continuous:
+	@echo "🔄 Starting continuous testing (watch mode)..."
+	@echo "Tests will re-run automatically when files change"
+	@echo "Press 'q' to quit, 'a' to run all tests"
+	npm run test:watch
+
+test-ci:
+	@echo "🤖 Running CI test suite..."
+	npm run test:ci
+
+test-changed:
+	@echo "🔄 Running tests for changed files only..."
+	npm test -- --onlyChanged
+
+test-specific:
+	@if [ -z "$(PATTERN)" ]; then \
+		echo "❌ Error: Please provide a test pattern"; \
+		echo "Usage: make test-specific PATTERN='test-pattern'"; \
+		echo "Examples:"; \
+		echo "  make test-specific PATTERN='elmPortHandler'"; \
+		echo "  make test-specific PATTERN='firebase'"; \
+		echo "  make test-specific PATTERN='Component'"; \
+		exit 1; \
+	fi
+	@echo "🎯 Running tests matching pattern: $(PATTERN)"
+	npm test -- --testNamePattern="$(PATTERN)" --verbose
+
+# Test quality commands
+test-quality:
+	@echo "📊 Running comprehensive test quality check..."
+	@echo "1. TypeScript compilation..."
+	@make --no-print-directory typecheck
+	@echo ""
+	@echo "2. Running all tests with coverage..."
+	@make --no-print-directory test-coverage
+	@echo ""
+	@echo "3. Checking coverage thresholds..."
+	@npm test -- --coverage --coverageThreshold='{"global":{"branches":50,"functions":50,"lines":50,"statements":50}}'
+	@echo ""
+	@echo "✅ Test quality check complete!"
+
+# Development workflow with continuous testing
+dev-with-tests:
+	@echo "🚀 Starting development with continuous testing..."
+	@echo "Opening two processes:"
+	@echo "  1. Development server (port 9002)"
+	@echo "  2. Test watcher"
+	@echo ""
+	@echo "💡 Tip: Use 'make stop-dev' to stop all processes"
+	@(npm run dev > dev.log 2>&1 &) && (npm run test:watch > test.log 2>&1 &)
+	@echo "✅ Development and testing started in background"
+	@echo "📄 Logs: dev.log and test.log"
 
 # Deployment commands
 deploy:
