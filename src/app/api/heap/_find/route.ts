@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { firebaseKompostService } from '@/services/firebaseKompostService'
-import { getAuth } from 'firebase-admin/auth'
 
 export async function POST(request: NextRequest) {
   try {

@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { firebaseKompostService } from '@/services/firebaseKompostService'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const id = decodeURIComponent(params.id).replace('.json', '')
+    const resolvedParams = await params
+    const id = decodeURIComponent(resolvedParams.id).replace('.json', '')
     console.log('📄 GET komposition:', id)
 
     const komposition = await firebaseKompostService.loadKomposition(id)
@@ -37,7 +38,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const id = decodeURIComponent(params.id).replace('.json', '')
+    const resolvedParams = await params
+    const id = decodeURIComponent(resolvedParams.id).replace('.json', '')
     const body = await request.json()
     
     console.log('💾 PUT komposition:', id, body)
@@ -93,7 +95,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const id = decodeURIComponent(params.id).replace('.json', '')
+    const resolvedParams = await params
+    const id = decodeURIComponent(resolvedParams.id).replace('.json', '')
     console.log('🗑️ DELETE komposition:', id)
 
     await firebaseKompostService.deleteKomposition(id)
