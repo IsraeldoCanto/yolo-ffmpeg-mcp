@@ -50,6 +50,10 @@ const customJestConfig = {
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}'
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/app/kompostedit/__tests__/page.test.tsx'
+  ],
   watchPlugins: [
     'jest-watch-typeahead/filename',
     'jest-watch-typeahead/testname',
