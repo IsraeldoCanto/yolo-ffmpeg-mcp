@@ -1,4 +1,26 @@
-Ok # FFMPEG MCP Server - INTELLIGENT VIDEO EDITING ✅
+# FFMPEG MCP Server - Claude Code Integration Guide
+
+**🚨 CRITICAL: Read Registry Guidelines Below Before Using This Server**
+
+## 🎯 **LLM Interaction Guidelines** 
+
+### **🚫 NEVER Do These Things**
+1. **Direct filesystem access**: Never use `ls`, `find`, `cat`, `ffprobe` on MCP server paths
+2. **Path-based operations**: Never work with `/tmp/music/` paths directly  
+3. **Cache manipulation**: Never access registry files or temp directories directly
+4. **Bypass MCP tools**: Always use MCP tools for file operations
+
+### **✅ ALWAYS Do These Things**
+1. **Use file IDs**: Work with `src_video_abc123` not `/path/to/video.mp4`
+2. **Use MCP tools**: `list_files()`, `get_file_info()`, `process_file()`
+3. **Trust the registry**: MCP server is authoritative for file existence
+4. **Natural language**: Ask "What videos do you have?" not "ls /tmp/music/"
+
+**📖 Full Guidelines**: See `MCP_REGISTRY_AND_CACHING_SYSTEM.md` for complete interaction patterns.
+
+---
+
+# FFMPEG MCP Server - INTELLIGENT VIDEO EDITING ✅
 
 ## Project Status: ADVANCED CONTENT-AWARE SYSTEM ✅
 This is an intelligent FFMPEG MCP server with AI-powered content understanding. The system now has "eyes" to understand video content and provide smart editing suggestions without manual timecode specification.

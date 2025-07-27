@@ -22,7 +22,11 @@ try:
     from .komposition_build_planner import KompositionBuildPlanner
     from .komposition_generator import KompositionGenerator
     from .effect_processor import EffectProcessor
-    from .analytics_service import configure_analytics, cleanup_analytics
+    try:
+        from .analytics_service import configure_analytics, cleanup_analytics
+    except ImportError:
+        configure_analytics = None
+        cleanup_analytics = None
     from .audio_effect_processor import AudioEffectProcessor
     from .format_manager import FormatManager, COMMON_PRESETS
     from .models import FileInfo, ProcessResult # Import models
@@ -56,7 +60,8 @@ mcp = FastMCP("ffmpeg-mcp")
 firebase_endpoint = os.getenv("FIREBASE_ANALYTICS_ENDPOINT")
 firebase_api_key = os.getenv("FIREBASE_API_KEY")
 analytics_enabled = os.getenv("ANALYTICS_ENABLED", "true").lower() == "true"
-configure_analytics(firebase_endpoint, analytics_enabled, firebase_api_key)
+if configure_analytics:
+    configure_analytics(firebase_endpoint, analytics_enabled, firebase_api_key)
 
 # Initialize components
 file_manager = FileManager()
@@ -81,7 +86,11 @@ video_comparison_tool = VideoComparisonTool(ffmpeg, file_manager, content_analyz
 async def list_files() -> Dict[str, Any]:
     """🎬 CORE WORKFLOW - List available source files with smart suggestions and quick actions
     
+    🚨 LLM GUIDANCE: This is the ONLY way to discover available files. 
+    NEVER use direct filesystem access (ls, find, etc.) - always use this tool.
+    
     This is typically your FIRST STEP in any video editing workflow.
+    Returns file IDs (not paths) for secure file referencing.
     
     Returns:
         - File IDs for secure processing
@@ -194,7 +203,13 @@ async def list_files() -> Dict[str, Any]:
 
 @mcp.tool()
 async def get_file_info(file_id: str) -> Dict[str, Any]:
-    """Get detailed metadata for a file by ID"""
+    """📋 FILE INFO - Get detailed metadata for a file by ID
+    
+    🚨 LLM GUIDANCE: Use file IDs from list_files(), NEVER file paths.
+    Example: get_file_info("src_video_abc123") not get_file_info("/path/to/video.mp4")
+    
+    Returns comprehensive metadata including duration, resolution, format, and processing history.
+    """
     file_path = file_manager.resolve_id(file_id)
     
     if not file_path:
@@ -397,7 +412,13 @@ async def get_scene_screenshots(file_id: str) -> Dict[str, Any]:
 
 @mcp.tool()
 async def list_generated_files() -> Dict[str, Any]:
-    """List all generated/processed files in temp directory with metadata"""
+    """📁 GENERATED FILES - List all processed files with metadata
+    
+    🚨 LLM GUIDANCE: Use this to find previously generated content in the registry.
+    NEVER scan /tmp/music/temp/ directly - trust the registry system.
+    
+    Shows files you've created through video processing operations.
+    """
     
     try:
         temp_files = []
@@ -561,6 +582,58 @@ async def cleanup_temp_files() -> Dict[str, str]:
         return {"message": "Temporary files cleaned up successfully"}
     except Exception as e:
         return {"error": f"Failed to cleanup temp files: {str(e)}"}
+
+
+@mcp.tool()
+async def get_registry_status() -> Dict[str, Any]:
+    """📊 REGISTRY STATUS - Get file registry health and statistics
+    
+    🚨 LLM GUIDANCE: Use this to check registry health and find orphaned files.
+    If you suspect cache misses or missing files, this is your diagnostic tool.
+    
+    Returns counts, storage usage, orphaned files, and registry health metrics.
+    """
+    try:
+        # Get source files count
+        source_files = await list_files()
+        source_count = len(source_files.get("files", []))
+        
+        # Get generated files count  
+        generated_files = await list_generated_files()
+        generated_count = len(generated_files.get("temp_files", []))
+        
+        # Check for potential issues
+        issues = []
+        if generated_count > 0 and "temp_files" in generated_files:
+            # Check if any files have missing registry entries
+            temp_files = generated_files["temp_files"]
+            for temp_file in temp_files:
+                if not temp_file.get("file_id"):
+                    issues.append(f"Orphaned file detected: {temp_file.get('name', 'unknown')}")
+        
+        # Calculate storage estimates
+        total_storage = 0
+        if "files" in source_files:
+            total_storage += sum(f.get("size", 0) for f in source_files["files"])
+        if "temp_files" in generated_files:
+            total_storage += sum(f.get("size", 0) for f in generated_files["temp_files"])
+        
+        return {
+            "registry_health": "healthy" if len(issues) == 0 else "issues_detected",
+            "source_files_count": source_count,
+            "generated_files_count": generated_count,
+            "total_storage_bytes": total_storage,
+            "total_storage_mb": round(total_storage / (1024 * 1024), 2),
+            "issues": issues,
+            "recommendations": [
+                "🎬 Use list_files() to discover available content",
+                "📋 Use get_file_info(file_id) for file details", 
+                "🔑 Work with file IDs, never direct paths",
+                "🗂️ Trust the registry as single source of truth"
+            ]
+        }
+    except Exception as e:
+        return {"error": f"Failed to get registry status: {str(e)}"}
 
 
 # MCP Prompts for Video Editing Guidance
@@ -4659,6 +4732,7 @@ if __name__ == "__main__":
     import atexit
     
     # Register cleanup handler
-    atexit.register(lambda: asyncio.run(cleanup_analytics()))
+    if cleanup_analytics:
+        atexit.register(lambda: asyncio.run(cleanup_analytics()))
     
     mcp.run()
