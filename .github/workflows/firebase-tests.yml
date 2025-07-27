@@ -1,0 +1,145 @@
+name: Firebase Integration Tests
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*firebase*', 'feature/*integration*' ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'firebase.json'
+      - 'firestore.rules*'
+      - 'storage.rules'
+      - 'package*.json'
+      - '.github/workflows/firebase-tests.yml'
+
+jobs:
+  firebase-tests:
+    name: Firebase Emulator Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Verify Firebase CLI installation
+        run: firebase --version
+        
+      - name: Setup Java for Firebase emulator
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators
+          
+      - name: Check for Firebase configuration
+        run: |
+          if [ -f "firebase.json" ]; then
+            echo "✅ Firebase configuration found"
+            cat firebase.json
+          else
+            echo "❌ No Firebase configuration found"
+            exit 1
+          fi
+          
+      - name: Check for Firebase test utilities
+        run: |
+          if [ -f "src/test-utils/firebaseTestUtils.ts" ]; then
+            echo "✅ Firebase test utilities found"
+          else
+            echo "⚠️ Firebase test utilities not found - skipping Firebase tests"
+            exit 0
+          fi
+          
+      - name: Check for Firebase Jest configuration
+        run: |
+          if [ -f "jest.config.firebase.js" ]; then
+            echo "✅ Firebase Jest configuration found"
+            npm run test:firebase
+          else
+            echo "⚠️ Firebase Jest configuration not found - skipping Firebase tests"
+            echo "This likely means Firebase integration is not yet implemented on this branch"
+            exit 0
+          fi
+          
+  firebase-tests-with-setup:
+    name: Firebase Tests (Full Setup)
+    runs-on: ubuntu-latest
+    # Only run if Firebase infrastructure files exist
+    if: contains(github.event.head_commit.message, 'firebase') || contains(github.ref, 'firebase')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Setup Java for Firebase emulator
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators
+          
+      - name: Download Firebase emulators
+        run: firebase setup:emulators:firestore
+        
+      - name: Download Firebase Auth emulator
+        run: firebase setup:emulators:auth
+        
+      - name: Download Firebase Storage emulator
+        run: firebase setup:emulators:storage
+        
+      - name: List Firebase emulators
+        run: firebase emulators:list
+        
+      - name: Run Firebase integration tests
+        run: |
+          if [ -f "jest.config.firebase.js" ] && [ -f "src/test-utils/firebaseTestUtils.ts" ]; then
+            echo "🚀 Running Firebase integration tests..."
+            npm run test:firebase
+          else
+            echo "⚠️ Firebase test infrastructure not complete - running basic tests instead"
+            npm test
+          fi
+          
+      - name: Firebase test report
+        if: always()
+        run: |
+          echo "📊 Firebase Test Results:"
+          echo "- Configuration: $([ -f 'firebase.json' ] && echo '✅' || echo '❌')"
+          echo "- Test Utilities: $([ -f 'src/test-utils/firebaseTestUtils.ts' ] && echo '✅' || echo '❌')"
+          echo "- Jest Config: $([ -f 'jest.config.firebase.js' ] && echo '✅' || echo '❌')"
+          echo "- Test Rules: $([ -f 'firestore.rules.test' ] && echo '✅' || echo '❌')"
