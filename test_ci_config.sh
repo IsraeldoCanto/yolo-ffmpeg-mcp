@@ -170,7 +170,7 @@ print('✅ All modules import successfully')
     uv run python -c "
 from src.file_manager import FileManager
 fm = FileManager()
-print(f'✅ FileManager initialized: {len(fm.list_files())} files')
+print(f'✅ FileManager initialized: {len(list(fm.file_map.keys()))} files in registry')
 "
 }
 
