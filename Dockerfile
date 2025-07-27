@@ -49,6 +49,8 @@ RUN uv pip install --system --no-cache \
     # Minimal dependencies for Alpine
     jsonschema>=4.0.0 \
     psutil>=5.9.0 \
+    # Audio effect dependencies
+    PyYAML>=6.0 \
     # Video effects dependencies
     opencv-python-headless>=4.8.0 \
     pillow>=10.0.0 \

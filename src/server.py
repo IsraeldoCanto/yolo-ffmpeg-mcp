@@ -33,24 +33,24 @@ try:
     from .video_operations import execute_core_processing # Import core processing logic
     from .video_comparison_tool import VideoComparisonTool
 except ImportError:
-    from file_manager import FileManager
-    from ffmpeg_wrapper import FFMPEGWrapper
-    from config import SecurityConfig
-    from content_analyzer import VideoContentAnalyzer
-    from komposition_processor import KompositionProcessor
-    from transition_processor import TransitionProcessor
-    from speech_detector import SpeechDetector
-    from speech_komposition_processor import SpeechKompositionProcessor
-    from enhanced_speech_analyzer import EnhancedSpeechAnalyzer
-    from composition_planner import CompositionPlanner
-    from komposition_build_planner import KompositionBuildPlanner
-    from komposition_generator import KompositionGenerator
-    from effect_processor import EffectProcessor
-    from audio_effect_processor import AudioEffectProcessor
-    from format_manager import FormatManager, COMMON_PRESETS
-    from models import FileInfo, ProcessResult # Import models
-    from video_operations import execute_core_processing # Import core processing logic
-    from video_comparison_tool import VideoComparisonTool
+    from .file_manager import FileManager
+    from .ffmpeg_wrapper import FFMPEGWrapper
+    from .config import SecurityConfig
+    from .content_analyzer import VideoContentAnalyzer
+    from .komposition_processor import KompositionProcessor
+    from .transition_processor import TransitionProcessor
+    from .speech_detector import SpeechDetector
+    from .speech_komposition_processor import SpeechKompositionProcessor
+    from .enhanced_speech_analyzer import EnhancedSpeechAnalyzer
+    from .composition_planner import CompositionPlanner
+    from .komposition_build_planner import KompositionBuildPlanner
+    from .komposition_generator import KompositionGenerator
+    from .effect_processor import EffectProcessor
+    from .audio_effect_processor import AudioEffectProcessor
+    from .format_manager import FormatManager, COMMON_PRESETS
+    from .models import FileInfo, ProcessResult # Import models
+    from .video_operations import execute_core_processing # Import core processing logic
+    from .video_comparison_tool import VideoComparisonTool
 
 
 # Initialize MCP server
