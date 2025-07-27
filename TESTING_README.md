@@ -1,7 +1,7 @@
 # Music Video Creation Test System
 
 ## Overview
-Comprehensive testing system for the LLM-MCP music video creation pipeline. Tests natural language input → video generation → verification → playback.
+Comprehensive testing system for the LLM-MCP music video creation pipeline. Tests Natural Language input → video generation → verification → playback.
 
 ## Test Scripts
 
