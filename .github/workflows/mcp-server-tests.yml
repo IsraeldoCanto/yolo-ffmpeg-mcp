@@ -173,27 +173,187 @@ jobs:
   mcp-docker-tests:
     name: MCP Server Docker Tests
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'docker') || contains(github.ref, 'docker')
+    needs: mcp-server-unit-tests
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
       - name: Build Docker image
         run: |
-          if [ -f "Dockerfile" ]; then
-            docker build -t mcp-ffmpeg-server .
-            echo "✅ Docker image built successfully"
+          echo "🐳 Building Docker image for MCP server..."
+          docker build -t ffmpeg-mcp:ci .
+          echo "✅ Docker image built successfully"
+          docker images ffmpeg-mcp:ci
+          
+      - name: Test Docker container health
+        run: |
+          echo "🔍 Testing Docker container health..."
+          # Start container in background
+          docker run -d --name mcp-test-container \
+            -p 8000:8000 \
+            ffmpeg-mcp:ci
+          
+          # Wait for container to start
+          sleep 10
+          
+          # Check if container is running
+          if docker ps | grep -q mcp-test-container; then
+            echo "✅ Container is running"
           else
-            echo "⚠️ No Dockerfile found, skipping Docker tests"
+            echo "❌ Container failed to start"
+            docker logs mcp-test-container
+            exit 1
           fi
           
-      - name: Test Docker container
+      - name: Test MCP server import in Docker
         run: |
-          if docker images | grep -q mcp-ffmpeg-server; then
-            docker run --rm mcp-ffmpeg-server python -c "import src.server; print('✅ MCP server works in Docker')"
-          else
-            echo "⚠️ Docker image not available, skipping container tests"
+          echo "🧪 Testing MCP server modules in Docker..."
+          docker exec mcp-test-container python -c "
+          import src.server
+          import src.file_manager
+          import src.ffmpeg_wrapper
+          print('✅ All MCP modules import successfully in Docker')
+          "
+          
+      - name: Test FFmpeg in Docker
+        run: |
+          echo "🎬 Testing FFmpeg in Docker container..."
+          docker exec mcp-test-container ffmpeg -version
+          docker exec mcp-test-container ffprobe -version
+          echo "✅ FFmpeg is working in Docker"
+          
+      - name: Test file operations in Docker
+        run: |
+          echo "📁 Testing file operations in Docker..."
+          # Create test directories
+          docker exec mcp-test-container mkdir -p /tmp/music/source /tmp/music/temp
+          
+          # Create a minimal test video
+          docker exec mcp-test-container ffmpeg \
+            -f lavfi -i testsrc2=duration=2:size=320x240:rate=25 \
+            -f lavfi -i sine=frequency=440:duration=2 \
+            -c:v libx264 -c:a aac -shortest \
+            /tmp/music/source/docker_test.mp4 -y
+          
+          # Verify the test video
+          docker exec mcp-test-container ffprobe \
+            -v quiet -print_format json -show_format \
+            /tmp/music/source/docker_test.mp4
+            
+          echo "✅ Video creation and verification working in Docker"
+          
+      - name: Test CI scripts in Docker
+        run: |
+          echo "🧪 Testing CI scripts in Docker..."
+          # Copy test scripts into container
+          docker cp test_ci_config.sh mcp-test-container:/app/
+          docker cp test_music_video_creation.sh mcp-test-container:/app/
+          
+          # Make scripts executable and run
+          docker exec mcp-test-container chmod +x test_ci_config.sh test_music_video_creation.sh
+          docker exec mcp-test-container bash -c "
+            export CI=true HEADLESS_MODE=true VIDEO_PLAYER=none
+            ./test_ci_config.sh setup
+            echo '✅ CI config setup completed in Docker'
+          "
+          
+      - name: Cleanup Docker test
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker test resources..."
+          docker stop mcp-test-container || true
+          docker rm mcp-test-container || true
+          docker rmi ffmpeg-mcp:ci || true
+
+  mcp-full-workflow-test:
+    name: MCP Full Workflow Test
+    runs-on: ubuntu-latest
+    needs: [mcp-server-integration-tests, mcp-docker-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install UV and dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          uv sync
+          
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg bc jq
+          
+      - name: Setup test environment
+        run: |
+          chmod +x test_ci_config.sh run_full_test.sh
+          export CI=true GITHUB_ACTIONS=true
+          ./test_ci_config.sh setup
+          
+      - name: Run full workflow test
+        run: |
+          echo "🎬 Running complete MCP workflow test..."
+          export CI=true HEADLESS_MODE=true VIDEO_PLAYER=none
+          
+          # Start MCP server in background
+          uv run python -m src.server &
+          MCP_PID=$!
+          echo "MCP_SERVER_PID=$MCP_PID" >> $GITHUB_ENV
+          sleep 10
+          
+          # Run the full test suite
+          ./test_ci_config.sh test all
+          
+          echo "✅ Full workflow test completed"
+          
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "📊 Generating test report..."
+          echo "# MCP Server CI Test Report" > test_report.md
+          echo "- Date: $(date)" >> test_report.md
+          echo "- Branch: ${{ github.ref_name }}" >> test_report.md
+          echo "- Commit: ${{ github.sha }}" >> test_report.md
+          echo "" >> test_report.md
+          echo "## Test Results" >> test_report.md
+          
+          if [ -f /tmp/ci_test.log ]; then
+            echo "### CI Test Log" >> test_report.md
+            echo '```' >> test_report.md
+            tail -20 /tmp/ci_test.log >> test_report.md
+            echo '```' >> test_report.md
+          fi
+          
+          echo "### Generated Files" >> test_report.md
+          ls -la /tmp/music/temp/ >> test_report.md || echo "No temp files" >> test_report.md
+          
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-test-report
+          path: |
+            test_report.md
+            /tmp/ci_test.log
+            /tmp/music/temp/*
+          retention-days: 14
+          
+      - name: Cleanup workflow test
+        if: always()
+        run: |
+          ./test_ci_config.sh cleanup
+          if [ ! -z "$MCP_SERVER_PID" ]; then
+            kill $MCP_SERVER_PID || echo "MCP server already stopped"
           fi
 
   mcp-test-documentation:
