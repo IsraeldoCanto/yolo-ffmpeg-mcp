@@ -10,24 +10,21 @@ import sys
 import pytest
 from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
-
 def test_imports():
     """Test that all core modules can be imported"""
     try:
-        from deterministic_id_generator import DeterministicIDGenerator
-        from resource_manager import ResourceRegistry, CacheManager
-        from file_manager import FileManager  
-        from ffmpeg_wrapper import FFMPEGWrapper
-        from config import SecurityConfig
+        from src.deterministic_id_generator import DeterministicIDGenerator
+        from src.resource_manager import ResourceRegistry, CacheManager
+        from src.file_manager import FileManager  
+        from src.ffmpeg_wrapper import FFMPEGWrapper
+        from src.config import SecurityConfig
         assert True, "All core modules imported successfully"
     except ImportError as e:
         pytest.fail(f"Import error: {e}")
 
 def test_deterministic_id_generation():
     """Test deterministic ID generation"""
-    from deterministic_id_generator import DeterministicIDGenerator
+    from src.deterministic_id_generator import DeterministicIDGenerator
     
     # Test source file IDs are consistent
     id1 = DeterministicIDGenerator.source_file_id("lookin.mp4")
@@ -46,7 +43,7 @@ def test_deterministic_id_generation():
 
 def test_resource_registry():
     """Test resource registry basic functionality"""
-    from resource_manager import ResourceRegistry
+    from src.resource_manager import ResourceRegistry
     import tempfile
     
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -63,7 +60,7 @@ def test_resource_registry():
 
 def test_security_config():
     """Test security configuration"""
-    from config import SecurityConfig
+    from src.config import SecurityConfig
     
     config = SecurityConfig()
     
@@ -78,7 +75,7 @@ def test_security_config():
 
 def test_file_manager_security():
     """Test file manager security validations"""
-    from file_manager import FileManager
+    from src.file_manager import FileManager
     
     fm = FileManager()
     

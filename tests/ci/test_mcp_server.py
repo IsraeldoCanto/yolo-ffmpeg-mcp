@@ -12,14 +12,13 @@ import asyncio
 import json
 from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
+# Import from src module directly
 
 @pytest.mark.asyncio
 async def test_mcp_server_startup():
     """Test that MCP server can start and respond"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Test server is responsive
         result = await mcp.call_tool("get_available_operations", {})
@@ -50,7 +49,7 @@ async def test_mcp_server_startup():
 async def test_mcp_list_files():
     """Test MCP list_files functionality"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         result = await mcp.call_tool("list_files", {})
         assert isinstance(result, list)
@@ -75,7 +74,7 @@ async def test_mcp_list_files():
 async def test_mcp_file_info():
     """Test MCP get_file_info functionality"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # First get file list
         result = await mcp.call_tool("list_files", {})
@@ -111,7 +110,7 @@ async def test_mcp_file_info():
 def test_mcp_tools_registration():
     """Test that all expected MCP tools are registered"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Get the FastMCP instance tools
         tools = mcp._tools
@@ -135,7 +134,7 @@ def test_mcp_tools_registration():
 
 def test_configuration_validation():
     """Test configuration file validation"""
-    from config import SecurityConfig
+    from src.config import SecurityConfig
     
     config = SecurityConfig()
     

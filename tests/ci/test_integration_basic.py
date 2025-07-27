@@ -12,8 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
+# Import from src module directly
 
 @pytest.fixture
 def test_data_dir():
@@ -41,7 +40,7 @@ def test_ffmpeg_available():
 
 def test_file_manager_basic_operations():
     """Test file manager basic operations"""
-    from file_manager import FileManager
+    from src.file_manager import FileManager
     
     fm = FileManager()
     
@@ -64,8 +63,8 @@ def test_file_manager_basic_operations():
 @pytest.mark.asyncio
 async def test_ffmpeg_wrapper_info():
     """Test FFMPEG wrapper file info functionality"""
-    from ffmpeg_wrapper import FFMPEGWrapper
-    from file_manager import FileManager
+    from src.ffmpeg_wrapper import FFMPEGWrapper
+    from src.file_manager import FileManager
     
     wrapper = FFMPEGWrapper()
     file_manager = FileManager()
@@ -86,7 +85,7 @@ async def test_ffmpeg_wrapper_info():
 async def test_mcp_server_basic():
     """Test basic MCP server functionality"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Test list_files tool
         result = await mcp.call_tool("list_files", {})
@@ -106,8 +105,8 @@ async def test_mcp_server_basic():
 @pytest.mark.asyncio
 async def test_basic_video_operations():
     """Test basic video operations if files are available"""
-    from ffmpeg_wrapper import FFMPEGWrapper
-    from file_manager import FileManager
+    from src.ffmpeg_wrapper import FFMPEGWrapper
+    from src.file_manager import FileManager
     
     wrapper = FFMPEGWrapper()
     file_manager = FileManager()

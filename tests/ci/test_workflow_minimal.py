@@ -13,8 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
+# Import from src module directly
 
 @pytest.fixture
 def ensure_test_environment():
@@ -34,7 +33,7 @@ def ensure_test_environment():
 async def test_minimal_video_workflow(ensure_test_environment):
     """Test minimal video processing workflow"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Step 1: Get available files
         files_result = await mcp.call_tool("list_files", {})
@@ -92,7 +91,7 @@ async def test_minimal_video_workflow(ensure_test_environment):
 async def test_batch_operations_basic(ensure_test_environment):
     """Test basic batch operations functionality"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Get available files
         files_result = await mcp.call_tool("list_files", {})
@@ -136,7 +135,7 @@ async def test_batch_operations_basic(ensure_test_environment):
 async def test_resource_cleanup(ensure_test_environment):
     """Test resource cleanup functionality"""
     try:
-        from server import mcp
+        from src.server import mcp
         
         # Test cleanup operation
         cleanup_result = await mcp.call_tool("cleanup_temp_files", {})
@@ -152,7 +151,7 @@ async def test_resource_cleanup(ensure_test_environment):
 
 def test_deterministic_workflow():
     """Test that workflows produce deterministic results"""
-    from deterministic_id_generator import DeterministicIDGenerator
+    from src.deterministic_id_generator import DeterministicIDGenerator
     
     # Test that same inputs produce same IDs
     file_id1 = DeterministicIDGenerator.source_file_id("test_video.mp4")
