@@ -6,7 +6,8 @@ import re
 import shutil
 import time
 
-from .analytics_service import get_analytics
+# Analytics service temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md
+# from .analytics_service import get_analytics
 
 
 class FFMPEGWrapper:
