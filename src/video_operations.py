@@ -4,7 +4,8 @@ import time
 
 from .config import SecurityConfig
 from .models import ProcessResult
-from .analytics_service import get_analytics
+# Analytics service temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md
+# from .analytics_service import get_analytics
 
 # Forward declaration for type hints if FileManager/FFMPEGWrapper are passed as instances
 # This helps with static analysis without creating circular imports at runtime.
@@ -108,19 +109,20 @@ async def execute_core_processing(
         
         # Track analytics - capture results
         processing_time_ms = int((time.time() - start_time) * 1000)
-        analytics = get_analytics()
-        if analytics:
-            await analytics.track_ffmpeg_operation(
-                user_id=user_id,
-                operation_type=operation,
-                parameters=parsed_params,
-                input_path=input_path,
-                output_path=output_path,
-                success=ffmpeg_result["success"],
-                processing_time_ms=processing_time_ms,
-                error_message=ffmpeg_result.get("error") if not ffmpeg_result["success"] else None,
-                platform="mcp"
-            )
+        # Analytics temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md for future implementation
+        # analytics = get_analytics()
+        # if analytics:
+        #     await analytics.track_ffmpeg_operation(
+        #         user_id=user_id,
+        #         operation_type=operation,
+        #         parameters=parsed_params,
+        #         input_path=input_path,
+        #         output_path=output_path,
+        #         success=ffmpeg_result["success"],
+        #         processing_time_ms=processing_time_ms,
+        #         error_message=ffmpeg_result.get("error") if not ffmpeg_result["success"] else None,
+        #         platform="mcp"
+        #     )
         
         if ffmpeg_result["success"]:
             return ProcessResult(
