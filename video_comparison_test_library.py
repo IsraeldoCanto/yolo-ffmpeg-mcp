@@ -146,12 +146,16 @@ class VideoComparisonTester:
             original.color_range != processed.color_range
         )
         
-        # Determine processing level
-        if bitrate_ratio >= self.thresholds["bitrate_ratio_major"] or size_ratio >= self.thresholds["size_ratio_major"]:
+        # Calculate absolute change ratios (handles both increases and decreases)
+        bitrate_change = abs(bitrate_ratio - 1.0)
+        size_change = abs(size_ratio - 1.0)
+        
+        # Determine processing level based on magnitude of change
+        if bitrate_change >= (self.thresholds["bitrate_ratio_major"] - 1.0) or size_change >= (self.thresholds["size_ratio_major"] - 1.0):
             return "major"
-        elif bitrate_ratio >= self.thresholds["bitrate_ratio_significant"] or size_ratio >= self.thresholds["size_ratio_significant"] or format_changes:
+        elif bitrate_change >= (self.thresholds["bitrate_ratio_significant"] - 1.0) or size_change >= (self.thresholds["size_ratio_significant"] - 1.0) or format_changes:
             return "significant"
-        elif bitrate_ratio >= self.thresholds["bitrate_ratio_minor"] or size_ratio >= self.thresholds["size_ratio_minor"]:
+        elif bitrate_change >= (self.thresholds["bitrate_ratio_minor"] - 1.0) or size_change >= (self.thresholds["size_ratio_minor"] - 1.0):
             return "minor"
         else:
             return "none"
