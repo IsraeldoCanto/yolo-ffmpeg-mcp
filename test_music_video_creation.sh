@@ -192,10 +192,15 @@ test_komposition() {
     
     print_success "Komposition file exists"
     
-    # Extract expected duration from komposition metadata
+    # Extract expected duration from komposition metadata (handle both old and new formats)
     if command -v jq &> /dev/null; then
-        duration=$(jq -r '.metadata.estimatedDuration // .estimatedDuration // 16' "$KOMPOSITION_FILE" 2>/dev/null || echo "16")
-        print_status "Expected duration from komposition: ${duration}s"
+        # Try multiple fields to get duration
+        total_beats=$(jq -r '.total_beats // .beatpattern.tobeat // 16' "$KOMPOSITION_FILE" 2>/dev/null || echo "16")
+        bpm=$(jq -r '.bpm // .metadata.bpm // 120' "$KOMPOSITION_FILE" 2>/dev/null || echo "120")
+        
+        # Calculate duration: beats / (BPM / 60) = duration in seconds
+        duration=$(echo "scale=1; $total_beats / ($bpm / 60)" | bc -l 2>/dev/null || echo "16")
+        print_status "Expected duration: ${total_beats} beats at ${bpm} BPM = ${duration}s"
     else
         duration=16
         print_warning "jq not found, using default duration: ${duration}s"
@@ -205,7 +210,9 @@ test_komposition() {
     latest_file=$(ls -t "$TEMP_DIR"/temp_*.mp4 2>/dev/null | head -1)
     
     if [[ -n "$latest_file" ]]; then
-        verify_video_file "$latest_file" $((duration - 2)) $((duration + 2))
+        # Convert duration to integer for bash arithmetic
+        duration_int=$(echo "$duration" | cut -d. -f1)
+        verify_video_file "$latest_file" $((duration_int - 2)) $((duration_int + 2))
         play_video "$latest_file"
     else
         print_error "No generated video files found"
