@@ -42,14 +42,14 @@ class VideoComparisonTester:
             "duration_tolerance_seconds": 0.1,    # Very tight for same source
             "frame_count_tolerance": 5,           # Allow minor encoding differences
             
-            # Processing detection thresholds  
-            "bitrate_ratio_minor": 1.1,          # 10% increase = minor processing
-            "bitrate_ratio_significant": 1.5,    # 50% increase = significant processing
-            "bitrate_ratio_major": 2.0,          # 100% increase = major processing
+            # Processing detection thresholds (CI-optimized for sensitive detection)
+            "bitrate_ratio_minor": 1.02,         # 2% change = minor processing
+            "bitrate_ratio_significant": 1.3,    # 30% change = significant processing
+            "bitrate_ratio_major": 2.0,          # 100% change = major processing
             
-            "size_ratio_minor": 1.1,             # 10% size increase
-            "size_ratio_significant": 1.3,       # 30% size increase  
-            "size_ratio_major": 2.0,             # 100% size increase
+            "size_ratio_minor": 1.02,            # 2% size change
+            "size_ratio_significant": 1.2,       # 20% size change  
+            "size_ratio_major": 2.0,             # 100% size change
             
             # Resolution/format changes
             "resolution_must_match": True,       # Same source videos must have same resolution
@@ -139,16 +139,20 @@ class VideoComparisonTester:
                                original: VideoTestMetrics, processed: VideoTestMetrics) -> str:
         """Detect level of processing applied"""
         
-        # Check for format/encoding changes
+        # Calculate absolute change ratios (handles both increases and decreases)
+        bitrate_change = abs(bitrate_ratio - 1.0)
+        size_change = abs(size_ratio - 1.0)
+        
+        # Check for format/encoding changes or other metadata indicators
         format_changes = (
             original.pixel_format != processed.pixel_format or
             original.video_profile != processed.video_profile or
             original.color_range != processed.color_range
         )
         
-        # Calculate absolute change ratios (handles both increases and decreases)
-        bitrate_change = abs(bitrate_ratio - 1.0)
-        size_change = abs(size_ratio - 1.0)
+        # For visually significant filters that don't change file size much,
+        # detect very small changes as indicators of processing
+        very_small_change = (bitrate_change >= 0.005 or size_change >= 0.005)  # 0.5% change
         
         # Determine processing level based on magnitude of change
         if bitrate_change >= (self.thresholds["bitrate_ratio_major"] - 1.0) or size_change >= (self.thresholds["size_ratio_major"] - 1.0):
@@ -157,6 +161,8 @@ class VideoComparisonTester:
             return "significant"
         elif bitrate_change >= (self.thresholds["bitrate_ratio_minor"] - 1.0) or size_change >= (self.thresholds["size_ratio_minor"] - 1.0):
             return "minor"
+        elif very_small_change:
+            return "minor"  # Assume visual filters with tiny file changes are still minor processing
         else:
             return "none"
     
