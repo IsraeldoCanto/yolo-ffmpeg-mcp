@@ -89,10 +89,11 @@ jobs:
         
         echo "Running $TEST_COUNT random filter tests..."
         
-        # Run the test using Docker container and capture output
+        # Run the test using Docker container with selective file mounting
         if docker run --rm \
           -v /tmp/music:/tmp/music \
-          -v ${{ github.workspace }}:/app \
+          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
+          -v ${{ github.workspace }}/video_comparison_test_library.py:/app/video_comparison_test_library.py \
           --workdir /app \
           ffmpeg-mcp:ci-test \
           python test_fast_filter_ci.py --tests "$TEST_COUNT" --duration 6; then
@@ -136,7 +137,8 @@ jobs:
         # Test major difference detection
         if docker run --rm \
           -v /tmp/music:/tmp/music \
-          -v ${{ github.workspace }}:/app \
+          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
+          -v ${{ github.workspace }}/video_comparison_test_library.py:/app/video_comparison_test_library.py \
           --workdir /app \
           ffmpeg-mcp:ci-test \
           python test_fast_filter_ci.py --specific dramatic_bw passthrough; then
@@ -150,7 +152,8 @@ jobs:
         # Test control (identical) detection  
         if docker run --rm \
           -v /tmp/music:/tmp/music \
-          -v ${{ github.workspace }}:/app \
+          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
+          -v ${{ github.workspace }}/video_comparison_test_library.py:/app/video_comparison_test_library.py \
           --workdir /app \
           ffmpeg-mcp:ci-test \
           python test_fast_filter_ci.py --specific passthrough copy; then
@@ -176,7 +179,8 @@ jobs:
         start_time=$(date +%s)
         docker run --rm \
           -v /tmp/music:/tmp/music \
-          -v ${{ github.workspace }}:/app \
+          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
+          -v ${{ github.workspace }}/video_comparison_test_library.py:/app/video_comparison_test_library.py \
           --workdir /app \
           ffmpeg-mcp:ci-test \
           python test_fast_filter_ci.py --tests 1 --duration 5
@@ -199,7 +203,7 @@ jobs:
       run: |
         echo "📋 Available filters for testing:"
         docker run --rm \
-          -v ${{ github.workspace }}:/app \
+          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
           --workdir /app \
           ffmpeg-mcp:ci-test \
           python test_fast_filter_ci.py --list
