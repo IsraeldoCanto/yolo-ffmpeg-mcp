@@ -162,7 +162,9 @@ class VideoComparisonTester:
         elif bitrate_change >= (self.thresholds["bitrate_ratio_minor"] - 1.0) or size_change >= (self.thresholds["size_ratio_minor"] - 1.0):
             return "minor"
         elif very_small_change:
-            return "minor"  # Assume visual filters with tiny file changes are still minor processing
+            # For filters with minimal file changes but known visual impact,
+            # classify as significant (many visual filters don't change file size much)
+            return "significant"
         else:
             return "none"
     
