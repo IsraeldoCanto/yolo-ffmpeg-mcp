@@ -31,40 +31,50 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Cache Docker layers
+      uses: actions/cache@v4
       with:
-        python-version: '3.13'
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ hashFiles('Dockerfile', 'pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-docker-
 
-    - name: Install system dependencies
+    - name: Build Docker image with cache
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg bc jq
+        docker buildx build \
+          --cache-from=type=local,src=/tmp/.buildx-cache \
+          --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+          --load \
+          --tag ffmpeg-mcp:test \
+          .
         
-    - name: Install Python dependencies
-      run: |
-        pip install uv
-        uv venv
-        source .venv/bin/activate
-        uv pip install -e .
+        # Move cache to avoid size issues
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
 
-    - name: Prepare test environment
+    - name: Prepare test environment and files
       run: |
         # Create required directories
         mkdir -p /tmp/music/source
         mkdir -p /tmp/music/temp
         mkdir -p /tmp/music/ci_test_outputs
         
-        # Create test video (simple color pattern)
-        ffmpeg -f lavfi -i testsrc2=duration=60:size=720x1280:rate=30 \
-               -f lavfi -i sine=frequency=440:duration=60 \
-               -c:v libx264 -c:a aac -shortest \
-               /tmp/music/source/_wZ5Hof5tXY_136.mp4
-        
-        # Create test audio (simple tone)
-        ffmpeg -f lavfi -i sine=frequency=220:duration=60 \
-               -c:a flac \
-               /tmp/music/source/Subnautic\ Measures.flac
+        # Create test video and audio using Docker container
+        docker run --rm \
+          -v /tmp/music:/tmp/music \
+          ffmpeg-mcp:test \
+          bash -c "
+            ffmpeg -f lavfi -i testsrc2=duration=60:size=720x1280:rate=30 \
+                   -f lavfi -i sine=frequency=440:duration=60 \
+                   -c:v libx264 -c:a aac -shortest \
+                   /tmp/music/source/_wZ5Hof5tXY_136.mp4 && \
+            ffmpeg -f lavfi -i sine=frequency=220:duration=60 \
+                   -c:a flac \
+                   '/tmp/music/source/Subnautic Measures.flac'
+          "
         
         echo "Test files created:"
         ls -la /tmp/music/source/
@@ -72,15 +82,18 @@ jobs:
     - name: Run random filter tests
       id: random_tests
       run: |
-        source .venv/bin/activate
-        
         # Determine test count (from input or default)
         TEST_COUNT="${{ github.event.inputs.test_count || '2' }}"
         
         echo "Running $TEST_COUNT random filter tests..."
         
-        # Run the test and capture output
-        if uv run python test_fast_filter_ci.py --tests "$TEST_COUNT" --duration 6; then
+        # Run the test using Docker container and capture output
+        if docker run --rm \
+          -v /tmp/music:/tmp/music \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:test \
+          python test_fast_filter_ci.py --tests "$TEST_COUNT" --duration 6; then
           echo "random_tests_result=success" >> $GITHUB_OUTPUT
         else
           echo "random_tests_result=failure" >> $GITHUB_OUTPUT
@@ -90,8 +103,6 @@ jobs:
       id: specific_tests
       if: github.event.inputs.specific_filters != ''
       run: |
-        source .venv/bin/activate
-        
         SPECIFIC_FILTERS="${{ github.event.inputs.specific_filters }}"
         echo "Testing specific filters: $SPECIFIC_FILTERS"
         
@@ -100,7 +111,12 @@ jobs:
         
         if [ ${#FILTER_ARRAY[@]} -eq 2 ]; then
           echo "Testing ${FILTER_ARRAY[0]} vs ${FILTER_ARRAY[1]}"
-          if uv run python test_fast_filter_ci.py --specific "${FILTER_ARRAY[0]}" "${FILTER_ARRAY[1]}"; then
+          if docker run --rm \
+            -v /tmp/music:/tmp/music \
+            -v ${{ github.workspace }}:/app \
+            --workdir /app \
+            ffmpeg-mcp:test \
+            python test_fast_filter_ci.py --specific "${FILTER_ARRAY[0]}" "${FILTER_ARRAY[1]}"; then
             echo "specific_tests_result=success" >> $GITHUB_OUTPUT
           else
             echo "specific_tests_result=failure" >> $GITHUB_OUTPUT
@@ -113,12 +129,15 @@ jobs:
     - name: Test analysis library accuracy
       id: library_test
       run: |
-        source .venv/bin/activate
-        
         echo "Testing analysis library with known filter combinations..."
         
         # Test major difference detection
-        if uv run python test_fast_filter_ci.py --specific dramatic_bw passthrough; then
+        if docker run --rm \
+          -v /tmp/music:/tmp/music \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:test \
+          python test_fast_filter_ci.py --specific dramatic_bw passthrough; then
           echo "Major difference test: PASS"
           library_major="pass"
         else
@@ -127,7 +146,12 @@ jobs:
         fi
         
         # Test control (identical) detection  
-        if uv run python test_fast_filter_ci.py --specific passthrough copy; then
+        if docker run --rm \
+          -v /tmp/music:/tmp/music \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:test \
+          python test_fast_filter_ci.py --specific passthrough copy; then
           echo "Control test: PASS"
           library_control="pass"
         else
@@ -145,12 +169,15 @@ jobs:
     - name: Performance benchmark
       id: performance
       run: |
-        source .venv/bin/activate
-        
         echo "Running performance benchmark..."
         
         start_time=$(date +%s)
-        uv run python test_fast_filter_ci.py --tests 1 --duration 5
+        docker run --rm \
+          -v /tmp/music:/tmp/music \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:test \
+          python test_fast_filter_ci.py --tests 1 --duration 5
         end_time=$(date +%s)
         
         duration=$((end_time - start_time))
@@ -168,9 +195,12 @@ jobs:
 
     - name: List available filters
       run: |
-        source .venv/bin/activate
         echo "📋 Available filters for testing:"
-        uv run python test_fast_filter_ci.py --list
+        docker run --rm \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:test \
+          python test_fast_filter_ci.py --list
 
     - name: Cleanup test files
       if: always()
@@ -219,28 +249,52 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    - name: Install dependencies
+    - name: Cache Docker layers
+      uses: actions/cache@v4
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-matrix-${{ hashFiles('Dockerfile', 'pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-docker-matrix-
+          ${{ runner.os }}-docker-
+
+    - name: Build Docker image with cache
       run: |
-        sudo apt-get update && sudo apt-get install -y ffmpeg
-        pip install uv && uv venv && source .venv/bin/activate && uv pip install -e .
+        docker buildx build \
+          --cache-from=type=local,src=/tmp/.buildx-cache \
+          --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+          --load \
+          --tag ffmpeg-mcp:matrix-test \
+          .
+        
+        # Move cache to avoid size issues
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
 
     - name: Prepare test environment
       run: |
         mkdir -p /tmp/music/source
-        ffmpeg -f lavfi -i testsrc2=duration=30:size=720x1280:rate=30 \
-               -f lavfi -i sine=frequency=440:duration=30 \
-               -c:v libx264 -c:a aac -shortest \
-               /tmp/music/source/_wZ5Hof5tXY_136.mp4
-        ffmpeg -f lavfi -i sine=frequency=220:duration=30 -c:a flac \
-               /tmp/music/source/Subnautic\ Measures.flac
+        docker run --rm \
+          -v /tmp/music:/tmp/music \
+          ffmpeg-mcp:matrix-test \
+          bash -c "
+            ffmpeg -f lavfi -i testsrc2=duration=30:size=720x1280:rate=30 \
+                   -f lavfi -i sine=frequency=440:duration=30 \
+                   -c:v libx264 -c:a aac -shortest \
+                   /tmp/music/source/_wZ5Hof5tXY_136.mp4 && \
+            ffmpeg -f lavfi -i sine=frequency=220:duration=30 -c:a flac \
+                   '/tmp/music/source/Subnautic Measures.flac'
+          "
 
     - name: Test filter pair ${{ matrix.filter_pair[0] }} vs ${{ matrix.filter_pair[1] }}
       run: |
-        source .venv/bin/activate
         echo "Testing: ${{ matrix.filter_pair[0] }} vs ${{ matrix.filter_pair[1] }}"
-        uv run python test_fast_filter_ci.py --specific "${{ matrix.filter_pair[0] }}" "${{ matrix.filter_pair[1] }}"
+        docker run --rm \
+          -v /tmp/music:/tmp/music \
+          -v ${{ github.workspace }}:/app \
+          --workdir /app \
+          ffmpeg-mcp:matrix-test \
+          python test_fast_filter_ci.py --specific "${{ matrix.filter_pair[0] }}" "${{ matrix.filter_pair[1] }}"
