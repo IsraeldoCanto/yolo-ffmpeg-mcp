@@ -27,27 +27,14 @@ RUN pip install --no-cache-dir uv
 # Create working directory
 WORKDIR /app
 
-# Copy dependency files first for maximum layer caching
-COPY pyproject.toml ./
-
-# Install only the minimal dependencies needed for CI testing
-# Skip heavy video processing libraries for faster builds
+# Install only essential dependencies for CI testing
 RUN uv pip install --system --no-cache \
-    # Core MCP dependencies
-    fastmcp>=2.7.1 \
-    mcp>=1.9.3 \
-    pydantic>=2.11.5 \
-    # Testing framework
     pytest>=8.4.0 \
-    pytest-asyncio>=1.0.0 \
-    # Lightweight utilities
-    PyYAML>=6.0 \
-    jsonschema>=4.0.0
+    pytest-asyncio>=1.0.0
 
 # Copy only test scripts and core modules needed for CI
 COPY test_fast_filter_ci.py ./
 COPY video_comparison_test_library.py ./
-COPY src/ ./src/
 
 # Create required directories
 RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/ci_test_outputs
