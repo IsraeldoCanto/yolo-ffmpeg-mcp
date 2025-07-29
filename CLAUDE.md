@@ -317,6 +317,19 @@ create_video_preset(name, operations)    # Save common workflows as presets
 - **YOLO commands**: When prefixed with "YOLO", implement changes directly without discussion
 - **External LLM Research**: For research-heavy tasks, create info-documents intended for external LLM consumption instead of burning tokens in conversation
 
+## ⚠️ ANTI-PATTERN ALERT: Quick Fix Temptations ⚠️
+
+**BEFORE implementing "quick fixes" - PAUSE and ask:**
+- **Using `/dev/null`?** → "Am I hiding a real problem instead of solving it?"
+- **Using `|| true` to ignore errors?** → "Should this error be handled properly?"
+- **Using `chmod 777` or broad permissions?** → "What's the actual permission issue?"
+- **Mass deleting with `rm -rf`?** → "Do I understand what I'm deleting and why?"
+- **Copying code without understanding?** → "Do I know why this pattern exists?"
+
+**THE RULE:** If it feels "quick and dirty" → STOP → Analyze root cause → Find proper solution
+
+*This reminder exists because the user caught me using `/dev/null` to hide chmod errors instead of fixing the actual problem. Always solve the real issue, don't mask symptoms.*
+
 ### ⚠️ CRITICAL INTERACTION PATTERNS ⚠️
 **ARCHITECTURAL DECISIONS REQUIRE CONSULTATION:**
 - **NEVER** switch base technologies (Ubuntu↔Alpine, framework changes) without discussion
