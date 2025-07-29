@@ -23,6 +23,9 @@ COPY src/ ./src/
 COPY tests/ ./tests/
 COPY README.md ./
 
+# Set Python path for module imports
+ENV PYTHONPATH=/app
+
 # Create directories for file processing
 RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/screenshots /tmp/music/metadata /tmp/music/finished \
     && chown -R mcp:mcp /app /tmp/music
