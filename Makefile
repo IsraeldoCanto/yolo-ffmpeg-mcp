@@ -41,6 +41,17 @@ inspector: ## Start MCP Inspector for testing
 add-mcp: ## Add MCP server to Claude Code (project scope)
 	claude mcp add ffmpeg-mcp --scope project -- uv run python -m src.server
 
+landscape-60s: ## Create 60-second landscape music video
+	python3 create_60s_landscape_video.py
+
+landscape-96s: ## Create 96-second landscape music video  
+	python3 create_landscape_video_via_mcp.py
+
+landscape-videos: landscape-60s landscape-96s ## Create both landscape music videos
+
+verify-videos: ## Verify created landscape videos
+	python3 verify_landscape_videos.py
+
 dev: setup-dirs install ## Full development setup
 	@echo "Development environment ready!"
 	@echo "Next steps:"

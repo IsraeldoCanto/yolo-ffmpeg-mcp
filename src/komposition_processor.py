@@ -39,10 +39,16 @@ class KompositionProcessor:
         bpm = komposition_data.get("bpm") or komposition_data.get("metadata", {}).get("bpm", 120)
         timing = BeatTiming(bpm)
         
+        # Extract total beats from komposition data (handle different formats)
+        total_beats = (komposition_data.get("total_beats") or 
+                      komposition_data.get("beatpattern", {}).get("tobeat") or 
+                      128)  # Default fallback
+        
         # Step 1: Extract and process all segments according to beat timing
         segment_clips = []
+        sources_list = komposition_data.get("sources", [])
         for segment in komposition_data["segments"]:
-            clip_id = await self.process_segment(segment, timing, komposition_data["sources"])
+            clip_id = await self.process_segment(segment, timing, sources_list)
             segment_clips.append({
                 "clip_id": clip_id,
                 "segment_info": segment
@@ -51,28 +57,48 @@ class KompositionProcessor:
         # Step 2: Concatenate all segments
         final_video_id = await self.concatenate_segments(segment_clips)
         
-        # Step 3: Add audio track
-        audio_source = self.find_audio_source(komposition_data["sources"])
-        if audio_source:
-            audio_file_id = await self.resolve_source_to_file_id(audio_source)
-            final_with_audio = await self.add_audio_track(final_video_id, audio_file_id, timing)
-            return {
-                "success": True,
-                "output_file_id": final_with_audio,
-                "composition_info": {
-                    "total_duration_beats": komposition_data["beatpattern"]["tobeat"],
-                    "total_duration_seconds": timing.beats_to_seconds(komposition_data["beatpattern"]["tobeat"]),
-                    "bpm": bpm,
-                    "segments_processed": len(segment_clips)
-                }
-            }
+        # Step 3: Add audio track (handle both old and new format)
+        audio_track = komposition_data.get("audio_track")
+        global_audio = komposition_data.get("globalAudio")
+        
+        if audio_track or global_audio:
+            # For new format, get background music filename from globalAudio
+            if global_audio:
+                audio_filename = global_audio.get("backgroundMusic")
+            else:
+                audio_filename = audio_track
+            
+            if audio_filename:
+                # Try to find audio file by name in source files
+                audio_file_id = await self.resolve_audio_track_to_file_id(audio_filename)
+                if audio_file_id:
+                    final_with_audio = await self.add_audio_track(final_video_id, audio_file_id, timing, global_audio)
+                    
+                    # Get the actual output file path for return
+                    output_path = self.file_manager.resolve_id(final_with_audio)
+                    
+                    return {
+                        "success": True,
+                        "output_file": str(output_path) if output_path else None,
+                        "output_file_id": final_with_audio,
+                        "composition_info": {
+                            "total_duration_beats": total_beats,
+                            "total_duration_seconds": timing.beats_to_seconds(total_beats),
+                            "bpm": bpm,
+                            "segments_processed": len(segment_clips)
+                        }
+                    }
+        
+        # Get the actual output file path for return
+        output_path = self.file_manager.resolve_id(final_video_id)
         
         return {
             "success": True,
+            "output_file": str(output_path) if output_path else None,
             "output_file_id": final_video_id,
             "composition_info": {
-                "total_duration_beats": komposition_data["beatpattern"]["tobeat"],
-                "total_duration_seconds": timing.beats_to_seconds(komposition_data["beatpattern"]["tobeat"]),
+                "total_duration_beats": total_beats,
+                "total_duration_seconds": timing.beats_to_seconds(total_beats),
                 "bpm": bpm,
                 "segments_processed": len(segment_clips)
             }
@@ -81,45 +107,44 @@ class KompositionProcessor:
     async def process_segment(self, segment: Dict[str, Any], timing: BeatTiming, sources: List[Dict[str, Any]]) -> str:
         """Process individual segment: extract, stretch to beat duration, handle media type"""
         
-        # Calculate target duration in seconds
-        target_duration_seconds = timing.beats_to_seconds(segment["duration"])
+        # Calculate target duration in seconds (new format uses start_beat/end_beat)
+        start_beat = segment.get("startBeat", segment.get("start_beat", 0))
+        end_beat = segment.get("endBeat", segment.get("end_beat", 16))
+        target_duration_seconds = timing.beats_to_seconds(end_beat - start_beat)
         
-        # Find source for this segment
-        source = self.find_source_by_id(segment.get("sourceid", ""), sources)
+        # Find source file name for this segment (new format uses source_ref)
+        source_ref = segment.get("sourceRef", segment.get("source_ref", segment.get("segment_id")))
         
-        if not source:
-            # Try to match by segment description to available media
-            source = await self.smart_match_segment_to_source(segment, sources)
+        # For new format, sourceRef contains the filename directly
+        source_filename = source_ref
         
-        if not source:
-            raise ValueError(f"No source found for segment: {segment['id']}")
+        if not source_filename:
+            raise ValueError(f"No source found for segment: {source_ref}")
         
-        # Get file ID for source
-        source_file_id = await self.resolve_source_to_file_id(source)
+        # Get file ID for source by finding it in the file registry
+        source_file_id = await self.resolve_filename_to_file_id(source_filename)
         
-        # Handle different media types
-        if source["mediatype"] == "image":
-            # Convert image to video clip of target duration
-            return await self.create_image_video(source_file_id, target_duration_seconds)
+        # For new format, assume video and process accordingly
+        # Extract video segment with trim parameters from params object
+        params = segment.get("params", {})
+        trim_start = params.get("start", 0)
+        trim_duration = params.get("duration", target_duration_seconds)
         
-        elif source["mediatype"] == "video":
-            # Extract and stretch video segment
-            return await self.extract_and_stretch_video(
-                source_file_id, 
-                segment, 
-                target_duration_seconds
-            )
-        
-        else:
-            raise ValueError(f"Unsupported media type: {source['mediatype']}")
+        # Extract and stretch video segment
+        return await self.extract_and_stretch_video(
+            source_file_id, 
+            segment, 
+            target_duration_seconds,
+            trim_start,
+            trim_duration
+        )
     
-    async def extract_and_stretch_video(self, source_file_id: str, segment: Dict[str, Any], target_duration: float) -> str:
+    async def extract_and_stretch_video(self, source_file_id: str, segment: Dict[str, Any], target_duration: float, trim_start: float = 0, trim_duration: float = None) -> str:
         """Extract video segment and stretch/compress to target duration"""
         
-        # Get original timing info
-        source_timing = segment.get("source_timing", {})
-        original_start = source_timing.get("original_start", 0)
-        original_duration = source_timing.get("original_duration", target_duration)
+        # Use provided trim parameters or fallback to original logic
+        original_start = trim_start
+        original_duration = trim_duration if trim_duration is not None else target_duration
         
         # Step 1: Extract the segment from source video
         try:
@@ -140,19 +165,51 @@ class KompositionProcessor:
         speed_factor = original_duration / target_duration
         
         # Step 3: Apply speed adjustment if needed
+        current_clip = extracted_clip
         if abs(speed_factor - 1.0) > 0.01:  # Only adjust if significant difference
             # Use setpts filter for video speed adjustment
-            speed_adjusted = await process_file_internal(
-                input_file_id=extracted_clip,
+            current_clip = await process_file_internal(
+                input_file_id=current_clip,
                 operation="convert",
                 output_extension="mp4",
                 params_str=f"-vf 'setpts={speed_factor}*PTS' -af 'atempo={1/speed_factor}'",
                 file_manager=self.file_manager,
                 ffmpeg=self.ffmpeg_wrapper
             )
-            return speed_adjusted
         
-        return extracted_clip
+        # Step 4: Apply effects if any are specified
+        effects = segment.get("effects", [])
+        for effect in effects:
+            if isinstance(effect, dict) and "type" in effect:
+                effect_type = effect["type"]
+                effect_params = effect.get("params", {})
+                current_clip = await self.apply_effect(current_clip, effect_type, effect_params)
+                print(f"Applied effect {effect_type} to segment {segment.get('id', 'unknown')}")
+        
+        if not effects:
+            print(f"No effects specified for segment {segment.get('id', 'unknown')}")
+        
+        return current_clip
+    
+    async def apply_effect(self, file_id: str, effect_type: str, params: Dict[str, Any]) -> str:
+        """Apply visual effect to video clip"""
+        try:
+            from .effect_processor import EffectProcessor
+        except (ImportError, ValueError):
+            from effect_processor import EffectProcessor
+        
+        # Initialize effect processor
+        effect_processor = EffectProcessor(self.ffmpeg_wrapper, self.file_manager)
+        
+        # Apply the effect
+        result = await effect_processor.apply_effect(file_id, effect_type, params)
+        
+        if result.get("success"):
+            return result["output_file_id"]
+        else:
+            # If effect fails, log the error but return original file
+            print(f"Warning: Effect {effect_type} failed: {result.get('error')}")
+            return file_id
     
     async def create_image_video(self, image_file_id: str, duration: float) -> str:
         """Convert image to video clip of specified duration"""
@@ -272,18 +329,31 @@ class KompositionProcessor:
 
         return final_result
     
-    async def add_audio_track(self, video_file_id: str, audio_file_id: str, timing: BeatTiming) -> str:
+    async def add_audio_track(self, video_file_id: str, audio_file_id: str, timing: BeatTiming, global_audio: Dict[str, Any] = None) -> str:
         """Add audio track to video, trimming audio to video length"""
         try:
             from .video_operations import process_file_as_finished
         except ImportError:
             from video_operations import process_file_as_finished
         
+        # Build parameters string with global audio settings if available
+        params_parts = [f"audio_file={audio_file_id}"]
+        
+        if global_audio:
+            volume = global_audio.get("musicVolume", 0.8)
+            fade_in = global_audio.get("fadeIn", 2.0)
+            fade_out = global_audio.get("fadeOut", 3.0)
+            params_parts.append(f"volume={volume}")
+            params_parts.append(f"fade_in={fade_in}")
+            params_parts.append(f"fade_out={fade_out}")
+        
+        params_str = " ".join(params_parts)
+        
         return await process_file_as_finished(
             input_file_id=video_file_id,
             operation="replace_audio",
             output_extension="mp4",
-            params_str=f"audio_file={audio_file_id}",
+            params_str=params_str,
             file_manager=self.file_manager,
             ffmpeg=self.ffmpeg_wrapper,
             title="music_video_with_audio"
@@ -353,3 +423,20 @@ class KompositionProcessor:
         
         # Handle other URL types (would need downloading)
         raise NotImplementedError(f"URL type not supported yet: {url}")
+    
+    async def resolve_filename_to_file_id(self, filename: str) -> str:
+        """Find file ID for a filename by registering it from source directory"""
+        from pathlib import Path
+        
+        # Look for file in source directory
+        source_dir = Path("/tmp/music/source")
+        for file_path in source_dir.glob("*"):
+            if file_path.name == filename and file_path.is_file():
+                # Register the file and return its ID
+                return self.file_manager.register_file(file_path)
+        
+        raise FileNotFoundError(f"File not found in source directory: {filename}")
+    
+    async def resolve_audio_track_to_file_id(self, audio_filename: str) -> str:
+        """Find file ID for audio track filename"""
+        return await self.resolve_filename_to_file_id(audio_filename)

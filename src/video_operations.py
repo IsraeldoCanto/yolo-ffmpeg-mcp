@@ -2,8 +2,12 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import time
 
-from .config import SecurityConfig
-from .models import ProcessResult
+try:
+    from .config import SecurityConfig
+    from .models import ProcessResult
+except (ImportError, ValueError):
+    from config import SecurityConfig
+    from models import ProcessResult
 # Analytics service temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md
 # from .analytics_service import get_analytics
 
@@ -15,8 +19,12 @@ except ImportError:
     TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from .file_manager import FileManager
-    from .ffmpeg_wrapper import FFMPEGWrapper
+    try:
+        from .file_manager import FileManager
+        from .ffmpeg_wrapper import FFMPEGWrapper
+    except (ImportError, ValueError):
+        from file_manager import FileManager
+        from ffmpeg_wrapper import FFMPEGWrapper
 
 
 async def execute_core_processing(
