@@ -317,6 +317,16 @@ create_video_preset(name, operations)    # Save common workflows as presets
 - **YOLO commands**: When prefixed with "YOLO", implement changes directly without discussion
 - **External LLM Research**: For research-heavy tasks, create info-documents intended for external LLM consumption instead of burning tokens in conversation
 
+## 📁 Project Organization Preferences
+- **Clean root directory**: Keep project root structured and uncluttered
+- **Organized temporary files**: Use `temp/` subfolder with meaningful categories:
+  - `temp/landscape-videos/` - Landscape video development scripts
+  - `temp/beat-sync-dev/` - Beat synchronization experiments
+  - `temp/filter-testing/` - Filter analysis and testing tools
+  - `temp/analysis-tools/` - Video analysis libraries and utilities
+- **No cluster dumps**: Avoid scattered `.py` files in root - always organize into logical subfolders
+- **Navigable structure**: Prefer clear folder hierarchy over flat file organization
+
 ## ⚠️ ANTI-PATTERN ALERT: Quick Fix Temptations ⚠️
 
 **BEFORE implementing "quick fixes" - PAUSE and ask:**
