@@ -84,7 +84,7 @@ jobs:
           
       - name: Setup CI test environment
         run: |
-          chmod +x test_ci_config.sh
+          # Scripts should be executable from git
           ./test_ci_config.sh setup
           
       - name: Create test media files
@@ -109,7 +109,6 @@ jobs:
           
       - name: Test video verification script
         run: |
-          chmod +x test_music_video_creation.sh
           # Run in headless mode for CI
           export HEADLESS_MODE=true
           export VIDEO_PLAYER=none
@@ -117,7 +116,6 @@ jobs:
           
       - name: Test MCP natural environment workflow
         run: |
-          chmod +x test_mcp_natural_environment.sh
           ./test_mcp_natural_environment.sh "CI integration test workflow"
           
       - name: Test actual video creation (if possible)
@@ -272,11 +270,10 @@ jobs:
           docker cp test_ci_config.sh mcp-test-container:/app/
           docker cp test_music_video_creation.sh mcp-test-container:/app/
           
-          # Make scripts executable and run
-          docker exec mcp-test-container chmod +x test_ci_config.sh test_music_video_creation.sh
+          # Scripts should be executable from git - run directly
           docker exec mcp-test-container bash -c "
             export CI=true HEADLESS_MODE=true VIDEO_PLAYER=none
-            ./test_ci_config.sh setup
+            bash test_ci_config.sh setup
             echo '✅ CI config setup completed in Docker'
           "
           
@@ -315,7 +312,7 @@ jobs:
           
       - name: Setup test environment
         run: |
-          chmod +x test_ci_config.sh run_full_test.sh
+          # Scripts should be executable from git
           export CI=true GITHUB_ACTIONS=true
           ./test_ci_config.sh setup
           
