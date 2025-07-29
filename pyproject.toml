@@ -18,6 +18,11 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
 ]
+komposteur = [
+    # Future: Java bridge dependencies
+    # "py4j>=0.10.9",  # Python-Java gateway
+    # "jpype1>=1.4.1", # Alternative Java integration
+]
 
 [dependency-groups]
 dev = [

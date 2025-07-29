@@ -2,6 +2,32 @@
 
 **🚨 CRITICAL: Read Registry Guidelines Below Before Using This Server**
 
+## 🔗 **Komposteur Integration Roadmap**
+
+**STATUS**: Preparing for Java library integration with proven cloud-scale algorithms
+
+### **Integration Architecture**
+- **Current**: Python MCP server with FFmpeg processing 
+- **Target**: Hybrid Python-Java architecture using Komposteur's microsecond-precise algorithms
+- **Bridge**: Py4J or JEP for Python-Java communication
+- **Security**: Maintain MCP file ID security model
+
+### **Priority Komposteur Algorithms**
+1. **Beat Synchronization** - 120 BPM = 8s per 16 beats formula (proven in production)
+2. **Microsecond-Precise Timing** - Segment extraction with frame-perfect accuracy  
+3. **S3 Caching Logic** - Intelligent cache strategies for video processing
+4. **Video Validation Pipeline** - Quality checks and format validation
+
+### **Implementation Phases**
+- **Phase 1**: Extract komposteur-core JAR (remove Spring Boot/cloud deps)
+- **Phase 2**: Python bridge layer with consistent error handling
+- **Phase 3**: MCP tool registration for hybrid processing workflows
+
+### **Technical Requirements**
+- GitHub Packages authentication setup for JAR dependencies
+- Python-Java bridge configuration (Py4J recommended)
+- MCP tool pattern: `@mcp.tool() async def komposteur_beat_sync(...)`
+
 ## 🎯 **LLM Interaction Guidelines** 
 
 ### **🚫 NEVER Do These Things**
