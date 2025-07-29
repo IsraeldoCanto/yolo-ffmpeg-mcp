@@ -9,14 +9,11 @@ RUN uv pip install --system --no-cache \
     fastmcp>=2.7.1 \
     mcp>=1.9.3 \
     pydantic>=2.11.5 \
-    # Testing dependencies
     pytest>=8.4.0 \
     pytest-asyncio>=1.0.0 \
-    # Minimal dependencies for Alpine
     jsonschema>=4.0.0 \
-    # Audio effect dependencies
     PyYAML>=6.0
-    # Note: opencv-python-headless, pillow, numpy, psutil pre-installed in base image
+# Note: opencv-python-headless, pillow, numpy, psutil pre-installed in base image
 
 # Copy application code
 COPY src/ ./src/
