@@ -23,8 +23,10 @@ COPY src/ ./src/
 COPY tests/ ./tests/
 COPY README.md ./
 
-# Set Python path for module imports
+# Set Python path for module imports  
 ENV PYTHONPATH=/app
+# Also add to shell profile for interactive sessions
+RUN echo 'export PYTHONPATH=/app' >> /etc/profile
 
 # Create directories for file processing
 RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/screenshots /tmp/music/metadata /tmp/music/finished \
