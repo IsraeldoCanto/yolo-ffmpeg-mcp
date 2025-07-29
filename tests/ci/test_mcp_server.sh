@@ -316,8 +316,11 @@ echo "Testing basic connectivity..."
 curl_mcp_request "list_files" "{}"
 EOF
 
-# Try to make executable, but don't fail in Docker environments
-chmod +x "$TEST_OUTPUT_DIR/test_mcp_http.sh" 2>/dev/null || true
+# Make the generated script executable (may fail in some Docker volume mounts)
+if ! chmod +x "$TEST_OUTPUT_DIR/test_mcp_http.sh" 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  Warning: Could not make script executable (Docker volume limitation)${NC}"
+    echo -e "   Script created but may need to be run with: bash $TEST_OUTPUT_DIR/test_mcp_http.sh"
+fi
 
 echo -e "${GREEN}✅ Created HTTP test script at: $TEST_OUTPUT_DIR/test_mcp_http.sh${NC}"
 echo ""
