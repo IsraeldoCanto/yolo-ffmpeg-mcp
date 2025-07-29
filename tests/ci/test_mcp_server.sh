@@ -316,7 +316,8 @@ echo "Testing basic connectivity..."
 curl_mcp_request "list_files" "{}"
 EOF
 
-chmod +x "$TEST_OUTPUT_DIR/test_mcp_http.sh"
+# Try to make executable, but don't fail in Docker environments
+chmod +x "$TEST_OUTPUT_DIR/test_mcp_http.sh" 2>/dev/null || true
 
 echo -e "${GREEN}✅ Created HTTP test script at: $TEST_OUTPUT_DIR/test_mcp_http.sh${NC}"
 echo ""

@@ -17,7 +17,8 @@ export VIDEO_PLAYER=none
 # Test 1: Setup CI environment
 echo ""
 echo "📋 Test 1: CI Environment Setup"
-chmod +x test_ci_config.sh
+# Try to make executable, but don't fail if it's already executable or chmod fails
+chmod +x test_ci_config.sh 2>/dev/null || true
 ./test_ci_config.sh setup
 
 # Test 2: Python dependencies
@@ -66,7 +67,8 @@ echo "✅ Video verification passed"
 # Test 6: Test scripts
 echo ""
 echo "📋 Test 6: Test Scripts"
-chmod +x test_music_video_creation.sh
+# Try to make executable, but don't fail if it's already executable or chmod fails
+chmod +x test_music_video_creation.sh 2>/dev/null || true
 ./test_music_video_creation.sh "Local CI test" "" "natural_language" || echo "Test completed with expected limitations"
 
 # Test 7: Cleanup
