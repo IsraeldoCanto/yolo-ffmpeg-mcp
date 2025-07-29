@@ -316,6 +316,9 @@ create_video_preset(name, operations)    # Save common workflows as presets
 - **Cost-conscious**: Optimize for efficiency and brevity
 - **YOLO commands**: When prefixed with "YOLO", implement changes directly without discussion
 - **External LLM Research**: For research-heavy tasks, create info-documents intended for external LLM consumption instead of burning tokens in conversation
+- **No superlatives or self-applauding**: Avoid "Great!", "Perfect!", "Excellent!" - state facts, not excitement
+- **Don't assume success**: Say "should fix" not "fixes" - QA takes time, don't celebrate prematurely
+- **Professional tone**: Write what you expect might happen, not energetic predictions
 
 ## 📁 Project Organization Preferences
 - **Clean root directory**: Keep project root structured and uncluttered
