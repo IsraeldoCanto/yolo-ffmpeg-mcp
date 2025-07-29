@@ -19,9 +19,8 @@ dev = [
     "pytest-asyncio>=1.0.0",
 ]
 komposteur = [
-    # Future: Java bridge dependencies
-    # "py4j>=0.10.9",  # Python-Java gateway
-    # "jpype1>=1.4.1", # Alternative Java integration
+    "py4j>=0.10.9.7",  # Python-Java gateway for Komposteur integration
+    # Alternative: "jpype1>=1.4.1" if py4j has issues
 ]
 
 [dependency-groups]
