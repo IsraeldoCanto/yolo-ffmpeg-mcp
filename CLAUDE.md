@@ -317,6 +317,24 @@ create_video_preset(name, operations)    # Save common workflows as presets
 - **YOLO commands**: When prefixed with "YOLO", implement changes directly without discussion
 - **External LLM Research**: For research-heavy tasks, create info-documents intended for external LLM consumption instead of burning tokens in conversation
 
+### ⚠️ CRITICAL INTERACTION PATTERNS ⚠️
+**ARCHITECTURAL DECISIONS REQUIRE CONSULTATION:**
+- **NEVER** switch base technologies (Ubuntu↔Alpine, framework changes) without discussion
+- **NEVER** make infrastructure decisions unilaterally (Docker base images, CI architecture)
+- **ALWAYS** ask before changing foundational components, even if "optimizing"
+- **EXAMPLE VIOLATION**: Switching Dockerfile from Alpine→Ubuntu "for faster builds" without asking
+
+**IMPLEMENTATION DISCIPLINE:**
+- **>10 LOC changes = STOP and discuss first** (unless explicitly YOLO prefixed)
+- **Architecture changes = ALWAYS ask** regardless of size
+- **Ask permission**: "Should I change X to Y?" not "I'll change X to Y because..."
+- **Efficiency focus**: Prefer asking concise questions over implementing and explaining
+
+**ASSUME SENIOR DEVELOPER:**
+- **No verbose explanations** unless requested
+- **No architecture lectures** - assume deep technical knowledge
+- **Direct answers**: "Alpine reduces memory 75%" not "Here's why Alpine is better..."
+
 ## AI-Generated Documentation Organization
 - **AI-Generated Files**: All .md files created by Claude/AI assistants should be moved to `documents/ai-generated/` folder
 - **Task-Based Organization**: Group documents by the task/feature they address with concise folder names
