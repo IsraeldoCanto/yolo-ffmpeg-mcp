@@ -24,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           
       - name: Install UV
         run: |
@@ -64,7 +64,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           
       - name: Install UV
         run: |
@@ -180,11 +180,16 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Build Docker image
+      - name: Build Docker image with cache
         run: |
-          echo "🐳 Building Docker image for MCP server..."
-          docker build -t ffmpeg-mcp:ci .
-          echo "✅ Docker image built successfully"
+          echo "🐳 Building Docker image for MCP server using pre-built base..."
+          docker buildx build \
+            --cache-from=type=gha \
+            --cache-to=type=gha,mode=max \
+            --load \
+            --tag ffmpeg-mcp:ci \
+            .
+          echo "✅ Docker image built successfully with pre-built base"
           docker images ffmpeg-mcp:ci
           echo "Note: PySceneDetect warning is expected - using fallback mechanism"
           
@@ -297,7 +302,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           
       - name: Install UV and dependencies
         run: |
@@ -415,7 +420,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
           
       - name: Install UV and dependencies
         run: |
