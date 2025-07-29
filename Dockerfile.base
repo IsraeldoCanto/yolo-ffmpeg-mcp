@@ -1,0 +1,49 @@
+# FFMPEG MCP Server - Base image with system dependencies only
+# This image is pre-built and stored in GitHub Container Registry
+FROM python:3.13-alpine
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies (slow part - cached in GHCR)
+RUN apk add --no-cache \
+    # Core utilities
+    bash \
+    curl \
+    netcat-openbsd \
+    # FFmpeg and multimedia
+    ffmpeg \
+    # Build tools and development libraries
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
+    # OpenCV dependencies 
+    glib-dev \
+    # Audio processing
+    libsndfile-dev \
+    # Python development
+    python3-dev \
+    # For some pip packages
+    build-base
+
+# Install UV for fast Python package management
+RUN pip install --no-cache-dir uv
+
+# Create working directory
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1000 mcp && adduser -u 1000 -G mcp -s /bin/bash -D mcp
+
+# Create directories for file processing
+RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/screenshots /tmp/music/metadata /tmp/music/finished \
+    && chown -R mcp:mcp /app /tmp/music
+
+# Labels
+LABEL maintainer="Stig Lau" \
+      version="1.0.0-base" \
+      description="FFMPEG MCP Server - Base Image (System Dependencies Only)"

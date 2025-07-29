@@ -1,44 +1,10 @@
-# FFMPEG MCP Server - Alpine-based for smaller size and stability
-FROM python:3.13-alpine
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Install system dependencies
-RUN apk add --no-cache \
-    # Core utilities
-    bash \
-    curl \
-    netcat-openbsd \
-    # FFmpeg and multimedia
-    ffmpeg \
-    # Build tools and development libraries
-    gcc \
-    g++ \
-    musl-dev \
-    linux-headers \
-    # OpenCV dependencies 
-    glib-dev \
-    # Audio processing
-    libsndfile-dev \
-    # Python development
-    python3-dev \
-    # For some pip packages
-    build-base
-
-# Install UV for fast Python package management
-RUN pip install --no-cache-dir uv
-
-# Create working directory
-WORKDIR /app
+# FFMPEG MCP Server - Production image using pre-built base
+FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml ./
 
-# Install core Python dependencies (lightweight versions for Alpine)
+# Install core Python dependencies (fast - uses pre-built base)
 RUN uv pip install --system --no-cache \
     fastmcp>=2.7.1 \
     mcp>=1.9.3 \
@@ -55,9 +21,6 @@ RUN uv pip install --system --no-cache \
     opencv-python-headless>=4.8.0 \
     pillow>=10.0.0 \
     numpy>=1.24.0
-
-# Create non-root user
-RUN addgroup -g 1000 mcp && adduser -u 1000 -G mcp -s /bin/bash -D mcp
 
 # Copy application code
 COPY src/ ./src/

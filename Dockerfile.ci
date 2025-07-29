@@ -1,40 +1,14 @@
-# FFMPEG MCP Server - CI-optimized Alpine image (minimal resources)
-FROM python:3.13-alpine
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
-
-# Install only essential system dependencies for CI testing (Alpine packages)
-RUN apk add --no-cache \
-    # Core utilities
-    bash \
-    # FFmpeg for video processing
-    ffmpeg \
-    # Minimal build tools for Python packages
-    gcc \
-    musl-dev \
-    python3-dev
-
-# Install UV for fast Python package management
-RUN pip install --no-cache-dir uv
-
-# Create working directory
-WORKDIR /app
+# FFMPEG MCP Server - CI-optimized using pre-built base
+FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
 
 # Install only essential dependencies for CI testing
 RUN uv pip install --system --no-cache \
     pytest>=8.4.0 \
     pytest-asyncio>=1.0.0
 
-# Copy only test scripts and core modules needed for CI
+# Copy only test scripts needed for CI
 COPY test_fast_filter_ci.py ./
 COPY video_comparison_test_library.py ./
-
-# Create required directories
-RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/ci_test_outputs
 
 # Default command
 CMD ["python", "test_fast_filter_ci.py", "--help"]
