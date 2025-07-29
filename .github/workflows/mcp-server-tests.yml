@@ -219,8 +219,20 @@ jobs:
       - name: Test MCP server import in Docker
         run: |
           echo "🧪 Testing MCP server modules in Docker..."
+          
+          # Debug: Check working directory and Python path
+          echo "Debug: Container environment:"
+          docker exec mcp-test-container pwd
+          docker exec mcp-test-container ls -la /app
+          docker exec mcp-test-container python -c "import sys; print('Python path:', sys.path)"
+          docker exec mcp-test-container printenv | grep PYTHON || echo "No PYTHON env vars"
+          
           # Test imports with expected PySceneDetect warnings
           OUTPUT=$(docker exec mcp-test-container python -c "
+          import sys
+          import os
+          print(f'Working dir: {os.getcwd()}')
+          print(f'Python path: {sys.path}')
           try:
               import src.server
               import src.file_manager  
