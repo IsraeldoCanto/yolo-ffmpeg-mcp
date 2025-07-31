@@ -269,6 +269,47 @@ class EffectProcessor:
             performance_tier="fast",
             estimated_time_per_second=0.12
         )
+        
+        # Add alias for blur (maps to gaussian_blur)
+        self.effects_registry["blur"] = EffectDefinition(
+            name="blur",
+            provider=EffectProvider.FFMPEG,
+            category="blur",
+            description="Simple blur effect (alias for gaussian_blur)",
+            parameters=[
+                EffectParameter("radius", "float", 2.0, 0.1, 20.0, "Blur radius")
+            ],
+            filter_chain="gblur=sigma={radius}",
+            performance_tier="fast",
+            estimated_time_per_second=0.1
+        )
+        
+        # Add leica_look effect from FFmpeg wrapper
+        self.effects_registry["leica_look"] = EffectDefinition(
+            name="leica_look",
+            provider=EffectProvider.FFMPEG,
+            category="color",
+            description="Leica-style color grading with vintage curves",
+            parameters=[],
+            filter_chain="curves=vintage,eq=contrast=1.1:brightness=0.05:saturation=0.9:gamma=1.05,colorbalance=rs=0.1:gs=-0.05:bs=-0.1:rm=0.05:gm=0:bm=-0.05:rh=-0.05:gh=0.05:bh=0.1,unsharp=5:5:0.8:3:3:0.4",
+            performance_tier="medium",
+            estimated_time_per_second=0.15
+        )
+        
+        # Add fade effect for global filters
+        self.effects_registry["fade"] = EffectDefinition(
+            name="fade",
+            provider=EffectProvider.FFMPEG,
+            category="transition",
+            description="Fade in/out effect",
+            parameters=[
+                EffectParameter("in", "float", 1.0, 0.0, 10.0, "Fade in duration (seconds)"),
+                EffectParameter("out", "float", 1.0, 0.0, 10.0, "Fade out duration (seconds)")
+            ],
+            filter_chain="fade=in:0:{in},fade=out:st={fade_out_start}:d={out}",
+            performance_tier="fast",
+            estimated_time_per_second=0.05
+        )
     
     def _register_external_effects(self, effects_data: Dict[str, Any]):
         """Register effects from external JSON configuration"""

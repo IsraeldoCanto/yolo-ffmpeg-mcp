@@ -18,14 +18,3 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.0.0",
 ]
-komposteur = [
-    "py4j>=0.10.9.7",  # Python-Java gateway for Komposteur integration
-    # Alternative: "jpype1>=1.4.1" if py4j has issues
-]
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.0",
-    "pytest-asyncio>=1.0.0",
-    "pyyaml>=6.0.2",
-]

@@ -63,14 +63,27 @@ analytics_enabled = os.getenv("ANALYTICS_ENABLED", "true").lower() == "true"
 if configure_analytics:
     configure_analytics(firebase_endpoint, analytics_enabled, firebase_api_key)
 
+# Register Komposteur integration
+try:
+    import sys
+    from pathlib import Path
+    integration_path = Path(__file__).parent.parent / "integration" / "komposteur" / "tools"
+    sys.path.insert(0, str(integration_path.parent))
+    from tools.mcp_tools import register_komposteur_tools
+    komposteur_tools = register_komposteur_tools(mcp)
+    print(f"✅ Registered {len(komposteur_tools)} Komposteur tools: {komposteur_tools}")
+except Exception as e:
+    print(f"⚠️  Komposteur integration failed: {e}")
+    # Continue without Komposteur tools
+
 # Initialize components
 file_manager = FileManager()
 ffmpeg = FFMPEGWrapper(SecurityConfig.FFMPEG_PATH)
 content_analyzer = VideoContentAnalyzer()
-komposition_processor = KompositionProcessor(file_manager, ffmpeg)
+komposition_processor = KompositionProcessor()
 transition_processor = TransitionProcessor(file_manager, ffmpeg)
 speech_detector = SpeechDetector()
-speech_komposition_processor = SpeechKompositionProcessor(file_manager, ffmpeg)
+speech_komposition_processor = SpeechKompositionProcessor()
 enhanced_speech_analyzer = EnhancedSpeechAnalyzer()
 composition_planner = CompositionPlanner()
 komposition_build_planner = KompositionBuildPlanner()
@@ -4725,6 +4738,152 @@ async def create_multi_video_comparison(
     return await video_comparison_tool.create_four_way_comparison(
         file_ids, labels, config
     )
+
+
+@mcp.tool()
+async def verify_music_video(
+    file_id: str,
+    expected_duration: Optional[float] = None,
+    expected_resolution: Optional[str] = None,
+    check_audio: bool = True,
+    check_video: bool = True
+) -> Dict[str, Any]:
+    """🎵 VERIFICATION - Verify music video meets expected criteria
+    
+    Comprehensive verification component that validates a music video meets
+    expected properties. Returns detailed analysis for LLM validation.
+    
+    Args:
+        file_id: Video file ID to verify
+        expected_duration: Expected duration in seconds (tolerance ±2s)
+        expected_resolution: Expected resolution (e.g., "1920x1080")
+        check_audio: Whether to verify audio track exists
+        check_video: Whether to verify video track exists
+    
+    Returns:
+        Dictionary with verification results and detailed analysis
+    
+    Example:
+        verify_music_video(
+            file_id="video_12345",
+            expected_duration=60.0,
+            expected_resolution="1920x1080"
+        )
+    """
+    try:
+        # Get detailed file info
+        info_result = await get_file_info(file_id)
+        if not info_result.get('media_info', {}).get('success'):
+            return {
+                "success": False,
+                "error": "Could not analyze video file",
+                "verification_failed": True
+            }
+        
+        video_props = info_result['media_info']['video_properties']
+        basic_info = info_result['basic_info']
+        
+        # Initialize verification results
+        verification = {
+            "success": True,
+            "file_id": file_id,
+            "verification_passed": True,
+            "checks_performed": [],
+            "failures": [],
+            "properties": {
+                "file_size_mb": basic_info.get('size', 0) / (1024 * 1024),
+                "duration": video_props.get('duration', 0),
+                "resolution": video_props.get('resolution'),
+                "has_video": video_props.get('has_video', False),
+                "has_audio": video_props.get('has_audio', False),
+                "codec": video_props.get('codec'),
+                "bitrate": video_props.get('bitrate'),
+                "fps": video_props.get('fps')
+            }
+        }
+        
+        # Check video track
+        if check_video:
+            verification["checks_performed"].append("video_track_exists")
+            if not video_props.get('has_video', False):
+                verification["failures"].append("No video track found")
+                verification["verification_passed"] = False
+        
+        # Check audio track
+        if check_audio:
+            verification["checks_performed"].append("audio_track_exists")
+            if not video_props.get('has_audio', False):
+                verification["failures"].append("No audio track found")
+                verification["verification_passed"] = False
+        
+        # Check duration
+        if expected_duration is not None:
+            verification["checks_performed"].append("duration_check")
+            actual_duration = video_props.get('duration', 0)
+            duration_diff = abs(actual_duration - expected_duration)
+            
+            if duration_diff > 2.0:  # ±2 second tolerance
+                verification["failures"].append(
+                    f"Duration mismatch: expected {expected_duration}s, got {actual_duration}s (diff: {duration_diff:.1f}s)"
+                )
+                verification["verification_passed"] = False
+            else:
+                verification["duration_match"] = True
+        
+        # Check resolution
+        if expected_resolution is not None:
+            verification["checks_performed"].append("resolution_check")
+            actual_resolution = video_props.get('resolution')
+            
+            if actual_resolution != expected_resolution:
+                verification["failures"].append(
+                    f"Resolution mismatch: expected {expected_resolution}, got {actual_resolution}"
+                )
+                verification["verification_passed"] = False
+            else:
+                verification["resolution_match"] = True
+        
+        # Quality checks
+        verification["checks_performed"].append("quality_checks")
+        quality_issues = []
+        
+        # Check file size (should be reasonable)
+        file_size_mb = verification["properties"]["file_size_mb"]
+        if file_size_mb < 0.1:
+            quality_issues.append("File size very small (< 0.1MB)")
+        elif file_size_mb > 500:
+            quality_issues.append(f"File size very large ({file_size_mb:.1f}MB)")
+        
+        # Check codec
+        codec = video_props.get('codec')
+        if codec and 'h264' not in codec.lower() and 'h265' not in codec.lower():
+            quality_issues.append(f"Unusual codec: {codec}")
+        
+        # Check bitrate
+        bitrate = video_props.get('bitrate')
+        if bitrate and bitrate < 500:
+            quality_issues.append(f"Low bitrate: {bitrate} kbps")
+        
+        verification["quality_issues"] = quality_issues
+        if quality_issues:
+            verification["has_quality_concerns"] = True
+        
+        # Summary
+        verification["summary"] = {
+            "total_checks": len(verification["checks_performed"]),
+            "failed_checks": len(verification["failures"]),
+            "quality_concerns": len(quality_issues),
+            "overall_status": "PASS" if verification["verification_passed"] and not quality_issues else "FAIL"
+        }
+        
+        return verification
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Verification failed: {str(e)}",
+            "verification_failed": True
+        }
 
 
 # Run the server

@@ -1,0 +1,36 @@
+{
+  "komposition_id": "film_noir_128_beats_v2",
+  "bpm": 120,
+  "audio_track": "Subnautic Measures.flac",
+  "sources": {
+    "first_half": "PXL_20250306_132546255.mp4",
+    "second_half": "_wZ5Hof5tXY_136.mp4"
+  },
+  "timeline": [
+    {
+      "source_ref": "first_half",
+      "start_beat": 0,
+      "end_beat": 64,
+      "trim_start": 0,
+      "trim_duration": 32,
+      "description": "Natural color first half"
+    },
+    {
+      "source_ref": "second_half", 
+      "start_beat": 64,
+      "end_beat": 128,
+      "trim_start": 0,
+      "trim_duration": 32,
+      "description": "Film noir second half",
+      "effects": [
+        {
+          "type": "film_noir",
+          "parameters": {
+            "contrast": 2.2,
+            "brightness": -0.12
+          }
+        }
+      ]
+    }
+  ]
+}

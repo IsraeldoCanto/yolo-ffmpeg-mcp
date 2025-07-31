@@ -8,12 +8,14 @@ from pathlib import Path
 
 try:
     from ..bridge.komposteur_bridge import get_bridge
+    from ..bridge.uber_kompost_bridge import get_uber_bridge
 except ImportError:
     # Fallback for testing or standalone usage
     import sys
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from bridge.komposteur_bridge import get_bridge
+    from bridge.uber_kompost_bridge import get_uber_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +214,91 @@ def register_komposteur_tools(server):
             }
     
     @server.tool()
+    async def komposteur_process_kompost(kompost_json_path: str) -> Dict[str, Any]:
+        """
+        Process a kompost.json file using Komposteur's curated FFMPEG workflows
+        
+        This is the primary integration point for processing kompost.json files
+        containing curated FFMPEG effects and beat-synchronized video workflows.
+        
+        Args:
+            kompost_json_path: Path to the kompost.json configuration file
+            
+        Returns:
+            Dict with processing results, output video path, and applied effects
+        """
+        try:
+            bridge = get_bridge()
+            if not bridge.is_available():
+                return {
+                    "success": False,
+                    "error": "Komposteur bridge not available"
+                }
+            
+            result = bridge.process_kompost_json(kompost_json_path)
+            
+            if result["success"]:
+                return {
+                    "success": True,
+                    "output_video_path": result["output_video_path"],
+                    "processing_log": result["processing_log"],
+                    "curated_effects_used": result["curated_effects_used"],
+                    "ffmpeg_commands_executed": result["ffmpeg_commands_executed"],
+                    "total_processing_time": result["total_processing_time"],
+                    "raw_result": result.get("raw_result", ""),
+                    "algorithm": "Komposteur curated FFMPEG workflow processor"
+                }
+            else:
+                return result
+                
+        except Exception as e:
+            logger.error(f"Komposteur kompost.json processing failed: {e}")
+            return {
+                "success": False,
+                "error": f"Kompost processing failed: {str(e)}"
+            }
+    
+    @server.tool()
+    async def uber_kompost_process_json(kompost_json_path: str) -> Dict[str, Any]:
+        """
+        Process kompost.json using uber-kompost JAR with JSON API
+        
+        This is the primary tool for the uber-kompost integration that processes
+        kompost.json files and creates actual video output using the Java library.
+        
+        Args:
+            kompost_json_path: Absolute path to the kompost.json file
+            
+        Returns:
+            Dict with processing results, output video path, and metadata
+        """
+        try:
+            bridge = get_uber_bridge()
+            if not bridge.is_available():
+                return {
+                    "success": False,
+                    "error": "Uber-kompost bridge not available. Build JAR with: mvn clean package -pl uber-kompost -DskipTests"
+                }
+            
+            result = bridge.process_kompost_json(kompost_json_path)
+            
+            if result["success"]:
+                return {
+                    "success": True,
+                    "processing_result": result,
+                    "algorithm": "Uber-kompost JSON API processor"
+                }
+            else:
+                return result
+                
+        except Exception as e:
+            logger.error(f"Uber-kompost processing failed: {e}")
+            return {
+                "success": False,
+                "error": f"Uber-kompost processing failed: {str(e)}"
+            }
+    
+    @server.tool()
     async def komposteur_get_status() -> Dict[str, Any]:
         """
         Get Komposteur integration status and version information
@@ -255,11 +342,13 @@ def register_komposteur_tools(server):
                 "error": f"Status check failed: {str(e)}"
             }
     
-    logger.info("Registered 5 Komposteur MCP tools")
+    logger.info("Registered 7 Komposteur MCP tools")
     return [
         "komposteur_beat_sync",
         "komposteur_extract_segment", 
         "komposteur_validate_media",
         "komposteur_calculate_beat_duration",
+        "komposteur_process_kompost",
+        "uber_kompost_process_json",
         "komposteur_get_status"
     ]
