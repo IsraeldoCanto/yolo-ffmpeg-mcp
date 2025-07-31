@@ -360,17 +360,121 @@ async def get_available_transitions() -> Dict[str, Any]:
         }
     }
     
+    # Add new xfade transition types
+    xfade_transitions = {
+        "wipe_left": {
+            "name": "Wipe Left",
+            "description": "Left-to-right wipe transition",
+            "category": "wipe",
+            "performance": "fast"
+        },
+        "wipe_up": {
+            "name": "Wipe Up", 
+            "description": "Bottom-to-top wipe transition",
+            "category": "wipe",
+            "performance": "fast"
+        },
+        "wipe_down": {
+            "name": "Wipe Down",
+            "description": "Top-to-bottom wipe transition", 
+            "category": "wipe",
+            "performance": "fast"
+        },
+        "slide_left": {
+            "name": "Slide Left",
+            "description": "Slide transition moving left",
+            "category": "slide",
+            "performance": "fast"
+        },
+        "slide_right": {
+            "name": "Slide Right", 
+            "description": "Slide transition moving right",
+            "category": "slide",
+            "performance": "fast"
+        },
+        "slide_up": {
+            "name": "Slide Up",
+            "description": "Slide transition moving up",
+            "category": "slide", 
+            "performance": "fast"
+        },
+        "slide_down": {
+            "name": "Slide Down",
+            "description": "Slide transition moving down",
+            "category": "slide",
+            "performance": "fast"
+        },
+        "circle_crop": {
+            "name": "Circle Crop",
+            "description": "Circular crop reveal transition",
+            "category": "crop",
+            "performance": "fast"
+        },
+        "fade_black": {
+            "name": "Fade Black",
+            "description": "Fade through black transition",
+            "category": "fade",
+            "performance": "fast"
+        },
+        "fade_white": {
+            "name": "Fade White",
+            "description": "Fade through white transition", 
+            "category": "fade",
+            "performance": "fast"
+        }
+    }
+    
+    # Add standard parameters for all xfade transitions
+    standard_xfade_params = [
+        {
+            "name": "duration_beats",
+            "type": "float",
+            "min": 0.5,
+            "max": 8.0,
+            "default": 2.0,
+            "description": "Length of transition in beats"
+        },
+        {
+            "name": "start_offset_beats",
+            "type": "float", 
+            "min": -4.0,
+            "max": 4.0,
+            "default": -1.0,
+            "description": "When to start transition (negative = overlap)"
+        }
+    ]
+    
+    # Add xfade transitions to catalog
+    for transition_id, transition_info in xfade_transitions.items():
+        transitions[transition_id] = {
+            **transition_info,
+            "parameters": standard_xfade_params,
+            "example": {
+                "effect_id": f"{transition_id}_demo",
+                "type": transition_id,
+                "parameters": {
+                    "duration_beats": 1.5,
+                    "start_offset_beats": -0.5
+                },
+                "applies_to": [
+                    {"type": "segment", "id": "clip1"},
+                    {"type": "segment", "id": "clip2"}
+                ]
+            }
+        }
+    
     return {
         "transitions": transitions,
         "total_count": len(transitions),
-        "categories": ["fade", "wipe", "overlay"],
+        "categories": ["fade", "wipe", "overlay", "slide", "crop"],
         "performance_tiers": ["fast", "medium", "slow"],
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "usage_notes": [
             "Use effects_tree structure in komposition JSON",
             "duration_beats calculated as: beats / (bpm/60)", 
             "Negative start_offset_beats creates overlap between clips",
-            "All transitions require exactly 2 clips in applies_to array"
+            "All transitions require exactly 2 clips in applies_to array",
+            "New in v1.1: Added 10 additional xfade transition types"
         ]
     }
 

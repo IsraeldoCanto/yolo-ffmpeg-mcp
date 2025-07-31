@@ -132,6 +132,9 @@ class TransitionProcessor:
         elif effect_type == "opacity_transition":
             return await self.apply_opacity_transition(applies_to, segment_clips, parameters, beats_per_second)
             
+        elif effect_type in ["wipe_left", "wipe_up", "wipe_down", "slide_left", "slide_right", "slide_up", "slide_down", "circle_crop", "fade_black", "fade_white"]:
+            return await self.apply_xfade_transition(effect_type, applies_to, segment_clips, parameters, beats_per_second)
+            
         else:
             raise ValueError(f"Unknown effect type: {effect_type}")
     
@@ -224,6 +227,40 @@ class TransitionProcessor:
             operation="opacity_transition", # Assuming this operation exists
             output_extension="mp4",
             params_str=f"second_video={second_clip} opacity={opacity}",
+            file_manager=self.file_manager,
+            ffmpeg=self.ffmpeg_wrapper
+        )
+        
+        return result
+    
+    async def apply_xfade_transition(self, transition_type: str, applies_to: List[Dict[str, Any]], 
+                                   segment_clips: Dict[str, Any], parameters: Dict[str, Any], 
+                                   beats_per_second: float) -> str:
+        """Apply any xfade-based transition (wipes, slides, fades, crops)"""
+        
+        if len(applies_to) != 2:
+            raise ValueError(f"{transition_type} requires exactly 2 input clips")
+            
+        first_clip = await self.resolve_applies_to(applies_to[0], segment_clips)
+        second_clip = await self.resolve_applies_to(applies_to[1], segment_clips)
+        
+        # Calculate timing
+        duration_beats = parameters.get("duration_beats", 2)
+        start_offset_beats = parameters.get("start_offset_beats", -1)
+        
+        duration_seconds = duration_beats / beats_per_second
+        offset_seconds = abs(start_offset_beats) / beats_per_second
+        
+        try:
+            from .video_operations import process_file_internal
+        except ImportError:
+            from video_operations import process_file_internal
+        
+        result = await process_file_internal(
+            input_file_id=first_clip,
+            operation=transition_type,
+            output_extension="mp4",
+            params_str=f"second_video={second_clip} duration={duration_seconds} offset={offset_seconds}",
             file_manager=self.file_manager,
             ffmpeg=self.ffmpeg_wrapper
         )

@@ -75,6 +75,66 @@ class FFMPEGWrapper:
                      "-map", "[outv]", "-map", "[outa]", "-c:v", "libx264", "-c:a", "aac"],
             "description": "Opacity-based transition with transparency control (requires second_video, opacity 0.0-1.0)"
         },
+        "wipe_left": {
+            "args": ["-i", "{second_video}", "-filter_complex", 
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=wipeleft:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Left-to-right wipe transition (requires second_video, duration, offset)"
+        },
+        "wipe_up": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=wipeup:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Bottom-to-top wipe transition (requires second_video, duration, offset)"
+        },
+        "wipe_down": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=wipedown:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Top-to-bottom wipe transition (requires second_video, duration, offset)"
+        },
+        "slide_left": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=slideleft:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Slide transition moving left (requires second_video, duration, offset)"
+        },
+        "slide_right": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=slideright:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Slide transition moving right (requires second_video, duration, offset)"
+        },
+        "slide_up": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=slideup:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Slide transition moving up (requires second_video, duration, offset)"
+        },
+        "slide_down": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=slidedown:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Slide transition moving down (requires second_video, duration, offset)"
+        },
+        "circle_crop": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=circlecrop:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Circular crop reveal transition (requires second_video, duration, offset)"
+        },
+        "fade_black": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=fadeblack:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Fade through black transition (requires second_video, duration, offset)"
+        },
+        "fade_white": {
+            "args": ["-i", "{second_video}", "-filter_complex",
+                     "[0:v]scale=1280:720,setsar=1:1[v0];[1:v]scale=1280:720,setsar=1:1[v1];[v0][v1]xfade=transition=fadewhite:duration={duration}:offset={offset}[outv]",
+                     "-map", "[outv]", "-c:v", "libx264"],
+            "description": "Fade through white transition (requires second_video, duration, offset)"
+        },
         "leica_look": {
             "args": ["-vf", "curves=vintage,eq=contrast=1.1:brightness=0.05:saturation=0.9:gamma=1.05,colorbalance=rs=0.1:gs=-0.05:bs=-0.1:rm=0.05:gm=0:bm=-0.05:rh=-0.05:gh=0.05:bh=0.1,unsharp=5:5:0.8:3:3:0.4"],
             "description": "Apply Leica-style color grading with vintage curves, contrast, and color balance"
