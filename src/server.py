@@ -254,6 +254,126 @@ async def get_available_operations() -> Dict[str, Dict[str, str]]:
     operations = ffmpeg.get_available_operations()
     return {"operations": operations}
 
+@mcp.tool()
+async def get_available_transitions() -> Dict[str, Any]:
+    """Get catalog of available video transition effects with parameters and examples"""
+    
+    transitions = {
+        "crossfade_transition": {
+            "name": "Crossfade Transition",
+            "description": "Classic dissolve transition between two clips",
+            "category": "fade",
+            "performance": "fast",
+            "parameters": [
+                {
+                    "name": "duration_beats",
+                    "type": "float",
+                    "min": 0.5,
+                    "max": 8.0,
+                    "default": 2.0,
+                    "description": "Length of transition in beats"
+                },
+                {
+                    "name": "start_offset_beats", 
+                    "type": "float",
+                    "min": -4.0,
+                    "max": 4.0,
+                    "default": -1.0,
+                    "description": "When to start transition (negative = overlap)"
+                }
+            ],
+            "example": {
+                "effect_id": "crossfade_demo",
+                "type": "crossfade_transition",
+                "parameters": {
+                    "duration_beats": 2,
+                    "start_offset_beats": -1
+                },
+                "applies_to": [
+                    {"type": "segment", "id": "clip1"},
+                    {"type": "segment", "id": "clip2"}
+                ]
+            }
+        },
+        "gradient_wipe": {
+            "name": "Gradient Wipe",
+            "description": "Directional wipe transition (right-to-left)",
+            "category": "wipe",
+            "performance": "fast",
+            "parameters": [
+                {
+                    "name": "duration_beats",
+                    "type": "float", 
+                    "min": 0.5,
+                    "max": 8.0,
+                    "default": 2.0,
+                    "description": "Length of wipe in beats"
+                },
+                {
+                    "name": "start_offset_beats",
+                    "type": "float",
+                    "min": -4.0,
+                    "max": 4.0, 
+                    "default": -1.0,
+                    "description": "Wipe start timing offset"
+                }
+            ],
+            "example": {
+                "effect_id": "wipe_demo",
+                "type": "gradient_wipe",
+                "parameters": {
+                    "duration_beats": 1.5,
+                    "start_offset_beats": -0.5
+                },
+                "applies_to": [
+                    {"type": "segment", "id": "clip1"},
+                    {"type": "segment", "id": "clip2"}
+                ]
+            }
+        },
+        "opacity_transition": {
+            "name": "Opacity Transition",
+            "description": "Alpha-blended overlay transition",
+            "category": "overlay",
+            "performance": "medium",
+            "parameters": [
+                {
+                    "name": "opacity",
+                    "type": "float",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "default": 0.5,
+                    "description": "Transparency level (0=transparent, 1=opaque)"
+                }
+            ],
+            "example": {
+                "effect_id": "opacity_demo", 
+                "type": "opacity_transition",
+                "parameters": {
+                    "opacity": 0.7
+                },
+                "applies_to": [
+                    {"type": "segment", "id": "clip1"},
+                    {"type": "segment", "id": "clip2"}
+                ]
+            }
+        }
+    }
+    
+    return {
+        "transitions": transitions,
+        "total_count": len(transitions),
+        "categories": ["fade", "wipe", "overlay"],
+        "performance_tiers": ["fast", "medium", "slow"],
+        "schema_version": "1.0",
+        "usage_notes": [
+            "Use effects_tree structure in komposition JSON",
+            "duration_beats calculated as: beats / (bpm/60)", 
+            "Negative start_offset_beats creates overlap between clips",
+            "All transitions require exactly 2 clips in applies_to array"
+        ]
+    }
+
 
 @mcp.tool()
 async def process_file(
