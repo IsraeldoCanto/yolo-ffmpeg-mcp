@@ -53,6 +53,7 @@ except ImportError:
     from .models import FileInfo, ProcessResult # Import models
     from .video_operations import execute_core_processing # Import core processing logic
     from .video_comparison_tool import VideoComparisonTool
+    from .enhanced_komposition_generator import generate_enhanced_komposition_from_description
 
 
 # Initialize MCP server
@@ -3112,6 +3113,90 @@ async def generate_komposition_from_description(
         return {
             "success": False,
             "error": f"Failed to generate komposition from description: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def generate_enhanced_komposition_from_description(
+    description: str,
+    title: str = "Enhanced Content-Aware Composition",
+    use_source_metadata: bool = True
+) -> Dict[str, Any]:
+    """
+    🧠 ENHANCED WORKFLOW - Generate komposition with deep content analysis integration
+    
+    Creates komposition.json with intelligent scene selection based on:
+    - AI-powered video content analysis (scene detection, object recognition)
+    - Source metadata files (usable segments, editing recommendations)
+    - Visual characteristics mapping to musical structure
+    - Content-aware transition and effect selection
+    
+    This enhanced version goes beyond basic komposition generation by:
+    - Analyzing video scenes for visual characteristics and objects
+    - Mapping scene content to musical roles (intro, verse, refrain, outro)
+    - Using source metadata for professional segment selection
+    - Generating content-aware effects and transitions
+    
+    Args:
+        description: Natural language description of desired composition
+        title: Title for the enhanced composition
+        use_source_metadata: Whether to use existing source metadata files (default: True)
+    
+    Returns:
+        Dictionary containing:
+        - success: Boolean indicating generation success
+        - komposition: Enhanced komposition with content-aware segments
+        - komposition_file: Path to saved komposition file
+        - content_analysis_used: Number of files analyzed
+        - scenes_selected: Number of scenes selected
+        - selection_details: Scene selection details with reasons
+        
+    Example Usage:
+        generate_enhanced_komposition_from_description(
+            "Create a 120 BPM music video with dramatic intro, eye-focused verse, dynamic refrain, and fade outro",
+            title="Eye Movement Music Video",
+            use_source_metadata=True
+        )
+    """
+    try:
+        print(f"🧠 GENERATING ENHANCED CONTENT-AWARE KOMPOSITION")
+        print(f"   📝 Description: {description[:100]}...")
+        print(f"   🎬 Title: {title}")
+        print(f"   📚 Using metadata: {use_source_metadata}")
+        
+        result = await generate_enhanced_komposition_from_description(
+            description=description,
+            title=title,
+            use_source_metadata=use_source_metadata
+        )
+        
+        if result["success"]:
+            print(f"   ✅ Enhanced komposition generated successfully")
+            print(f"   📊 Content analysis used: {result.get('content_analysis_used', 0)} files")
+            print(f"   🎯 Scenes selected: {result.get('scenes_selected', 0)}")
+            
+            # Add processing summary
+            result["processing_summary"] = {
+                "description": description,
+                "title": title,
+                "use_source_metadata": use_source_metadata,
+                "enhancement_features": [
+                    "AI-powered scene analysis",
+                    "Content-aware segment selection", 
+                    "Visual characteristic mapping",
+                    "Source metadata integration",
+                    "Musical structure optimization"
+                ]
+            }
+        else:
+            print(f"   ❌ Enhanced komposition generation failed: {result.get('error')}")
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to generate enhanced komposition: {str(e)}"
         }
 
 
