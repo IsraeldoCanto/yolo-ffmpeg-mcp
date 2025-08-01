@@ -22,6 +22,7 @@ try:
     from .komposition_build_planner import KompositionBuildPlanner
     from .komposition_generator import KompositionGenerator
     from .effect_processor import EffectProcessor
+    from .download_service import DownloadService, get_download_service
     try:
         from .analytics_service import configure_analytics, cleanup_analytics
     except ImportError:
@@ -46,6 +47,7 @@ except ImportError:
     from .komposition_build_planner import KompositionBuildPlanner
     from .komposition_generator import KompositionGenerator
     from .effect_processor import EffectProcessor
+    from .download_service import DownloadService, get_download_service
     from .audio_effect_processor import AudioEffectProcessor
     from .format_manager import FormatManager, COMMON_PRESETS
     from .models import FileInfo, ProcessResult # Import models
@@ -90,6 +92,7 @@ komposition_build_planner = KompositionBuildPlanner()
 komposition_generator = KompositionGenerator()
 effect_processor = EffectProcessor(ffmpeg, file_manager)
 audio_effect_processor = AudioEffectProcessor(ffmpeg, file_manager)
+download_service = get_download_service(file_manager)
 format_manager = FormatManager()
 video_comparison_tool = VideoComparisonTool(ffmpeg, file_manager, content_analyzer)
 
@@ -5107,6 +5110,320 @@ async def verify_music_video(
             "success": False,
             "error": f"Verification failed: {str(e)}",
             "verification_failed": True
+        }
+
+
+# === DOWNLOAD SERVICE TOOLS ===
+
+@mcp.tool()
+async def download_youtube_video(
+    url: str,
+    quality: str = "best",
+    max_duration: Optional[int] = None
+) -> Dict[str, Any]:
+    """🎥 DOWNLOAD - Download YouTube video for music video creation
+
+    Downloads YouTube videos using Komposteur's download service and integrates
+    them into the file system for immediate use in music video workflows.
+
+    Args:
+        url: YouTube video URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)
+        quality: Quality preference ("best", "worst", "720p", "1080p", etc.)
+        max_duration: Maximum duration in seconds (None for no limit)
+
+    Returns:
+        Success: file_id for use with other tools, download metadata
+        Failure: Error message and download diagnostics 
+
+    Next Steps:
+        → analyze_video_content(file_id) - Understand downloaded content
+        → process_file(file_id, operation) - Process downloaded video
+        → generate_komposition_from_description() - Create music video with downloaded content
+
+    Example Usage:
+        download_youtube_video("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "720p", 300)
+    """
+    if not download_service.is_available():
+        return {
+            "success": False,
+            "error": "Download service not available - Komposteur download service required",
+            "diagnostics": {
+                "service_available": False,
+                "komposteur_jar_found": download_service.komposteur_jar is not None,
+                "jar_path": str(download_service.komposteur_jar) if download_service.komposteur_jar else None
+            }
+        }
+    
+    try:
+        result = await download_service.download_youtube_video(url, quality, max_duration)
+        
+        if result.success:
+            return {
+                "success": True,
+                "file_id": result.file_id,
+                "file_path": result.file_path,
+                "download_info": {
+                    "original_url": result.original_url,
+                    "duration": result.download_duration,
+                    "file_size_mb": round(result.file_size_bytes / (1024 * 1024), 2),
+                    "format": result.format,
+                    "resolution": result.resolution,
+                    "cache_hit": result.cache_hit
+                },
+                "metadata": result.metadata,
+                "next_steps": [
+                    f"analyze_video_content('{result.file_id}') - Understand video content",
+                    f"get_file_info('{result.file_id}') - Get detailed metadata",
+                    f"process_file('{result.file_id}', 'operation') - Process downloaded video"
+                ]
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.error,
+                "download_info": {
+                    "original_url": result.original_url,
+                    "duration": result.download_duration
+                }
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Download failed: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def download_from_url(
+    url: str,
+    source_type: str = "auto",
+    quality: str = "best",
+    format: str = "mp4"
+) -> Dict[str, Any]:
+    """🌐 DOWNLOAD - Download content from any supported URL
+
+    Universal download tool for YouTube, S3, HTTP, and other content sources
+    using Komposteur's multi-source download capabilities.
+
+    Args:
+        url: Source URL (YouTube, S3, HTTP, etc.)
+        source_type: Source type ("auto", "youtube", "s3", "http", "local")
+        quality: Quality preference for video sources
+        format: Output format preference ("mp4", "webm", "mp3", etc.)
+
+    Returns:
+        Downloaded file information and file_id for further processing
+
+    Supported Sources:
+        - YouTube: youtube.com, youtu.be URLs
+        - S3: AWS S3 bucket URLs
+        - HTTP/HTTPS: Direct video/audio file URLs
+        - Local: file:// URLs
+
+    Example Usage:
+        download_from_url("https://example.com/video.mp4", "http", "best", "mp4")
+    """
+    if not download_service.is_available():
+        return {
+            "success": False,
+            "error": "Download service not available - Komposteur download service required"
+        }
+    
+    try:
+        result = await download_service.download_from_url(url, source_type, quality, format)
+        
+        if result.success:
+            return {
+                "success": True,
+                "file_id": result.file_id,
+                "file_path": result.file_path,
+                "source_info": {
+                    "original_url": result.original_url,
+                    "detected_source_type": source_type,
+                    "duration": result.download_duration,
+                    "file_size_mb": round(result.file_size_bytes / (1024 * 1024), 2),
+                    "format": result.format,
+                    "resolution": result.resolution,
+                    "cache_hit": result.cache_hit
+                },
+                "metadata": result.metadata
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.error,
+                "source_info": {
+                    "original_url": result.original_url,
+                    "detected_source_type": source_type,
+                    "duration": result.download_duration
+                }
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Download failed: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def batch_download_urls(
+    urls: List[str],
+    quality: str = "best",
+    max_concurrent: int = 3
+) -> Dict[str, Any]:
+    """📦 DOWNLOAD - Download multiple URLs concurrently
+
+    Efficiently download multiple videos/content sources in parallel for
+    music video creation workflows that require multiple source files.
+
+    Args:
+        urls: List of URLs to download
+        quality: Quality preference for all downloads
+        max_concurrent: Maximum concurrent downloads (default: 3)
+
+    Returns:
+        Batch download results with individual file information
+
+    Batch Processing Benefits:
+        - Concurrent downloads for faster processing
+        - Automatic error handling per URL
+        - Combined results for workflow integration
+
+    Example Usage:
+        batch_download_urls([
+            "https://www.youtube.com/watch?v=VIDEO1",
+            "https://www.youtube.com/watch?v=VIDEO2"
+        ], "720p", 2)
+    """
+    if not download_service.is_available():
+        return {
+            "success": False,
+            "error": "Download service not available - Komposteur download service required"
+        }
+    
+    if not urls:
+        return {
+            "success": False,
+            "error": "No URLs provided for batch download"
+        }
+    
+    try:
+        results = await download_service.batch_download(urls, quality, max_concurrent)
+        
+        successful_downloads = [r for r in results if r.success]
+        failed_downloads = [r for r in results if not r.success]
+        
+        return {
+            "success": len(successful_downloads) > 0,
+            "batch_summary": {
+                "total_urls": len(urls),
+                "successful": len(successful_downloads),
+                "failed": len(failed_downloads),
+                "success_rate": f"{len(successful_downloads)/len(urls)*100:.1f}%"
+            },
+            "successful_downloads": [
+                {
+                    "file_id": r.file_id,
+                    "original_url": r.original_url,
+                    "file_size_mb": round(r.file_size_bytes / (1024 * 1024), 2),
+                    "format": r.format,
+                    "resolution": r.resolution,
+                    "cache_hit": r.cache_hit
+                }
+                for r in successful_downloads
+            ],
+            "failed_downloads": [
+                {
+                    "original_url": r.original_url,
+                    "error": r.error
+                }
+                for r in failed_downloads
+            ],
+            "next_steps": [
+                "Use file_ids from successful_downloads with other MCP tools",
+                "analyze_video_content(file_id) for each downloaded video",
+                "generate_komposition_from_description() to create music video"
+            ]
+        }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Batch download failed: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def get_download_info(url: str) -> Dict[str, Any]:
+    """ℹ️ DOWNLOAD - Get information about downloadable content
+
+    Preview downloadable content information without actually downloading.
+    Useful for checking video duration, quality options, and metadata before
+    committing to a download.
+
+    Args:
+        url: URL to analyze (YouTube, S3, HTTP, etc.)
+
+    Returns:
+        Content information including title, duration, available formats
+
+    Preview Information:
+        - Video title and description
+        - Duration and file size estimates
+        - Available quality options
+        - Thumbnail and metadata
+
+    Example Usage:
+        get_download_info("https://www.youtube.com/watch?v=VIDEO_ID")
+    """
+    if not download_service.is_available():
+        return {
+            "success": False,
+            "error": "Download service not available - Komposteur download service required"
+        }
+    
+    try:
+        info = await download_service.get_download_info(url)
+        return info
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to get download info: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def cleanup_download_cache(max_age_days: int = 7) -> Dict[str, Any]:
+    """🧹 DOWNLOAD - Clean up old downloaded files
+
+    Remove cached downloads older than specified age to free up disk space.
+    Maintains recent downloads for faster re-access while cleaning old files.
+
+    Args:
+        max_age_days: Maximum age in days (default: 7)
+
+    Returns:
+        Cleanup statistics including files removed and space freed
+
+    Cache Management:
+        - Removes both cached files and metadata
+        - Preserves recent downloads for performance
+        - Reports space savings
+
+    Example Usage:
+        cleanup_download_cache(14)  # Remove downloads older than 2 weeks
+    """
+    try:
+        result = download_service.cleanup_cache(max_age_days)
+        return result
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Cache cleanup failed: {str(e)}"
         }
 
 
