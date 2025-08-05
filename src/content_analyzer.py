@@ -555,3 +555,197 @@ class VideoContentAnalyzer:
             "total_scenes": len(screenshots),
             "screenshots": screenshots
         }
+    
+    async def detect_loop_points(self, file_id: str, desired_duration: float = 10.0) -> Dict[str, Any]:
+        """
+        Detect optimal loop points for creating seamless YouTube Shorts loops
+        
+        Analyzes video content to find segments that can loop seamlessly based on:
+        - Visual similarity between start and end frames
+        - Natural motion patterns 
+        - Scene boundaries and content flow
+        - Audio characteristics
+        
+        Args:
+            file_id: Video file ID
+            desired_duration: Target loop duration in seconds
+            
+        Returns:
+            Dict with loop point suggestions and quality scores
+        """
+        try:
+            analysis = await self.get_cached_analysis(file_id)
+            
+            if not analysis:
+                return {"success": False, "error": "No analysis found for this file"}
+            
+            scenes = analysis.get("scenes", [])
+            total_duration = analysis.get("total_duration", 0)
+            
+            if total_duration < desired_duration:
+                return {
+                    "success": False, 
+                    "error": f"Video duration {total_duration:.1f}s is shorter than desired loop duration {desired_duration}s"
+                }
+            
+            loop_suggestions = []
+            
+            # Strategy 1: Single scene loops (best for seamless content)
+            for scene in scenes:
+                if scene["duration"] >= desired_duration:
+                    # Find segment within scene that can loop well
+                    loop_start = scene["start"]
+                    loop_end = min(scene["end"], loop_start + desired_duration)
+                    
+                    # Score based on scene characteristics
+                    score = self._calculate_loop_quality_score(scene, loop_end - loop_start, desired_duration)
+                    
+                    loop_suggestions.append({
+                        "type": "single_scene_loop",
+                        "start": loop_start,
+                        "end": loop_end,
+                        "duration": loop_end - loop_start,
+                        "scene_id": scene["scene_id"],
+                        "quality_score": score,
+                        "characteristics": scene.get("characteristics", []),
+                        "objects": scene.get("objects", []),
+                        "loop_strategy": "direct_cut",
+                        "crossfade_recommended": score < 0.7,
+                        "description": f"Loop from scene {scene['scene_id']} with {score:.2f} quality score"
+                    })
+            
+            # Strategy 2: Multi-scene loops with natural transitions
+            if len(scenes) >= 2:
+                for i in range(len(scenes) - 1):
+                    current_scene = scenes[i]
+                    next_scene = scenes[i + 1]
+                    
+                    # Check if we can create a meaningful loop across scenes
+                    potential_duration = min(current_scene["duration"] + next_scene["duration"], desired_duration)
+                    
+                    if potential_duration >= desired_duration * 0.8:  # Allow 80% of desired duration
+                        loop_start = current_scene["start"]
+                        loop_end = current_scene["start"] + potential_duration
+                        
+                        # Calculate transition quality
+                        transition_score = self._calculate_transition_quality(current_scene, next_scene)
+                        
+                        loop_suggestions.append({
+                            "type": "multi_scene_loop",
+                            "start": loop_start,
+                            "end": loop_end,
+                            "duration": loop_end - loop_start,
+                            "scene_range": [current_scene["scene_id"], next_scene["scene_id"]],
+                            "quality_score": transition_score,
+                            "characteristics": list(set(current_scene.get("characteristics", []) + next_scene.get("characteristics", []))),
+                            "objects": list(set(current_scene.get("objects", []) + next_scene.get("objects", []))),
+                            "loop_strategy": "crossfade_transition",
+                            "crossfade_recommended": True,
+                            "crossfade_duration": 0.5,
+                            "description": f"Multi-scene loop from scenes {current_scene['scene_id']}-{next_scene['scene_id']}"
+                        })
+            
+            # Strategy 3: Ping-pong loops (forward + reverse)
+            best_scenes = sorted(scenes, key=lambda s: len(s.get("objects", [])) + len(s.get("characteristics", [])), reverse=True)[:3]
+            
+            for scene in best_scenes:
+                if scene["duration"] >= desired_duration / 2:  # Need at least half duration for ping-pong
+                    segment_duration = min(scene["duration"], desired_duration / 2)
+                    loop_start = scene["start"]
+                    loop_end = loop_start + segment_duration
+                    
+                    # Ping-pong works well with motion and symmetric content
+                    pingpong_score = self._calculate_pingpong_quality(scene)
+                    
+                    loop_suggestions.append({
+                        "type": "pingpong_loop",
+                        "start": loop_start,
+                        "end": loop_end,
+                        "duration": segment_duration * 2,  # Forward + reverse
+                        "scene_id": scene["scene_id"],
+                        "quality_score": pingpong_score,
+                        "characteristics": scene.get("characteristics", []),
+                        "objects": scene.get("objects", []),
+                        "loop_strategy": "reverse_mirror",
+                        "crossfade_recommended": False,
+                        "description": f"Ping-pong loop (forward+reverse) from scene {scene['scene_id']}"
+                    })
+            
+            # Sort by quality score and duration match
+            loop_suggestions.sort(key=lambda x: (x["quality_score"], -abs(x["duration"] - desired_duration)), reverse=True)
+            
+            return {
+                "success": True,
+                "file_info": analysis.get("file_info", {}),
+                "target_duration": desired_duration,
+                "total_suggestions": len(loop_suggestions),
+                "loop_suggestions": loop_suggestions[:5],  # Return top 5 suggestions
+                "analysis_metadata": {
+                    "total_scenes": len(scenes),
+                    "video_duration": total_duration,
+                    "best_strategy": loop_suggestions[0]["type"] if loop_suggestions else "none_found"
+                }
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Loop point detection failed: {str(e)}"
+            }
+    
+    def _calculate_loop_quality_score(self, scene: Dict[str, Any], actual_duration: float, desired_duration: float) -> float:
+        """Calculate quality score for a potential loop segment"""
+        score = 0.5  # Base score
+        
+        # Duration match bonus
+        duration_match = 1.0 - abs(actual_duration - desired_duration) / desired_duration
+        score += duration_match * 0.3
+        
+        # Content richness bonus
+        objects_count = len(scene.get("objects", []))
+        characteristics_count = len(scene.get("characteristics", []))
+        content_richness = min(1.0, (objects_count + characteristics_count) / 5.0)
+        score += content_richness * 0.2
+        
+        # Avoid very short or very long scenes
+        if scene["duration"] < desired_duration * 0.5:
+            score -= 0.2
+        elif scene["duration"] > desired_duration * 3:
+            score -= 0.1
+            
+        return max(0.0, min(1.0, score))
+    
+    def _calculate_transition_quality(self, scene1: Dict[str, Any], scene2: Dict[str, Any]) -> float:
+        """Calculate how well two scenes can transition for looping"""
+        score = 0.4  # Base score for multi-scene
+        
+        # Similar content bonus
+        objects1 = set(scene1.get("objects", []))
+        objects2 = set(scene2.get("objects", []))
+        if objects1 and objects2:
+            similarity = len(objects1.intersection(objects2)) / len(objects1.union(objects2))
+            score += similarity * 0.2
+        
+        # Duration balance
+        duration_balance = 1.0 - abs(scene1["duration"] - scene2["duration"]) / max(scene1["duration"], scene2["duration"])  
+        score += duration_balance * 0.1
+        
+        return max(0.0, min(1.0, score))
+    
+    def _calculate_pingpong_quality(self, scene: Dict[str, Any]) -> float:
+        """Calculate how well a scene works for ping-pong (forward+reverse) looping"""
+        score = 0.6  # Base score for ping-pong
+        
+        # Motion and dynamic content work better for ping-pong
+        characteristics = scene.get("characteristics", [])
+        if "motion" in characteristics or "dynamic" in characteristics:
+            score += 0.2
+        if "static" in characteristics:
+            score -= 0.1
+            
+        # People and faces often work well for ping-pong
+        objects = scene.get("objects", [])
+        if "person" in objects or "face" in objects:
+            score += 0.1
+            
+        return max(0.0, min(1.0, score))

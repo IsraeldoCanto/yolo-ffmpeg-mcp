@@ -100,14 +100,7 @@ public class MultiSourceDownloadBridge {
                 if (file.exists()) {
                     fileSizeBytes = file.length();
                 } else {
-                    // Create placeholder file for integration testing
-                    file.createNewFile();
-                    Files.write(file.toPath(), 
-                        ("# Komposteur Download Placeholder\\n" +
-                         "# Source: " + url + "\\n" +
-                         "# Type: " + sourceType + "\\n" +
-                         "# Quality: " + quality + "\\n").getBytes());
-                    fileSizeBytes = file.length();
+                    throw new Exception("Download failed - output file was not created: " + outputFile);
                 }
             }
             
@@ -250,47 +243,74 @@ public class MultiSourceDownloadBridge {
     }
     
     private String downloadYouTube(String url, String outputDir, String quality) throws Exception {
-        // Use existing YoutubeDlConvertor
-        YoutubeDlConvertor convertor = new YoutubeDlConvertor();
-        
-        // For now, create a placeholder - real implementation would use convertor
+        // Use real McpDownloadServiceCli from Komposteur (as recommended by Komposteur Claude)
         String videoId = extractVideoId(url);
         String outputFile = outputDir + "/youtube_" + videoId + "_" + quality + ".mp4";
         
-        // This would be replaced with actual YouTube download logic
-        // convertor.download(url, outputFile, quality);
+        // Call McpDownloadServiceCli for real YouTube downloads
+        ProcessBuilder pb = new ProcessBuilder(
+            "java", "-cp", "integration/komposteur/uber-kompost-latest.jar",
+            "no.lau.download.service.McpDownloadServiceCli",
+            "download_youtube", url, quality, outputFile
+        );
+        
+        Process process = pb.start();
+        String jsonResult = new String(process.getInputStream().readAllBytes());
+        
+        // Parse JSON response to check success
+        if (jsonResult.contains("\"success\": true")) {
+            // Check if the output file was actually created
+            File outputFileObj = new File(outputFile);
+            if (!outputFileObj.exists() || outputFileObj.length() == 0) {
+                throw new Exception("YouTube download failed - McpDownloadServiceCli succeeded but no file created");
+            }
+        } else {
+            throw new Exception("YouTube download failed - McpDownloadServiceCli returned: " + jsonResult);
+        }
         
         return outputFile;
     }
     
     private String downloadS3(String url, String outputDir) throws Exception {
-        // Use existing S3Downloader
+        // Use real S3Downloader from Komposteur
         S3Downloader s3Downloader = new S3Downloader();
         
         String key = extractS3Key(url);
         String outputFile = outputDir + "/s3_" + key.replaceAll("[^a-zA-Z0-9._-]", "_");
         
-        // This would be replaced with actual S3 download logic
-        // s3Downloader.download(url, outputFile);
+        // Call real S3 download using Komposteur's S3Downloader
+        s3Downloader.fetch(url, outputFile, "mp4", Paths.get(outputDir), "");
+        
+        // Check if the output file was created
+        File outputFileObj = new File(outputFile);
+        if (!outputFileObj.exists() || outputFileObj.length() == 0) {
+            throw new Exception("S3 download failed - output file not created or empty");
+        }
         
         return outputFile;
     }
     
     private String downloadHttp(String url, String outputDir) throws Exception {
-        // Use existing UrlDownloader
+        // Use real UrlDownloader from Komposteur
         UrlDownloader urlDownloader = new UrlDownloader();
         
         String filename = extractFilename(url);
         String outputFile = outputDir + "/http_" + filename;
         
-        // This would be replaced with actual HTTP download logic
-        // urlDownloader.download(url, outputFile);
+        // Call real HTTP download using Komposteur's UrlDownloader
+        urlDownloader.fetch(url, outputFile, "mp4", Paths.get(outputDir), "");
+        
+        // Check if the output file was created
+        File outputFileObj = new File(outputFile);
+        if (!outputFileObj.exists() || outputFileObj.length() == 0) {
+            throw new Exception("HTTP download failed - output file not created or empty");
+        }
         
         return outputFile;
     }
     
     private String handleLocalFile(String url, String outputDir) throws Exception {
-        // Use existing LocalFileFetcher
+        // Use real LocalFileFetcher from Komposteur
         LocalFileFetcher localFetcher = new LocalFileFetcher();
         
         String cleanUrl = url.startsWith("file://") ? url.substring(7) : url;
@@ -303,8 +323,14 @@ public class MultiSourceDownloadBridge {
         String filename = sourceFile.getName();
         String outputFile = outputDir + "/local_" + filename;
         
-        // This would copy the local file
-        // localFetcher.fetch(cleanUrl, outputFile);
+        // Call real local file fetch using Komposteur's LocalFileFetcher
+        localFetcher.fetch(cleanUrl, outputFile, "mp4", Paths.get(outputDir), "");
+        
+        // Check if the output file was created
+        File outputFileObj = new File(outputFile);
+        if (!outputFileObj.exists() || outputFileObj.length() == 0) {
+            throw new Exception("Local file fetch failed - output file not created or empty");
+        }
         
         return outputFile;
     }

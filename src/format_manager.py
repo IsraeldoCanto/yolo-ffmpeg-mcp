@@ -354,6 +354,7 @@ class FormatManager:
 # Predefined format presets for common use cases
 COMMON_PRESETS = {
     "youtube_landscape": FormatSpec(AspectRatio.LANDSCAPE_16_9, (1920, 1080), CropMode.CENTER_CROP),
+    "youtube_shorts": FormatSpec(AspectRatio.PORTRAIT_9_16, (1080, 1920), CropMode.SMART_CROP, target_fps=30),
     "instagram_square": FormatSpec(AspectRatio.SQUARE_1_1, (1080, 1080), CropMode.CENTER_CROP),
     "instagram_story": FormatSpec(AspectRatio.PORTRAIT_9_16, (1080, 1920), CropMode.CENTER_CROP),
     "tiktok_vertical": FormatSpec(AspectRatio.PORTRAIT_9_16, (1080, 1920), CropMode.TOP_CROP),

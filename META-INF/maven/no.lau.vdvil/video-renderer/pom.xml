@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>video-renderer</artifactId>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>no.lau.vdvil</groupId>
+        <artifactId>video-renderer-base</artifactId>
+        <version>v20</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>no.lau.vdvil</groupId>
+            <artifactId>video-renderer-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>no.lau.vdvil</groupId>
+            <artifactId>ffmpeg</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xuggle</groupId>
+            <artifactId>xuggle-xuggler</artifactId>
+            <version>5.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <build>
+
+    </build>
+    <repositories>
+        <repository>
+            <id>aws-repository</id>
+            <url>https://kompost.s3.amazonaws.com/maven/</url>
+        </repository>
+    </repositories>
+</project>

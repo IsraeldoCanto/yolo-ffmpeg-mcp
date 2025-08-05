@@ -33,14 +33,14 @@ class KompositionProcessor:
     def __init__(self):
         """Initialize the bridge processor"""
         try:
-            from src.config import Config
+            from src.config import SecurityConfig
             from src.file_manager import FileManager  
-            from src.ffmpeg_wrapper import FFmpegWrapper
+            from src.ffmpeg_wrapper import FFMPEGWrapper
             from src.komposition_processor_mcp import KompositionProcessor as MCPProcessor
             
-            self.config = Config()
-            self.file_manager = FileManager(self.config)
-            self.ffmpeg_wrapper = FFmpegWrapper(self.file_manager)
+            self.config = SecurityConfig()
+            self.file_manager = FileManager()
+            self.ffmpeg_wrapper = FFMPEGWrapper(self.file_manager)
             self.mcp_processor = MCPProcessor(self.file_manager, self.ffmpeg_wrapper)
             
             logger.info("✅ Komposteur bridge processor initialized successfully")

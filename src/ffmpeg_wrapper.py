@@ -146,6 +146,18 @@ class FFMPEGWrapper:
         "apply_leica_and_trim": {
             "args": ["-ss", "{start}", "-t", "{duration}", "-vf", "curves=vintage,eq=contrast=1.1:brightness=0.05:saturation=0.9:gamma=1.05,colorbalance=rs=0.1:gs=-0.05:bs=-0.1:rm=0.05:gm=0:bm=-0.05:rh=-0.05:gh=0.05:bh=0.1,unsharp=5:5:0.8:3:3:0.4"],
             "description": "Trim video segment and apply Leica look in one operation (requires start, duration)"
+        },
+        "create_seamless_loop": {
+            "args": ["-filter_complex", "[0:a]asplit=2[a][b];[a]atrim=0:{fade_duration}[afade_out];[b]atrim={overlap_start}[afade_in];[afade_out][afade_in]acrossfade=d={fade_duration}[audio_loop];[0:v]copy[video_loop]", "-map", "[video_loop]", "-map", "[audio_loop]", "-c:v", "libx264", "-preset", "slower", "-crf", "18", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-bf", "2", "-b_strategy", "0", "-c:a", "aac", "-movflags", "+faststart", "-pix_fmt", "yuv420p"],
+            "description": "Create seamless looping video with crossfade audio and GOP optimization (requires fade_duration, overlap_start)"
+        },
+        "youtube_shorts_optimize": {
+            "args": ["-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slower", "-crf", "18", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-bf", "2", "-b_strategy", "0", "-refs", "3", "-c:a", "aac", "-ar", "48000", "-b:a", "128k", "-movflags", "+faststart", "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Optimize video for YouTube Shorts with 9:16 aspect ratio, GOP structure control, and platform-specific encoding"
+        },
+        "create_loop_with_reverse": {
+            "args": ["-filter_complex", "[0]split=2[original][reverse];[reverse]reverse[rev];[original][rev]concat=n=2:v=1:a=0[video_pingpong];[0]asplit=2[a1][a2];[a2]areverse[a2rev];[a1][a2rev]concat=n=2:v=0:a=1[audio_pingpong]", "-map", "[video_pingpong]", "-map", "[audio_pingpong]", "-c:v", "libx264", "-preset", "slower", "-crf", "18", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-movflags", "+faststart"],
+            "description": "Create ping-pong loop by playing video forward then reverse for seamless looping effect"
         }
     }
 
@@ -166,22 +178,22 @@ class FFMPEGWrapper:
             if isinstance(arg, str) and "{" in arg:
                 for param_name, param_value in params.items():
                     placeholder = f"{{{param_name}}}"
-                    if placeholder in arg:
-                        args[i] = arg.replace(placeholder, str(param_value))
+                    if placeholder in args[i]:  # Use args[i] instead of arg
+                        args[i] = args[i].replace(placeholder, str(param_value))
         
         # Replace parameter placeholders in pre-input args
         for i, arg in enumerate(pre_input_args):
             if isinstance(arg, str) and "{" in arg:
                 for param_name, param_value in params.items():
                     placeholder = f"{{{param_name}}}"
-                    if placeholder in arg:
-                        pre_input_args[i] = arg.replace(placeholder, str(param_value))
+                    if placeholder in pre_input_args[i]:  # Use pre_input_args[i] instead of arg
+                        pre_input_args[i] = pre_input_args[i].replace(placeholder, str(param_value))
         
         # Validate that all placeholders were replaced in both arg lists
         all_args = args + pre_input_args
         for arg in all_args:
             if isinstance(arg, str) and re.search(r'\{[^}]+\}', arg):
-                missing_params = re.findall(r'\{([^}]+)\}', arg)
+                missing_params = list(set(re.findall(r'\{([^}]+)\}', arg)))  # Deduplicate with set()
                 raise ValueError(f"Missing required parameters: {missing_params}")
         
         # Build complete command with pre-input args before -i

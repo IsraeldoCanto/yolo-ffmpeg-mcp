@@ -94,20 +94,45 @@ class DownloadService:
             self._initialize_service()
     
     def _find_komposteur_jar(self) -> Optional[Path]:
-        """Find Komposteur JAR with download service"""
-        # Check for latest JAR with download service
-        potential_paths = [
-            Path("integration/komposteur/uber-kompost-latest.jar"),
-            Path("integration/komposteur/uber-kompost.jar"),
-            Path.home() / ".m2/repository/no/lau/kompost/komposteur-download-service/0.8-SNAPSHOT/komposteur-download-service-0.8-SNAPSHOT-jar-with-dependencies.jar"
+        """Find Komposteur JAR - prefer latest 1.0.0 MCP artifacts"""
+        # Latest 1.0.0 MCP artifacts (should have YouTube download fixes)
+        mcp_jars = [
+            Path.home() / ".m2/repository/no/lau/kompost/mcp/uber-kompost/1.0.0/uber-kompost-1.0.0-shaded.jar",
+            Path.home() / ".m2/repository/no/lau/kompost/mcp/komposteur-core/1.0.0/komposteur-core-1.0.0-jar-with-dependencies.jar",
+            Path.home() / ".m2/repository/no/lau/kompost/mcp/komposteur-core/1.0/komposteur-core-1.0-jar-with-dependencies.jar"
         ]
         
-        for jar_path in potential_paths:
+        # Previous local JARs (fallback)
+        legacy_jars = [
+            Path.home() / ".m2/repository/no/lau/kompost/komposteur-core/0.10.1/komposteur-core-0.10.1-jar-with-dependencies.jar",
+            Path.home() / ".m2/repository/no/lau/kompost/komposteur-core/0.9-SNAPSHOT/komposteur-core-0.9-SNAPSHOT-jar-with-dependencies.jar"
+        ]
+        
+        # Production JAR paths
+        production_paths = [
+            Path("integration/komposteur/uber-kompost-0.10.1.jar"),
+            Path("integration/komposteur/uber-kompost.jar")
+        ]
+        
+        # Prefer latest 1.0.0 MCP JARs first
+        for mcp_jar in mcp_jars:
+            if mcp_jar.exists():
+                logger.info(f"🚀 Using latest 1.0.0 MCP JAR: {mcp_jar}")
+                return mcp_jar
+        
+        # Fallback to legacy local JARs
+        for legacy_jar in legacy_jars:
+            if legacy_jar.exists():
+                logger.info(f"🔧 Using legacy local JAR: {legacy_jar}")
+                return legacy_jar
+        
+        # Final fallback to production JARs
+        for jar_path in production_paths:
             if jar_path.exists():
-                logger.info(f"Found Komposteur JAR: {jar_path}")
+                logger.info(f"📦 Using production JAR: {jar_path}")
                 return jar_path
         
-        logger.warning("No Komposteur JAR with download service found")
+        logger.warning("No Komposteur JAR found (checked 1.0.0 MCP, legacy local, and production)")
         return None
     
     def _initialize_service(self) -> bool:
