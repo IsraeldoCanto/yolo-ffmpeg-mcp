@@ -70,6 +70,34 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Java build artifacts
+*.class
+*.jar
+META-INF/
+target/
+out/
+build/
+
+# Maven/Gradle
+.m2/
+.gradle/
+gradle-wrapper.properties
+
+# Generated files
+*.xjb
+*.generated.*
+
+# ProGuard
+proguard/
+mapping.txt
+
+# Camel/Integration artifacts
+integration/*/target/
+integration/*/*.jar
+integration/*/*.class
+integration/*/META-INF/
+
 # Aider files (contain sensitive information)
 .aider.chat.history.md
 .aider.input.history

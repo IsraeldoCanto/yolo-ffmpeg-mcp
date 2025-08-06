@@ -33,6 +33,7 @@ try:
     from .models import FileInfo, ProcessResult # Import models
     from .video_operations import execute_core_processing # Import core processing logic
     from .video_comparison_tool import VideoComparisonTool
+    from .youtube_upload_service import upload_to_youtube, validate_youtube_shorts
 except ImportError:
     from .file_manager import FileManager
     from .ffmpeg_wrapper import FFMPEGWrapper
@@ -5797,6 +5798,130 @@ async def _validate_youtube_shorts_compliance(file_info: Dict[str, Any]) -> Dict
         compliance["error"] = str(e)
         
     return compliance
+
+
+@mcp.tool()
+async def upload_youtube_short(file_id: str, 
+                              title: str,
+                              description: str = "",
+                              tags: str = "",
+                              privacy_status: str = "private") -> Dict[str, Any]:
+    """📤 YOUTUBE UPLOAD - Upload video as YouTube Short with seamless looping optimization
+    
+    Upload videos to YouTube as Shorts with proper 9:16 aspect ratio and seamless looping.
+    Requires YouTube API credentials and OAuth2 authentication setup.
+    
+    Args:
+        file_id: File ID of video to upload (must be 9:16 aspect ratio)
+        title: Video title for YouTube
+        description: Video description (optional)
+        tags: Comma-separated tags (optional)
+        privacy_status: "private", "public", or "unlisted" (default: private)
+    
+    Authentication Setup:
+        1. Create project in Google Cloud Console
+        2. Enable YouTube Data API v3
+        3. Create OAuth2 credentials
+        4. Download credentials.json file
+        5. Set YOUTUBE_CREDENTIALS_FILE environment variable
+    
+    Example Usage:
+        upload_youtube_short(
+            file_id="file_12345678",
+            title="My Music Video Short",
+            description="Created with MCP FFMPEG Server",
+            tags="music,shorts,loop",
+            privacy_status="private"
+        )
+    
+    Returns:
+        Dictionary with upload results including video_id and URLs
+    """
+    try:
+        # Resolve file path
+        file_path = file_manager.resolve_id(file_id)
+        if not file_path:
+            return {"success": False, "error": f"File ID {file_id} not found"}
+            
+        # Convert tags string to list
+        tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
+        
+        # Upload to YouTube
+        result = await upload_to_youtube(
+            video_path=str(file_path),
+            title=title,
+            description=description,
+            tags=tags_list,
+            privacy_status=privacy_status
+        )
+        
+        return result
+        
+    except Exception as e:
+        return {"success": False, "error": f"YouTube upload failed: {str(e)}"}
+
+
+@mcp.tool()
+async def validate_youtube_short(file_id: str) -> Dict[str, Any]:
+    """🔍 YOUTUBE VALIDATION - Validate video meets YouTube Shorts requirements
+    
+    Check if video meets YouTube Shorts specifications:
+    - 9:16 aspect ratio (1080x1920 recommended)
+    - Duration ≤ 3 minutes
+    - Proper encoding (H.264/AAC)
+    - File size reasonable for upload
+    
+    Args:
+        file_id: File ID of video to validate
+    
+    Returns:
+        Dictionary with validation results and recommendations
+    
+    Example Usage:
+        validate_youtube_short("file_12345678")
+    """
+    try:
+        # Resolve file path
+        file_path = file_manager.resolve_id(file_id)
+        if not file_path:
+            return {"valid": False, "error": f"File ID {file_id} not found"}
+            
+        # Validate video
+        result = await validate_youtube_shorts(str(file_path))
+        
+        # Add detailed video info if available
+        try:
+            video_info = await ffmpeg_wrapper.get_file_info(file_path, file_manager, file_id)
+            if video_info.get("success"):
+                props = video_info.get("video_properties", {})
+                result["video_info"] = {
+                    "resolution": props.get("resolution"),
+                    "duration": props.get("duration"),
+                    "codec": props.get("codec"),
+                    "has_audio": props.get("has_audio", False)
+                }
+                
+                # Check Shorts requirements
+                resolution = props.get("resolution", "")
+                duration = props.get("duration", 0)
+                
+                shorts_checks = {
+                    "aspect_ratio_9_16": "1080x1920" in resolution or "9:16" in resolution,
+                    "duration_under_3min": duration <= 180,
+                    "has_video": props.get("has_video", False),
+                    "has_audio": props.get("has_audio", False)
+                }
+                
+                result["shorts_compliance"] = shorts_checks
+                result["shorts_ready"] = all(shorts_checks.values())
+                
+        except Exception as e:
+            result["video_info_error"] = str(e)
+            
+        return result
+        
+    except Exception as e:
+        return {"valid": False, "error": f"Validation failed: {str(e)}"}
 
 
 @mcp.tool()

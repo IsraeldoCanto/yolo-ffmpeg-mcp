@@ -6,6 +6,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.Arrays;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import no.lau.download.S3Downloader;
 import no.lau.download.UrlDownloader;
@@ -18,6 +24,8 @@ import no.lau.state.YoutubeDlConvertor;
  * Integrates with existing Komposteur download infrastructure.
  */
 public class MultiSourceDownloadBridge {
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -60,13 +68,6 @@ public class MultiSourceDownloadBridge {
         try {
             SourceType sourceType = detectSourceType(url);
             
-            System.out.println("{");
-            System.out.println("  \"success\": true,");
-            System.out.println("  \"sourceType\": \"" + sourceType.name().toLowerCase() + "\",");
-            System.out.println("  \"url\": \"" + url + "\",");
-            System.out.println("  \"outputDir\": \"" + outputDir + "\",");
-            System.out.println("  \"quality\": \"" + quality + "\",");
-            
             // Ensure output directory exists
             File outputDirFile = new File(outputDir);
             if (!outputDirFile.exists()) {
@@ -104,25 +105,39 @@ public class MultiSourceDownloadBridge {
                 }
             }
             
-            System.out.println("  \"filePath\": \"" + outputFile + "\",");
-            System.out.println("  \"fileSizeBytes\": " + fileSizeBytes + ",");
-            System.out.println("  \"format\": \"" + format + "\",");
-            System.out.println("  \"resolution\": \"" + resolution + "\",");
-            System.out.println("  \"downloadClasses\": [");
-            System.out.println("    \"no.lau.download.S3Downloader\",");
-            System.out.println("    \"no.lau.download.UrlDownloader\",");
-            System.out.println("    \"no.lau.download.LocalFileFetcher\",");
-            System.out.println("    \"no.lau.state.YoutubeDlConvertor\"");
-            System.out.println("  ]");
-            System.out.println("}");
+            // Build response using Map and ObjectMapper for proper JSON serialization
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("sourceType", sourceType.name().toLowerCase());
+            response.put("url", url);
+            response.put("outputDir", outputDir);
+            response.put("quality", quality);
+            response.put("filePath", outputFile);
+            response.put("fileSizeBytes", fileSizeBytes);
+            response.put("format", format);
+            response.put("resolution", resolution);
+            response.put("downloadClasses", Arrays.asList(
+                "no.lau.download.S3Downloader",
+                "no.lau.download.UrlDownloader", 
+                "no.lau.download.LocalFileFetcher",
+                "no.lau.state.YoutubeDlConvertor"
+            ));
+            
+            System.out.println(objectMapper.writeValueAsString(response));
             
         } catch (Exception e) {
-            System.out.println("{");
-            System.out.println("  \"success\": false,");
-            System.out.println("  \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\",");
-            System.out.println("  \"sourceType\": \"" + detectSourceType(url).name().toLowerCase() + "\",");
-            System.out.println("  \"url\": \"" + url + "\"");
-            System.out.println("}");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("sourceType", detectSourceType(url).name().toLowerCase());
+            errorResponse.put("url", url);
+            
+            try {
+                System.out.println(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonException) {
+                // Fallback to simple JSON if ObjectMapper fails
+                System.out.println("{\"success\": false, \"error\": \"JSON serialization failed\"}");
+            }
         }
     }
     
@@ -130,96 +145,141 @@ public class MultiSourceDownloadBridge {
         try {
             SourceType sourceType = detectSourceType(url);
             
-            System.out.println("{");
-            System.out.println("  \"success\": true,");
-            System.out.println("  \"sourceType\": \"" + sourceType.name().toLowerCase() + "\",");
-            System.out.println("  \"url\": \"" + url + "\",");
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("sourceType", sourceType.name().toLowerCase());
+            response.put("url", url);
             
             switch (sourceType) {
                 case YOUTUBE:
-                    System.out.println("  \"title\": \"YouTube Video - " + extractVideoId(url) + "\",");
-                    System.out.println("  \"duration\": 180,");
-                    System.out.println("  \"formats\": [\"720p\", \"1080p\", \"best\", \"worst\"],");
-                    System.out.println("  \"thumbnail\": \"https://img.youtube.com/vi/" + extractVideoId(url) + "/maxresdefault.jpg\",");
+                    response.put("title", "YouTube Video - " + extractVideoId(url));
+                    response.put("duration", 180);
+                    response.put("formats", Arrays.asList("720p", "1080p", "best", "worst"));
+                    response.put("thumbnail", "https://img.youtube.com/vi/" + extractVideoId(url) + "/maxresdefault.jpg");
                     break;
                 case S3:
-                    System.out.println("  \"title\": \"S3 Object - " + extractS3Key(url) + "\",");
-                    System.out.println("  \"duration\": 0,");
-                    System.out.println("  \"formats\": [\"original\"],");
+                    response.put("title", "S3 Object - " + extractS3Key(url));
+                    response.put("duration", 0);
+                    response.put("formats", Arrays.asList("original"));
                     break;
                 case HTTP:
                     String filename = extractFilename(url);
-                    System.out.println("  \"title\": \"HTTP Resource - " + filename + "\",");
-                    System.out.println("  \"duration\": 0,");
-                    System.out.println("  \"formats\": [\"original\"],");
+                    response.put("title", "HTTP Resource - " + filename);
+                    response.put("duration", 0);
+                    response.put("formats", Arrays.asList("original"));
                     break;
                 case LOCAL:
                     String localName = extractFilename(url);
-                    System.out.println("  \"title\": \"Local File - " + localName + "\",");
-                    System.out.println("  \"duration\": 0,");
-                    System.out.println("  \"formats\": [\"original\"],");
+                    response.put("title", "Local File - " + localName);
+                    response.put("duration", 0);
+                    response.put("formats", Arrays.asList("original"));
                     break;
             }
             
-            System.out.println("  \"description\": \"Content from " + sourceType.name().toLowerCase() + " source\",");
-            System.out.println("  \"uploader\": \"" + sourceType.name() + " Source\",");
-            System.out.println("  \"availableClasses\": [");
-            System.out.println("    \"no.lau.download.S3Downloader\",");
-            System.out.println("    \"no.lau.download.UrlDownloader\",");
-            System.out.println("    \"no.lau.download.LocalFileFetcher\",");
-            System.out.println("    \"no.lau.state.YoutubeDlConvertor\"");
-            System.out.println("  ]");
-            System.out.println("}");
+            response.put("description", "Content from " + sourceType.name().toLowerCase() + " source");
+            response.put("uploader", sourceType.name() + " Source");
+            response.put("availableClasses", Arrays.asList(
+                "no.lau.download.S3Downloader",
+                "no.lau.download.UrlDownloader",
+                "no.lau.download.LocalFileFetcher",
+                "no.lau.state.YoutubeDlConvertor"
+            ));
+            
+            System.out.println(objectMapper.writeValueAsString(response));
             
         } catch (Exception e) {
-            System.out.println("{");
-            System.out.println("  \"success\": false,");
-            System.out.println("  \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\"");
-            System.out.println("}");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            
+            try {
+                System.out.println(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonException) {
+                System.out.println("{\"success\": false, \"error\": \"JSON serialization failed\"}");
+            }
         }
     }
     
     public void testServices() {
-        System.out.println("{");
-        System.out.println("  \"success\": true,");
-        System.out.println("  \"services\": {");
-        
-        // Test S3Downloader
         try {
-            S3Downloader s3Downloader = new S3Downloader();
-            System.out.println("    \"s3\": { \"available\": true, \"class\": \"no.lau.download.S3Downloader\" },");
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            
+            Map<String, Object> services = new HashMap<>();
+            
+            // Test S3Downloader
+            try {
+                S3Downloader s3Downloader = new S3Downloader();
+                Map<String, Object> s3Info = new HashMap<>();
+                s3Info.put("available", true);
+                s3Info.put("class", "no.lau.download.S3Downloader");
+                services.put("s3", s3Info);
+            } catch (Exception e) {
+                Map<String, Object> s3Info = new HashMap<>();
+                s3Info.put("available", false);
+                s3Info.put("error", e.getMessage());
+                services.put("s3", s3Info);
+            }
+            
+            // Test UrlDownloader
+            try {
+                UrlDownloader urlDownloader = new UrlDownloader();
+                Map<String, Object> httpInfo = new HashMap<>();
+                httpInfo.put("available", true);
+                httpInfo.put("class", "no.lau.download.UrlDownloader");
+                services.put("http", httpInfo);
+            } catch (Exception e) {
+                Map<String, Object> httpInfo = new HashMap<>();
+                httpInfo.put("available", false);
+                httpInfo.put("error", e.getMessage());
+                services.put("http", httpInfo);
+            }
+            
+            // Test LocalFileFetcher
+            try {
+                LocalFileFetcher localFetcher = new LocalFileFetcher();
+                Map<String, Object> localInfo = new HashMap<>();
+                localInfo.put("available", true);
+                localInfo.put("class", "no.lau.download.LocalFileFetcher");
+                services.put("local", localInfo);
+            } catch (Exception e) {
+                Map<String, Object> localInfo = new HashMap<>();
+                localInfo.put("available", false);
+                localInfo.put("error", e.getMessage());
+                services.put("local", localInfo);
+            }
+            
+            // Test YoutubeDlConvertor
+            try {
+                YoutubeDlConvertor youtubeConvertor = new YoutubeDlConvertor();
+                Map<String, Object> youtubeInfo = new HashMap<>();
+                youtubeInfo.put("available", true);
+                youtubeInfo.put("class", "no.lau.state.YoutubeDlConvertor");
+                services.put("youtube", youtubeInfo);
+            } catch (Exception e) {
+                Map<String, Object> youtubeInfo = new HashMap<>();
+                youtubeInfo.put("available", false);
+                youtubeInfo.put("error", e.getMessage());
+                services.put("youtube", youtubeInfo);
+            }
+            
+            response.put("services", services);
+            response.put("supportedSources", Arrays.asList("youtube", "s3", "http", "local"));
+            response.put("version", "1.0.0");
+            
+            System.out.println(objectMapper.writeValueAsString(response));
+            
         } catch (Exception e) {
-            System.out.println("    \"s3\": { \"available\": false, \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\" },");
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            
+            try {
+                System.out.println(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonException) {
+                System.out.println("{\"success\": false, \"error\": \"JSON serialization failed\"}");
+            }
         }
-        
-        // Test UrlDownloader
-        try {
-            UrlDownloader urlDownloader = new UrlDownloader();
-            System.out.println("    \"http\": { \"available\": true, \"class\": \"no.lau.download.UrlDownloader\" },");
-        } catch (Exception e) {
-            System.out.println("    \"http\": { \"available\": false, \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\" },");
-        }
-        
-        // Test LocalFileFetcher
-        try {
-            LocalFileFetcher localFetcher = new LocalFileFetcher();
-            System.out.println("    \"local\": { \"available\": true, \"class\": \"no.lau.download.LocalFileFetcher\" },");
-        } catch (Exception e) {
-            System.out.println("    \"local\": { \"available\": false, \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\" },");
-        }
-        
-        // Test YoutubeDlConvertor
-        try {
-            YoutubeDlConvertor youtubeConvertor = new YoutubeDlConvertor();
-            System.out.println("    \"youtube\": { \"available\": true, \"class\": \"no.lau.state.YoutubeDlConvertor\" }");
-        } catch (Exception e) {
-            System.out.println("    \"youtube\": { \"available\": false, \"error\": \"" + e.getMessage().replace("\"", "\\\"") + "\" }");
-        }
-        
-        System.out.println("  },");
-        System.out.println("  \"supportedSources\": [\"youtube\", \"s3\", \"http\", \"local\"],");
-        System.out.println("  \"version\": \"1.0.0\"");
-        System.out.println("}");
     }
     
     private SourceType detectSourceType(String url) {
