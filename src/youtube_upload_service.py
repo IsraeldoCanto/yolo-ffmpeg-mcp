@@ -243,7 +243,7 @@ class YouTubeUploadService:
         except Exception as e:
             return {"error": str(e)}
             
-    def validate_shorts_video(self, video_path: str) -> Dict[str, Any]:
+    async def validate_shorts_video(self, video_path: str) -> Dict[str, Any]:
         """
         Validate video meets YouTube Shorts requirements
         
@@ -254,12 +254,6 @@ class YouTubeUploadService:
             Dict with validation results
         """
         try:
-            from ..ffmpeg_wrapper import FFMPEGWrapper
-            
-            wrapper = FFMPEGWrapper()
-            # This would need to be made async in the wrapper
-            # For now, return basic validation
-            
             video_path = Path(video_path)
             if not video_path.exists():
                 return {"valid": False, "error": "File not found"}
@@ -267,22 +261,105 @@ class YouTubeUploadService:
             # Basic file checks
             file_size_mb = video_path.stat().st_size / (1024 * 1024)
             
+            # Enhanced validation with ffprobe
+            try:
+                from .ffmpeg_wrapper import FFMPEGWrapper
+                wrapper = FFMPEGWrapper()
+                file_info = await wrapper.get_file_info(video_path)
+                
+                if file_info.get("success"):
+                    props = file_info.get("video_properties", {})
+                    duration = props.get("duration", 0)
+                    resolution = props.get("resolution", "0x0")
+                    has_video = props.get("has_video", False)
+                    has_audio = props.get("has_audio", False)
+                    
+                    # Parse resolution
+                    width, height = 0, 0
+                    if resolution and "x" in resolution:
+                        try:
+                            width, height = map(int, resolution.split('x'))
+                        except ValueError:
+                            pass
+                    
+                    # Calculate aspect ratio
+                    aspect_ratio = width / height if height > 0 else 0
+                    is_shorts_ratio = abs(aspect_ratio - 9/16) < 0.1  # 9:16 with tolerance
+                    is_square = abs(aspect_ratio - 1.0) < 0.1  # 1:1 square format
+                    
+                    # Validate Shorts requirements
+                    checks = {
+                        "file_exists": True,
+                        "file_size_ok": file_size_mb <= 60,  # YouTube Shorts limit
+                        "file_size_optimal": file_size_mb <= 10,  # Recommended size
+                        "format": "mp4" if video_path.suffix.lower() == '.mp4' else "other",
+                        "duration_valid": 15 <= duration <= 180,  # 15s to 3min
+                        "has_video": has_video,
+                        "has_audio": has_audio,
+                        "resolution_hd": width >= 1080 and height >= 1920,
+                        "aspect_ratio_shorts": is_shorts_ratio,
+                        "aspect_ratio_square": is_square,
+                    }
+                    
+                    # Overall validity
+                    valid = (
+                        checks["file_exists"] and 
+                        checks["file_size_ok"] and
+                        checks["format"] == "mp4" and
+                        checks["duration_valid"] and
+                        checks["has_video"] and
+                        (checks["aspect_ratio_shorts"] or checks["aspect_ratio_square"])
+                    )
+                    
+                    # Generate recommendations
+                    recommendations = []
+                    if not checks["aspect_ratio_shorts"] and not checks["aspect_ratio_square"]:
+                        recommendations.append("Convert to 9:16 aspect ratio (1080x1920) for optimal Shorts display")
+                    if not checks["file_size_optimal"]:
+                        recommendations.append("Reduce file size to under 10MB for faster upload and processing")
+                    if not checks["duration_valid"]:
+                        if duration < 15:
+                            recommendations.append("Extend duration to at least 15 seconds")
+                        else:
+                            recommendations.append("Reduce duration to 3 minutes or less")
+                    if not checks["resolution_hd"]:
+                        recommendations.append("Use 1080x1920 resolution for best quality")
+                    if not checks["has_audio"]:
+                        recommendations.append("Consider adding audio track for better engagement")
+                    
+                    return {
+                        "valid": valid,
+                        "file_size_mb": round(file_size_mb, 1),
+                        "duration": duration,
+                        "resolution": resolution,
+                        "aspect_ratio": round(aspect_ratio, 3),
+                        "checks": checks,
+                        "recommendations": recommendations if recommendations else ["Video meets YouTube Shorts requirements"]
+                    }
+            except ImportError:
+                pass
+            
+            # Fallback validation without detailed analysis
+            basic_checks = {
+                "file_exists": True,
+                "file_size_ok": file_size_mb <= 60,
+                "format": "mp4" if video_path.suffix.lower() == '.mp4' else "other"
+            }
+            
             return {
-                "valid": True,
+                "valid": basic_checks["file_exists"] and basic_checks["file_size_ok"] and basic_checks["format"] == "mp4",
                 "file_size_mb": round(file_size_mb, 1),
-                "checks": {
-                    "file_exists": True,
-                    "file_size_ok": file_size_mb < 500,  # Reasonable upper limit
-                    "format": "mp4" if video_path.suffix.lower() == '.mp4' else "other"
-                },
+                "checks": basic_checks,
                 "recommendations": [
                     "Ensure 9:16 aspect ratio (1080x1920)",
-                    "Duration should be 3 minutes or less",
-                    "Use H.264 codec for best compatibility"
+                    "Duration should be 15 seconds to 3 minutes",
+                    "Use H.264 codec with AAC audio",
+                    "Keep file size under 10MB for optimal processing"
                 ]
             }
             
         except Exception as e:
+            logger.error(f"Validation error: {e}")
             return {"valid": False, "error": str(e)}
 
 
@@ -332,7 +409,7 @@ async def validate_youtube_shorts(video_path: str) -> Dict[str, Any]:
     """
     try:
         service = YouTubeUploadService()
-        result = service.validate_shorts_video(video_path)
+        result = await service.validate_shorts_video(video_path)
         return result
     except Exception as e:
         return {"valid": False, "error": str(e)}

@@ -5956,6 +5956,137 @@ async def cleanup_download_cache(max_age_days: int = 7) -> Dict[str, Any]:
         }
 
 
+@mcp.tool()
+async def upload_youtube_video(
+    video_file_id: str,
+    title: str,
+    description: str = "",
+    tags: List[str] = None,
+    privacy_status: str = "private",
+    is_shorts: bool = True
+) -> Dict[str, Any]:
+    """
+    Upload video to YouTube with OAuth2 authentication
+    
+    Perfect for uploading processed videos directly to YouTube with optimized settings
+    for both regular videos and YouTube Shorts.
+    
+    Args:
+        video_file_id: Video file ID from MCP file registry
+        title: Video title for YouTube
+        description: Video description (optional)
+        tags: List of tags/keywords (optional)
+        privacy_status: "private", "public", or "unlisted" (default: "private")
+        is_shorts: Whether to optimize for YouTube Shorts (default: True)
+        
+    Returns:
+        Dictionary containing:
+        - success: Boolean indicating upload completion
+        - video_id: YouTube video ID
+        - video_url: Standard YouTube URL
+        - shorts_url: YouTube Shorts URL (if is_shorts=True)
+        - upload_timestamp: When upload completed
+        
+    Authentication Setup Required:
+        1. Download client_secrets.json from Google Cloud Console
+        2. Set YOUTUBE_CREDENTIALS_FILE environment variable
+        3. First run will open browser for OAuth2 authentication
+        4. Subsequent runs use cached token.json
+        
+    Example Usage:
+        upload_youtube_video(
+            video_file_id="file_abc12345",
+            title="My Amazing Music Video #Shorts",
+            description="Created with MCP FFMPEG Server",
+            tags=["music", "shorts", "ai"],
+            privacy_status="public",
+            is_shorts=True
+        )
+    """
+    try:
+        # Get video file path from registry
+        video_file = file_manager.get_file_by_id(video_file_id)
+        if not video_file:
+            return {"success": False, "error": f"Video file not found: {video_file_id}"}
+            
+        video_path = video_file["path"]
+        if not Path(video_path).exists():
+            return {"success": False, "error": f"Video file does not exist: {video_path}"}
+            
+        # Upload to YouTube
+        result = await upload_to_youtube(
+            video_path=video_path,
+            title=title,
+            description=description,
+            tags=tags or [],
+            privacy_status=privacy_status
+        )
+        
+        # Add file ID to result for tracking
+        if result.get("success"):
+            result["source_file_id"] = video_file_id
+            result["source_filename"] = video_file["filename"]
+            
+        return result
+        
+    except Exception as e:
+        return {"success": False, "error": f"Upload failed: {str(e)}"}
+
+
+@mcp.tool()
+async def validate_youtube_video(video_file_id: str) -> Dict[str, Any]:
+    """
+    Validate video file meets YouTube Shorts requirements
+    
+    Performs comprehensive validation including file size, duration, aspect ratio,
+    resolution, and codec requirements for optimal YouTube Shorts compatibility.
+    
+    Args:
+        video_file_id: Video file ID from MCP file registry
+        
+    Returns:
+        Dictionary containing:
+        - valid: Boolean indicating if video meets requirements
+        - file_size_mb: File size in megabytes
+        - duration: Video duration in seconds
+        - resolution: Video resolution (e.g., "1080x1920")
+        - aspect_ratio: Calculated aspect ratio
+        - checks: Detailed validation checks
+        - recommendations: List of improvement suggestions
+        
+    YouTube Shorts Requirements:
+        - Aspect Ratio: 9:16 (vertical) or 1:1 (square)
+        - Resolution: 1080x1920 recommended
+        - Duration: 15 seconds to 3 minutes
+        - File Size: Under 60MB (10MB recommended)
+        - Format: MP4 with H.264/AAC
+        
+    Example Usage:
+        validate_youtube_video("file_abc12345")
+    """
+    try:
+        # Get video file path from registry
+        video_file = file_manager.get_file_by_id(video_file_id)
+        if not video_file:
+            return {"valid": False, "error": f"Video file not found: {video_file_id}"}
+            
+        video_path = video_file["path"]
+        if not Path(video_path).exists():
+            return {"valid": False, "error": f"Video file does not exist: {video_path}"}
+            
+        # Validate using YouTube service
+        result = await validate_youtube_shorts(video_path)
+        
+        # Add file tracking info
+        result["source_file_id"] = video_file_id
+        result["source_filename"] = video_file["filename"]
+        
+        return result
+        
+    except Exception as e:
+        return {"valid": False, "error": f"Validation failed: {str(e)}"}
+
+
 # Run the server
 if __name__ == "__main__":
     import atexit

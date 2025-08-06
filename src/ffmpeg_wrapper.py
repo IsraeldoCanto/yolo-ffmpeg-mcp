@@ -158,6 +158,22 @@ class FFMPEGWrapper:
         "create_loop_with_reverse": {
             "args": ["-filter_complex", "[0]split=2[original][reverse];[reverse]reverse[rev];[original][rev]concat=n=2:v=1:a=0[video_pingpong];[0]asplit=2[a1][a2];[a2]areverse[a2rev];[a1][a2rev]concat=n=2:v=0:a=1[audio_pingpong]", "-map", "[video_pingpong]", "-map", "[audio_pingpong]", "-c:v", "libx264", "-preset", "slower", "-crf", "18", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-movflags", "+faststart"],
             "description": "Create ping-pong loop by playing video forward then reverse for seamless looping effect"
+        },
+        "youtube_recommended_encode": {
+            "args": ["-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "8000k", "-bufsize", "12000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Encode video with YouTube recommended settings for best quality and compatibility"
+        },
+        "youtube_shorts_premium": {
+            "args": ["-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "8000k", "-bufsize", "12000k", "-pix_fmt", "yuv420p", "-g", "24", "-keyint_min", "24", "-sc_threshold", "0", "-bf", "2", "-b_strategy", "0", "-refs", "3", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Premium YouTube Shorts encoding with optimal quality settings, faster GOP for mobile playback"
+        },
+        "youtube_1080p_optimize": {
+            "args": ["-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "5000k", "-bufsize", "10000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Optimize video for YouTube 1080p with recommended bitrate and quality settings"
+        },
+        "youtube_4k_optimize": {
+            "args": ["-vf", "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-maxrate", "40000k", "-bufsize", "60000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Optimize video for YouTube 4K with high bitrate and premium quality settings"
         }
     }
 
