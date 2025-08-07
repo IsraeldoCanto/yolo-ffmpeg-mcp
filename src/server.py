@@ -1,8 +1,12 @@
 import asyncio
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 from mcp.server.fastmcp import FastMCP
 # Pydantic BaseModel is now in models.py, but FileInfo and ProcessResult are imported directly
@@ -34,6 +38,12 @@ try:
     from .video_operations import execute_core_processing # Import core processing logic
     from .video_comparison_tool import VideoComparisonTool
     from .youtube_upload_service import upload_to_youtube, validate_youtube_shorts
+    from .timeout_manager import (
+        ProcessingTimeEstimator,
+        OperationTimeoutManager,
+        timeout_manager,
+        calculate_operation_timeout
+    )
 except ImportError:
     from .file_manager import FileManager
     from .ffmpeg_wrapper import FFMPEGWrapper
@@ -48,6 +58,12 @@ except ImportError:
     from .komposition_build_planner import KompositionBuildPlanner
     from .komposition_generator import KompositionGenerator
     from .effect_processor import EffectProcessor
+    from .timeout_manager import (
+        ProcessingTimeEstimator,
+        OperationTimeoutManager,
+        timeout_manager,
+        calculate_operation_timeout
+    )
     from .download_service import DownloadService, get_download_service
     from .audio_effect_processor import AudioEffectProcessor
     from .format_manager import FormatManager, COMMON_PRESETS
@@ -3664,50 +3680,23 @@ async def build_video_from_audio_manifest(
         }
 
 
-@mcp.tool()
-async def create_video_from_description(
+async def _internal_create_video_from_description(
     description: str,
     title: str = "Generated Video",
-    execution_mode: str = "full",  # "full", "plan_only", "preview"
-    quality: str = "standard",     # "draft", "standard", "high"
+    execution_mode: str = "full",
+    quality: str = "standard",
     custom_bpm: Optional[int] = None,
     custom_resolution: Optional[str] = None
 ) -> Dict[str, Any]:
-    """🎬 ATOMIC VIDEO CREATION - Complete video from text description in single call
+    """Internal implementation of video creation without timeout wrapper"""
+    workflow_results = {
+        "success": True,
+        "workflow_steps": [],
+        "files_created": [],
+        "processing_summary": {},
+        "total_time": 0
+    }
     
-    This is the ULTIMATE workflow tool - combines all steps into one atomic operation:
-    1. Parse natural language description with enhanced NLP
-    2. Match and analyze available source files
-    3. Generate optimized komposition with musical structure recognition
-    4. Create and validate build plan with dependency resolution
-    5. Execute video processing (if execution_mode="full")
-    
-    Perfect for: 80% of video creation use cases, rapid prototyping, non-technical users
-    
-    Parameters:
-        description: Natural language description of desired video
-        title: Video title (default: "Generated Video")
-        execution_mode: 
-            - "full": Complete video processing (default)
-            - "plan_only": Generate plan but don't process
-            - "preview": Quick preview with draft quality
-        quality: Processing quality level
-            - "draft": Fast processing, lower quality
-            - "standard": Balanced quality/speed (default)
-            - "high": Maximum quality, slower processing
-        custom_bpm: Override detected BPM
-        custom_resolution: Override resolution (e.g., "600x800", "1920x1080")
-    
-    Examples:
-        → create_video_from_description("134 BPM music video with smooth transitions")
-        → create_video_from_description("Leica-style intro, verse and refrain", execution_mode="plan_only")
-        → create_video_from_description("Portrait format dance video", custom_resolution="600x800")
-    
-    Reduces: 5 calls → 1 call (80% workflow simplification)
-    
-    Returns:
-        Dictionary with complete workflow results, files created, and processing summary
-    """
     try:
         
         workflow_start = asyncio.get_event_loop().time()
@@ -3879,7 +3868,768 @@ async def create_video_from_description(
         return {
             "success": False,
             "error": f"Atomic video creation failed: {str(e)}",
-            "workflow_results": workflow_results if 'workflow_results' in locals() else {}
+            "workflow_results": workflow_results
+        }
+
+
+@mcp.tool()
+async def create_video_from_description(
+    description: str,
+    title: str = "Generated Video",
+    execution_mode: str = "full",  # "full", "plan_only", "preview"
+    quality: str = "standard",     # "draft", "standard", "high"
+    custom_bpm: Optional[int] = None,
+    custom_resolution: Optional[str] = None
+) -> Dict[str, Any]:
+    """🎬 ATOMIC VIDEO CREATION - Complete video from text description in single call
+    
+    This is the ULTIMATE workflow tool - combines all steps into one atomic operation:
+    1. Parse natural language description with enhanced NLP
+    2. Match and analyze available source files
+    3. Generate optimized komposition with musical structure recognition
+    4. Create and validate build plan with dependency resolution
+    5. Execute video processing (if execution_mode="full")
+    
+    Perfect for: 80% of video creation use cases, rapid prototyping, non-technical users
+    
+    Parameters:
+        description: Natural language description of desired video
+        title: Video title (default: "Generated Video")
+        execution_mode: 
+            - "full": Complete video processing (default)
+            - "plan_only": Generate plan but don't process
+            - "preview": Quick preview with draft quality
+        quality: Processing quality level
+            - "draft": Fast processing, lower quality
+            - "standard": Balanced quality/speed (default)
+            - "high": Maximum quality, slower processing
+        custom_bpm: Override detected BPM
+        custom_resolution: Override resolution (e.g., "600x800", "1920x1080")
+    
+    Examples:
+        → create_video_from_description("134 BPM music video with smooth transitions")
+        → create_video_from_description("Leica-style intro, verse and refrain", execution_mode="plan_only")
+        → create_video_from_description("Portrait format dance video", custom_resolution="600x800")
+    
+    Reduces: 5 calls → 1 call (80% workflow simplification)
+    
+    ⚡ TIMEOUT PROTECTION: Automatically estimates processing time and applies timeout with cleanup
+    
+    Returns:
+        Dictionary with complete workflow results, files created, and processing summary
+    """
+    try:
+        # Calculate operation timeout based on description complexity
+        timeout_seconds = calculate_operation_timeout(
+            description,
+            execution_mode=execution_mode,
+            quality=quality,
+            custom_resolution=custom_resolution
+        )
+        
+        # Generate unique operation ID
+        import time
+        import hashlib
+        operation_id = f"video_creation_{int(time.time())}_{hashlib.md5(description.encode()).hexdigest()[:8]}"
+        
+        # Define cleanup function for partial operations
+        async def cleanup_partial_operations():
+            """Clean up any partial files or processes on timeout/error"""
+            try:
+                # Clean up temp files
+                cleanup_result = await mcp.call_tool('cleanup_temp_files', {})
+                logger.info(f"Cleanup temp files result: {cleanup_result}")
+                
+                # Clean up any registry inconsistencies
+                registry_result = await mcp.call_tool('get_registry_status', {})
+                logger.info(f"Registry status after cleanup: {registry_result}")
+                
+            except Exception as cleanup_error:
+                logger.error(f"Error during partial operation cleanup: {cleanup_error}")
+        
+        # Execute with timeout protection
+        logger.info(f"Starting video creation with {timeout_seconds:.1f}s timeout for: {description[:50]}...")
+        
+        result = await timeout_manager.execute_with_timeout(
+            _internal_create_video_from_description(
+                description, title, execution_mode, quality, custom_bpm, custom_resolution
+            ),
+            operation_id,
+            timeout_seconds,
+            cleanup_partial_operations
+        )
+        
+        # Add timeout information to result
+        if isinstance(result, dict):
+            result["timeout_info"] = {
+                "estimated_time": timeout_seconds / 1.5,  # Remove safety buffer for display
+                "actual_timeout": timeout_seconds,
+                "operation_id": operation_id
+            }
+        
+        return result
+        
+    except TimeoutError as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": "timeout",
+            "timeout_info": {
+                "estimated_time": timeout_seconds / 1.5,
+                "actual_timeout": timeout_seconds,
+                "operation_id": operation_id,
+                "cleanup_attempted": True
+            },
+            "recommendation": "Try with a simpler description, lower quality setting, or plan_only mode first"
+        }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Video creation failed: {str(e)}",
+            "error_type": "general"
+        }
+
+
+@mcp.tool()
+async def estimate_processing_time(
+    description: str,
+    execution_mode: str = "full",
+    quality: str = "standard",
+    custom_resolution: Optional[str] = None
+) -> Dict[str, Any]:
+    """⏱️ PROCESSING TIME ESTIMATION - Predict operation duration before execution
+    
+    Estimates processing time for video creation operations based on:
+    - Video duration extracted from description
+    - Operation complexity (effects, segments, processing steps)
+    - Resolution requirements and format conversions
+    - Quality settings and processing mode
+    
+    Args:
+        description: Natural language description of desired video
+        execution_mode: "full", "plan_only", or "preview"
+        quality: "draft", "standard", or "high"
+        custom_resolution: Override resolution (e.g., "600x800", "1920x1080")
+    
+    Returns:
+        Dictionary containing:
+        - estimated_seconds: Total processing time estimate
+        - estimated_minutes: Time in minutes for readability
+        - video_duration: Estimated output video length
+        - complexity: Analyzed operation complexity
+        - resolution: Target resolution
+        - factors: Breakdown of time calculation factors
+        - timeout_recommendation: Suggested timeout for operation
+    
+    Example Usage:
+        estimate_processing_time("30 second 120 BPM music video with effects")
+        estimate_processing_time("Simple 10s intro", execution_mode="plan_only")
+    """
+    try:
+        estimation = ProcessingTimeEstimator.estimate_processing_time(
+            description, execution_mode, quality, custom_resolution
+        )
+        
+        # Add timeout recommendation
+        timeout_recommendation = calculate_operation_timeout(
+            description, 
+            execution_mode=execution_mode,
+            quality=quality,
+            custom_resolution=custom_resolution
+        )
+        
+        estimation["timeout_recommendation"] = timeout_recommendation
+        estimation["timeout_minutes"] = timeout_recommendation / 60
+        
+        return {
+            "success": True,
+            **estimation
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to estimate processing time: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def get_operation_status(operation_id: Optional[str] = None) -> Dict[str, Any]:
+    """📋 OPERATION MONITORING - Get real-time status of running operations
+    
+    Monitor active video processing operations and their progress.
+    Useful for tracking long-running operations and detecting potential lockups.
+    
+    Args:
+        operation_id: Specific operation to check (optional, shows all if not provided)
+    
+    Returns:
+        Dictionary containing:
+        - active_operations: Currently running operations
+        - operation_history: Recent completed operations
+        - system_health: Resource usage and process health
+    
+    Example Usage:
+        get_operation_status()  # All operations
+        get_operation_status("video_creation_1733512345_abc123")  # Specific operation
+    """
+    try:
+        if operation_id:
+            # Get specific operation status
+            status = timeout_manager.get_operation_status(operation_id)
+            return {
+                "success": True,
+                "operation_id": operation_id,
+                "status": status,
+                "found": status is not None
+            }
+        else:
+            # Get all active operations
+            active_operations = timeout_manager.get_active_operations()
+            
+            return {
+                "success": True,
+                "active_operations": active_operations,
+                "active_count": len(active_operations),
+                "system_health": "healthy" if len(active_operations) < 3 else "busy"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to get operation status: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def scan_zombie_processes() -> Dict[str, Any]:
+    """🔍 PROCESS SCANNER - Detect potential zombie processes from video operations
+    
+    Scans for long-running Python processes that might be hung from previous operations.
+    Identifies multiprocessing spawn processes, ffmpeg processes, and other video-related tasks.
+    
+    Returns:
+        Dictionary containing:
+        - python_spawn_processes: Long-running Python multiprocessing processes
+        - ffmpeg_processes: Active FFMPEG processes  
+        - video_related_processes: Other video/audio processing processes
+        - recommendations: Suggested PIDs to investigate/kill
+        - system_health: Overall process health assessment
+    
+    Example Usage:
+        scan_zombie_processes()  # Get list of suspicious processes
+    """
+    try:
+        import subprocess
+        import time
+        from datetime import datetime, timedelta
+        
+        # Get all processes
+        ps_result = subprocess.run(
+            ['ps', 'aux'], 
+            capture_output=True, 
+            text=True, 
+            timeout=10
+        )
+        
+        if ps_result.returncode != 0:
+            return {
+                "success": False,
+                "error": "Failed to get process list"
+            }
+        
+        lines = ps_result.stdout.strip().split('\n')[1:]  # Skip header
+        
+        python_spawn_processes = []
+        ffmpeg_processes = []
+        video_related_processes = []
+        suspicious_pids = []
+        
+        current_time = time.time()
+        
+        for line in lines:
+            try:
+                parts = line.split(None, 10)  # Split into max 11 parts
+                if len(parts) < 11:
+                    continue
+                    
+                user, pid, cpu_pct, mem_pct, vsz, rss, tty, stat, started, time_used, command = parts
+                
+                # Skip if not our user
+                import getpass
+                if user != getpass.getuser():
+                    continue
+                
+                pid = int(pid)
+                cpu_pct = float(cpu_pct)
+                
+                # Calculate process age from start time
+                process_age_hours = None
+                try:
+                    # Parse different start time formats (e.g., "10:36PM", "26Jun25", "Aug06")
+                    if ':' in started:
+                        # Today - time format
+                        process_age_hours = 0  # Assume recent if time format
+                    elif 'Jun' in started or 'Jul' in started or 'Aug' in started:
+                        # Date format - calculate days
+                        if len(started) == 6:  # Format like "26Jun25"
+                            day = int(started[:2])
+                            month_str = started[2:5]
+                            year = int('20' + started[5:])
+                            
+                            month_map = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                                       'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+                            
+                            if month_str in month_map:
+                                process_date = datetime(year, month_map[month_str], day)
+                                age_delta = datetime.now() - process_date
+                                process_age_hours = age_delta.total_seconds() / 3600
+                except:
+                    process_age_hours = None
+                
+                # Identify different types of processes
+                command_lower = command.lower()
+                
+                # Python spawn processes (potential zombies)
+                if 'python' in command_lower and 'spawn_main' in command_lower:
+                    process_info = {
+                        'pid': pid,
+                        'cpu_percent': cpu_pct,
+                        'memory_percent': float(mem_pct),
+                        'started': started,
+                        'age_hours': process_age_hours,
+                        'time_used': time_used,
+                        'command': command,
+                        'status': stat
+                    }
+                    python_spawn_processes.append(process_info)
+                    
+                    # Mark spawn processes as suspicious if old or high CPU
+                    if (process_age_hours and process_age_hours > 24) or cpu_pct > 5.0:
+                        suspicious_pids.append({
+                            'pid': pid,
+                            'reason': f'Long-running spawn process ({process_age_hours:.1f}h old, {cpu_pct}% CPU)',
+                            'priority': 'high' if process_age_hours and process_age_hours > 48 else 'medium',
+                            'safety_level': 'safe_to_kill',  # Spawn processes are always safe to kill
+                            'type': 'python_spawn_zombie'
+                        })
+                
+                # FFMPEG processes
+                elif 'ffmpeg' in command_lower:
+                    process_info = {
+                        'pid': pid,
+                        'cpu_percent': cpu_pct,
+                        'memory_percent': float(mem_pct),
+                        'started': started,
+                        'age_hours': process_age_hours,
+                        'time_used': time_used,
+                        'command': command[:100] + '...' if len(command) > 100 else command,
+                        'status': stat
+                    }
+                    ffmpeg_processes.append(process_info)
+                    
+                    # Mark as suspicious if running too long
+                    if process_age_hours and process_age_hours > 2:  # FFMPEG shouldn't run > 2 hours
+                        suspicious_pids.append({
+                            'pid': pid,
+                            'reason': f'Long-running FFMPEG process ({process_age_hours:.1f}h)',
+                            'priority': 'high',
+                            'safety_level': 'safe_to_kill',  # Hung FFMPEG processes are safe to kill
+                            'type': 'ffmpeg_hung'
+                        })
+                
+                # Other video/audio related processes with detailed classification
+                elif any(keyword in command_lower for keyword in 
+                        ['uvicorn', 'mcp', 'java.*kompost', 'video', 'audio', 'youtube']):
+                    
+                    # Classify process type and safety
+                    process_type = 'unknown'
+                    safety_level = 'safe_to_kill'  # default
+                    
+                    if 'uvicorn' in command_lower:
+                        if 'mcp' in command_lower or ':809' in command_lower:
+                            process_type = 'mcp_server'
+                            safety_level = 'do_not_kill'  # MCP servers should not be killed
+                        else:
+                            process_type = 'web_server'
+                            safety_level = 'caution'  # Other web servers - ask before killing
+                    elif 'java' in command_lower and 'kompost' in command_lower:
+                        process_type = 'komposteur_service'
+                        safety_level = 'caution'  # Processing service - may be in use
+                    elif 'firebase' in command_lower:
+                        process_type = 'firebase_emulator'
+                        safety_level = 'caution'  # Development service
+                    elif 'node' in command_lower and ('firebase' in command_lower or 'emulator' in command_lower):
+                        process_type = 'firebase_node_service'
+                        safety_level = 'caution'
+                    elif any(keyword in command_lower for keyword in ['video', 'audio', 'youtube']):
+                        process_type = 'media_processing'
+                        safety_level = 'safe_to_kill'  # Media processing can usually be restarted
+                    
+                    process_info = {
+                        'pid': pid,
+                        'cpu_percent': cpu_pct,
+                        'memory_percent': float(mem_pct),
+                        'started': started,
+                        'age_hours': process_age_hours,
+                        'time_used': time_used,
+                        'command': command[:100] + '...' if len(command) > 100 else command,
+                        'status': stat,
+                        'type': process_type,
+                        'safety_level': safety_level
+                    }
+                    video_related_processes.append(process_info)
+                    
+                    # Only mark as suspicious if it's safe to kill and meets criteria
+                    if (safety_level == 'safe_to_kill' and process_age_hours and process_age_hours > 4) or \
+                       (safety_level == 'caution' and process_age_hours and process_age_hours > 48):  # Very old services
+                        suspicious_pids.append({
+                            'pid': pid,
+                            'reason': f'Long-running {process_type} ({process_age_hours:.1f}h)',
+                            'priority': 'medium',
+                            'safety_level': safety_level,
+                            'type': process_type
+                        })
+                
+            except (ValueError, IndexError):
+                continue  # Skip malformed lines
+        
+        # System health assessment
+        total_processes = len(python_spawn_processes) + len(ffmpeg_processes) + len(video_related_processes)
+        suspicious_count = len(suspicious_pids)
+        
+        if suspicious_count > 5:
+            health = "critical"
+        elif suspicious_count > 2:
+            health = "warning"
+        elif len(python_spawn_processes) > 10:
+            health = "concerning"
+        else:
+            health = "healthy"
+        
+        return {
+            "success": True,
+            "python_spawn_processes": python_spawn_processes,
+            "ffmpeg_processes": ffmpeg_processes,
+            "video_related_processes": video_related_processes,
+            "suspicious_processes": suspicious_pids,
+            "summary": {
+                "total_spawn_processes": len(python_spawn_processes),
+                "total_ffmpeg_processes": len(ffmpeg_processes),
+                "total_video_processes": len(video_related_processes),
+                "suspicious_count": suspicious_count,
+                "system_health": health
+            },
+            "recommendations": {
+                "safe_to_kill": {
+                    "processes": [p for p in suspicious_pids if p.get('safety_level') == 'safe_to_kill'],
+                    "kill_commands": [f"kill {p['pid']}" for p in suspicious_pids if p.get('safety_level') == 'safe_to_kill'],
+                    "force_kill_commands": [f"kill -9 {p['pid']}" for p in suspicious_pids if p.get('safety_level') == 'safe_to_kill' and p['priority'] == 'high']
+                },
+                "caution_required": {
+                    "processes": [p for p in suspicious_pids if p.get('safety_level') == 'caution'],
+                    "warning": "These are services that may be in use. Verify they're not needed before killing.",
+                    "kill_commands": [f"kill {p['pid']}" for p in suspicious_pids if p.get('safety_level') == 'caution']
+                },
+                "do_not_kill": {
+                    "processes": [p for p in suspicious_pids if p.get('safety_level') == 'do_not_kill'],
+                    "warning": "These are critical services (MCP servers, etc.) - DO NOT KILL unless absolutely necessary"
+                },
+                "summary": {
+                    "immediate_action": [p for p in suspicious_pids if p['priority'] == 'high' and p.get('safety_level') == 'safe_to_kill'],
+                    "investigate": [p for p in suspicious_pids if p['priority'] == 'medium'],
+                    "total_suspicious": len(suspicious_pids),
+                    "safe_to_kill_count": len([p for p in suspicious_pids if p.get('safety_level') == 'safe_to_kill']),
+                    "protected_count": len([p for p in suspicious_pids if p.get('safety_level') in ['do_not_kill', 'caution']])
+                }
+            }
+        }
+        
+    except subprocess.TimeoutError:
+        return {
+            "success": False,
+            "error": "Process scan timed out"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to scan processes: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def kill_zombie_processes(pids: List[int], force: bool = False) -> Dict[str, Any]:
+    """☠️ PROCESS KILLER - Kill specified zombie processes with safety checks
+    
+    Kills specified processes after verifying they are safe to kill.
+    Only kills processes that are classified as 'safe_to_kill' (spawn zombies, hung FFMPEG, etc.)
+    Will NOT kill MCP servers or other critical services.
+    
+    Args:
+        pids: List of process IDs to kill
+        force: Use SIGKILL (-9) instead of SIGTERM (default: False)
+    
+    Returns:
+        Dictionary with kill results and safety information
+    
+    Example Usage:
+        kill_zombie_processes([81886, 82024])  # Kill specific zombie PIDs
+        kill_zombie_processes([12345], force=True)  # Force kill with SIGKILL
+    """
+    try:
+        import subprocess
+        
+        if not pids:
+            return {
+                "success": False,
+                "error": "No PIDs provided to kill"
+            }
+        
+        # First, scan current processes to verify safety
+        scan_result = await mcp.call_tool('scan_zombie_processes', {})
+        scan_text = scan_result[0].text if scan_result and len(scan_result) > 0 else '{}'
+        scan_data = json.loads(scan_text)
+        
+        if not scan_data.get('success'):
+            return {
+                "success": False,
+                "error": "Could not scan processes for safety verification"
+            }
+        
+        # Build safety lookup from scan results
+        safe_to_kill_pids = set()
+        protected_pids = set()
+        process_info = {}
+        
+        # Get all processes and their safety levels
+        for proc_list, safety_level in [
+            (scan_data.get('python_spawn_processes', []), 'safe_to_kill'),
+            (scan_data.get('ffmpeg_processes', []), 'safe_to_kill'),
+            (scan_data.get('video_related_processes', []), None)  # Check individual safety_level
+        ]:
+            for proc in proc_list:
+                pid = int(proc['pid'])
+                proc_safety = proc.get('safety_level', safety_level)
+                process_info[pid] = {
+                    'type': proc.get('type', 'unknown'),
+                    'safety_level': proc_safety,
+                    'command': proc.get('command', ''),
+                    'started': proc.get('started', ''),
+                    'cpu_percent': proc.get('cpu_percent', 0)
+                }
+                
+                if proc_safety == 'safe_to_kill':
+                    safe_to_kill_pids.add(pid)
+                elif proc_safety in ['do_not_kill', 'caution']:
+                    protected_pids.add(pid)
+        
+        # Verify all requested PIDs are safe to kill
+        kill_results = []
+        safety_violations = []
+        
+        for pid in pids:
+            if pid in protected_pids:
+                safety_violations.append({
+                    'pid': pid,
+                    'reason': f'Protected process: {process_info[pid]["type"]} ({process_info[pid]["safety_level"]})',
+                    'command': process_info[pid].get('command', '')[:60] + '...'
+                })
+            elif pid not in safe_to_kill_pids:
+                # Check if process still exists
+                try:
+                    check_result = subprocess.run(['ps', '-p', str(pid)], capture_output=True, text=True, timeout=5)
+                    if check_result.returncode == 0:
+                        safety_violations.append({
+                            'pid': pid,
+                            'reason': 'Process exists but not classified as safe to kill',
+                            'command': 'Unknown - not in scan results'
+                        })
+                    else:
+                        kill_results.append({
+                            'pid': pid,
+                            'status': 'already_dead',
+                            'message': 'Process already terminated'
+                        })
+                except subprocess.TimeoutError:
+                    safety_violations.append({
+                        'pid': pid,
+                        'reason': 'Could not verify process status (timeout)',
+                        'command': 'Unknown'
+                    })
+            else:
+                # Safe to kill - proceed with termination
+                try:
+                    signal_type = '-9' if force else '-15'  # SIGKILL vs SIGTERM
+                    kill_cmd = ['kill', signal_type, str(pid)]
+                    
+                    result = subprocess.run(kill_cmd, capture_output=True, text=True, timeout=10)
+                    
+                    if result.returncode == 0:
+                        kill_results.append({
+                            'pid': pid,
+                            'status': 'killed',
+                            'signal': 'SIGKILL' if force else 'SIGTERM',
+                            'type': process_info[pid]['type'],
+                            'message': f'Successfully killed {process_info[pid]["type"]}'
+                        })
+                    else:
+                        kill_results.append({
+                            'pid': pid,
+                            'status': 'failed',
+                            'error': result.stderr.strip() or 'Unknown error',
+                            'message': f'Failed to kill PID {pid}'
+                        })
+                        
+                except subprocess.TimeoutError:
+                    kill_results.append({
+                        'pid': pid,
+                        'status': 'timeout',
+                        'message': f'Kill command timed out for PID {pid}'
+                    })
+                except Exception as e:
+                    kill_results.append({
+                        'pid': pid,
+                        'status': 'error',
+                        'error': str(e),
+                        'message': f'Error killing PID {pid}: {str(e)}'
+                    })
+        
+        # Summary
+        successful_kills = len([r for r in kill_results if r['status'] == 'killed'])
+        failed_kills = len([r for r in kill_results if r['status'] in ['failed', 'timeout', 'error']])
+        already_dead = len([r for r in kill_results if r['status'] == 'already_dead'])
+        
+        return {
+            "success": len(safety_violations) == 0,
+            "kill_results": kill_results,
+            "safety_violations": safety_violations,
+            "summary": {
+                "requested_pids": len(pids),
+                "successful_kills": successful_kills,
+                "failed_kills": failed_kills,
+                "already_dead": already_dead,
+                "blocked_for_safety": len(safety_violations),
+                "signal_used": 'SIGKILL (-9)' if force else 'SIGTERM (-15)'
+            },
+            "recommendation": "Check kill_results for detailed status of each PID" if kill_results else "No processes were killed"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to kill processes: {str(e)}"
+        }
+
+
+@mcp.tool()
+async def kill_all_safe_zombies(force: bool = False) -> Dict[str, Any]:
+    """☠️ AUTO ZOMBIE KILLER - Automatically kill all safe zombie processes
+    
+    Scans for zombie processes and automatically kills all processes classified as 'safe_to_kill'.
+    This includes Python spawn zombies and hung FFMPEG processes, but protects MCP servers
+    and other critical services.
+    
+    Args:
+        force: Use SIGKILL (-9) instead of SIGTERM (default: False)
+    
+    Returns:
+        Dictionary with scan results and kill results
+    
+    Example Usage:
+        kill_all_safe_zombies()  # Kill all safe zombies with SIGTERM
+        kill_all_safe_zombies(force=True)  # Force kill with SIGKILL
+    """
+    try:
+        # First scan for zombie processes
+        scan_result = await mcp.call_tool('scan_zombie_processes', {})
+        scan_text = scan_result[0].text if scan_result and len(scan_result) > 0 else '{}'
+        scan_data = json.loads(scan_text)
+        
+        if not scan_data.get('success'):
+            return {
+                "success": False,
+                "error": "Could not scan for zombie processes",
+                "scan_result": scan_data
+            }
+        
+        # Extract all safe-to-kill PIDs
+        safe_pids = []
+        
+        # Get PIDs from recommendations
+        safe_processes = scan_data.get('recommendations', {}).get('safe_to_kill', {}).get('processes', [])
+        safe_pids.extend([int(p['pid']) for p in safe_processes])
+        
+        if not safe_pids:
+            return {
+                "success": True,
+                "message": "No safe zombie processes found to kill",
+                "scan_summary": scan_data.get('summary', {}),
+                "kill_results": [],
+                "recommendation": "System is clean - no zombie processes detected"
+            }
+        
+        # Kill all safe processes
+        kill_result = await mcp.call_tool('kill_zombie_processes', {
+            'pids': safe_pids,
+            'force': force
+        })
+        
+        kill_text = kill_result[0].text if kill_result and len(kill_result) > 0 else '{}'
+        kill_data = json.loads(kill_text)
+        
+        return {
+            "success": kill_data.get('success', False),
+            "scan_summary": scan_data.get('summary', {}),
+            "kill_summary": kill_data.get('summary', {}),
+            "kill_results": kill_data.get('kill_results', []),
+            "safety_violations": kill_data.get('safety_violations', []),
+            "processes_found": len(safe_pids),
+            "signal_used": 'SIGKILL (-9)' if force else 'SIGTERM (-15)',
+            "recommendation": f"Killed {kill_data.get('summary', {}).get('successful_kills', 0)} zombie processes"
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to auto-kill zombies: {str(e)}"
+        }
+
+
+@mcp.tool() 
+async def cleanup_partial_operations() -> Dict[str, Any]:
+    """🧹 SYSTEM CLEANUP - Clean up partial operations and hung processes
+    
+    Manually trigger cleanup of partial operations, temp files, and hung processes.
+    Useful for recovering from interrupted operations or system lockups.
+    
+    Returns:
+        Dictionary with cleanup results and system health status
+    
+    Example Usage:
+        cleanup_partial_operations()  # Clean up everything
+    """
+    try:
+        result = await timeout_manager.cleanup_partial_operations()
+        
+        # Also clean up temp files via existing tool
+        temp_cleanup = await mcp.call_tool('cleanup_temp_files', {})
+        
+        # Get process scan for additional context
+        process_scan = await mcp.call_tool('scan_zombie_processes', {})
+        
+        return {
+            "success": True,
+            "operation_cleanup": result,
+            "temp_file_cleanup": temp_cleanup,
+            "process_scan": process_scan,
+            "recommendation": "System cleanup completed. Check process_scan for any remaining zombie processes. Use kill_zombie_processes() to eliminate safe zombies."
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to cleanup partial operations: {str(e)}"
         }
 
 
