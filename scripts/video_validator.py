@@ -10,6 +10,8 @@ import sys
 import json
 import subprocess
 import tempfile
+import os
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -18,6 +20,32 @@ class VideoValidator:
     
     def __init__(self):
         self.validation_results = []
+    
+    def _find_ffmpeg_path(self) -> str:
+        """Find FFmpeg executable in various locations"""
+        # Check environment variable first
+        env_path = os.getenv("FFMPEG_PATH")
+        if env_path and Path(env_path).exists():
+            return env_path
+        
+        # Try PATH
+        ffmpeg_path = shutil.which("ffmpeg")
+        if ffmpeg_path:
+            return ffmpeg_path
+        
+        # Try common locations
+        common_paths = [
+            "/opt/homebrew/bin/ffmpeg",  # Homebrew on Apple Silicon
+            "/usr/local/bin/ffmpeg",     # Homebrew on Intel Mac / Linux
+            "/usr/bin/ffmpeg",           # System package manager
+            "/snap/bin/ffmpeg",          # Snap package
+        ]
+        
+        for path in common_paths:
+            if Path(path).exists():
+                return path
+        
+        return "ffmpeg"  # Fallback to PATH
     
     def validate_video_file(self, video_path: Path) -> Dict[str, Any]:
         """

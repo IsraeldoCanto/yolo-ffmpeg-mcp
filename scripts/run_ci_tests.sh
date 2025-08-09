@@ -63,7 +63,7 @@ run_test_category() {
     echo -e "${BLUE}🧪 Running $category_name${NC}"
     echo "   File: $test_file"
     
-    if python3 -m pytest "$test_file" -v --tb=short; then
+    if uv run pytest "$test_file" -v --tb=short; then
         echo -e "${GREEN}✅ $category_name PASSED${NC}"
         ((passed_tests++))
     else
@@ -87,7 +87,7 @@ done
 # Video validation test (if video files are available)
 echo -e "${BLUE}🎬 Video Processing & Validation Test${NC}"
 if [ -f "scripts/video_validator.py" ]; then
-    if python3 scripts/video_validator.py; then
+    if uv run python scripts/video_validator.py; then
         echo -e "${GREEN}✅ Video validation PASSED${NC}"
         ((passed_tests++))
     else
@@ -119,7 +119,7 @@ echo ""
 # Performance benchmarks (optional)
 echo -e "${BLUE}⚡ Performance Benchmarks${NC}"
 if [ -f "scripts/benchmark_performance.py" ]; then
-    python3 scripts/benchmark_performance.py || echo -e "${YELLOW}⚠️  Benchmarks failed but continuing${NC}"
+    uv run python scripts/benchmark_performance.py || echo -e "${YELLOW}⚠️  Benchmarks failed but continuing${NC}"
 else
     echo -e "${YELLOW}⚠️  Performance benchmarks not available${NC}"
 fi
