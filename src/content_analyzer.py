@@ -176,105 +176,174 @@ class VideoContentAnalyzer:
             return {"success": False, "error": error_msg}
     
     async def _detect_scenes(self, video_path: Path) -> List[Tuple[float, float]]:
-        """Detect scene boundaries using PySceneDetect"""
-        print(f"  Detecting scenes in {video_path.name}...")
-
-        if not SCENEDETECT_AVAILABLE:
-            print("  PySceneDetect not available. Using fallback: single scene for the video.")
-            # Fallback: create a single scene for the entire video.
-            # The existing fallback assumes 60s; a future improvement could be to get actual video duration.
-            return [(0.0, 60.0)] 
+        """Detect scene boundaries using subprocess isolation to prevent hanging"""
+        print(f"  Detecting scenes in {video_path.name} (subprocess isolation)...")
         
         try:
-            # Use ContentDetector for general scene changes
-            # Ensure scenedetect components are available (they should be if SCENEDETECT_AVAILABLE is True)
-            if not detect or not ContentDetector:
-                # This case should ideally not be reached if SCENEDETECT_AVAILABLE is True
-                # and imports were successful.
-                raise ImportError("PySceneDetect components (detect or ContentDetector) are not available even though SCENEDETECT_AVAILABLE is True.")
+            import asyncio
+            import subprocess
+            import json
             
-            scene_list = detect(str(video_path), ContentDetector(threshold=30.0))
+            # Path to subprocess script
+            subprocess_script = Path(__file__).parent / "opencv_subprocess.py"
             
-            # Convert to list of (start, end) tuples in seconds
-            scenes = []
-            for i, scene in enumerate(scene_list):
-                start_time = scene[0].get_seconds()
-                end_time = scene[1].get_seconds()
-                scenes.append((start_time, end_time))
+            # Run scene detection in subprocess with timeout
+            process = await asyncio.create_subprocess_exec(
+                'python', str(subprocess_script), 'detect_scenes', str(video_path),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            # Wait for completion with timeout (max 2 minutes for scene detection)
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=120.0
+                )
+            except asyncio.TimeoutError:
+                print("  Scene detection subprocess timed out, terminating...")
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
                 
-            print(f"  Found {len(scenes)} scenes")
+                # Fallback to single scene
+                return [(0.0, 60.0)]
+            
+            if process.returncode != 0:
+                print(f"  Scene detection subprocess failed: {stderr.decode()}")
+                return [(0.0, 60.0)]
+                
+            # Parse result
+            result = json.loads(stdout.decode())
+            
+            if not result.get("success", False):
+                print(f"  Scene detection failed: {result.get('error', 'Unknown error')}")
+                return [(0.0, 60.0)]
+                
+            # Convert scenes to tuple format
+            scenes = []
+            for scene in result.get("scenes", []):
+                scenes.append((scene["start"], scene["end"]))
+                
+            print(f"  Found {len(scenes)} scenes via subprocess")
             return scenes
             
         except Exception as e:
-            print(f"  Scene detection using PySceneDetect failed: {e}")
+            print(f"  Subprocess scene detection failed: {e}")
             # Fallback: create a single scene for the entire video
-            return [(0.0, 60.0)]  # Assume max 60 seconds if we can't detect properly
+            return [(0.0, 60.0)]
     
     async def _analyze_scene_content(self, video_path: Path, scenes_data: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
-        """Extract keyframes from scenes and analyze visual content"""
-        print(f"  Analyzing content of {len(scenes_data)} scenes...")
-        
-        enhanced_scenes = []
-        
-        # Create sourceRef directory for screenshots
-        source_ref = video_path.stem  # filename without extension
-        screenshots_source_dir = self.screenshots_dir / source_ref
-        screenshots_source_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Open video for frame extraction
-        cap = cv2.VideoCapture(str(video_path))
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        """Extract keyframes from scenes and analyze visual content using subprocess isolation"""
+        print(f"  Analyzing content of {len(scenes_data)} scenes (subprocess isolation)...")
         
         try:
+            import asyncio
+            import subprocess
+            import json
+            
+            # Convert scenes data to format expected by subprocess
+            scenes_for_subprocess = []
             for i, (start_time, end_time) in enumerate(scenes_data):
-                duration = end_time - start_time
-                mid_time = start_time + (duration / 2)
-                
-                # Extract keyframe from middle of scene
-                frame_number = int(mid_time * fps)
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-                ret, frame = cap.read()
-                
-                scene_data = {
+                scenes_for_subprocess.append({
                     "scene_id": i,
                     "start": start_time,
                     "end": end_time,
-                    "duration": duration,
-                    "mid_time": mid_time,
-                    "objects": [],
-                    "characteristics": [],
-                    "screenshot_url": None
-                }
+                    "duration": end_time - start_time
+                })
+            
+            # Path to subprocess script
+            subprocess_script = Path(__file__).parent / "opencv_subprocess.py"
+            
+            # Run object analysis in subprocess with timeout
+            process = await asyncio.create_subprocess_exec(
+                'python', str(subprocess_script), 'analyze_objects', str(video_path),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            # Send scenes data to subprocess
+            input_data = json.dumps({"scenes": scenes_for_subprocess}).encode()
+            
+            # Wait for completion with timeout (max 3 minutes for object analysis)
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(input=input_data),
+                    timeout=180.0
+                )
+            except asyncio.TimeoutError:
+                print("  Object analysis subprocess timed out, terminating...")
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
                 
-                if ret and frame is not None:
-                    # Analyze frame content
-                    objects = self._detect_objects_in_frame(frame)
-                    characteristics = self._analyze_frame_characteristics(frame)
-                    
-                    scene_data["objects"] = objects
-                    scene_data["characteristics"] = characteristics
-                    
-                    # Generate screenshot from scene start
+                # Return basic scenes without detailed analysis
+                return self._create_fallback_scenes(scenes_data)
+            
+            if process.returncode != 0:
+                print(f"  Object analysis subprocess failed: {stderr.decode()}")
+                return self._create_fallback_scenes(scenes_data)
+                
+            # Parse result
+            result = json.loads(stdout.decode())
+            
+            if not result.get("success", False):
+                print(f"  Object analysis failed: {result.get('error', 'Unknown error')}")
+                return self._create_fallback_scenes(scenes_data)
+            
+            enhanced_scenes = result.get("scenes", [])
+            
+            # Generate screenshots for each scene (keep this in main process for now)
+            source_ref = video_path.stem
+            screenshots_source_dir = self.screenshots_dir / source_ref
+            screenshots_source_dir.mkdir(parents=True, exist_ok=True)
+            
+            for i, scene in enumerate(enhanced_scenes):
+                try:
                     screenshot_url = await _generate_screenshot_for_scene(
                         video_path,
-                        start_time,
-                        i,  # scene_id
-                        screenshots_source_dir, # Full path to dir for this source's screenshots
+                        scene["start"],
+                        scene["scene_id"],
+                        screenshots_source_dir,
                         SecurityConfig.FFMPEG_PATH,
                         SecurityConfig.PROCESS_TIMEOUT,
                         SecurityConfig.SCREENSHOTS_BASE_URL,
-                        source_ref # source_ref for URL construction
+                        source_ref
                     )
-                    scene_data["screenshot_url"] = screenshot_url
-                else:
-                    print(f"    Warning: Could not extract keyframe for scene {i}")
-                
-                enhanced_scenes.append(scene_data)
-                
-        finally:
-            cap.release()
+                    scene["screenshot_url"] = screenshot_url
+                except Exception as e:
+                    print(f"    Warning: Could not generate screenshot for scene {i}: {e}")
+                    scene["screenshot_url"] = None
             
-        return enhanced_scenes
+            print(f"  Analyzed {len(enhanced_scenes)} scenes via subprocess")
+            return enhanced_scenes
+            
+        except Exception as e:
+            print(f"  Subprocess object analysis failed: {e}")
+            return self._create_fallback_scenes(scenes_data)
+    
+    def _create_fallback_scenes(self, scenes_data: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
+        """Create basic scene data without detailed analysis as fallback"""
+        fallback_scenes = []
+        for i, (start_time, end_time) in enumerate(scenes_data):
+            fallback_scenes.append({
+                "scene_id": i,
+                "start": start_time,
+                "end": end_time,
+                "duration": end_time - start_time,
+                "mid_time": start_time + ((end_time - start_time) / 2),
+                "objects": ["unknown"],
+                "characteristics": ["analyzed_externally"],
+                "screenshot_url": None
+            })
+        return fallback_scenes
     
     def _detect_objects_in_frame(self, frame: np.ndarray) -> List[str]:
         """Detect objects in a video frame using OpenCV"""
@@ -749,3 +818,35 @@ class VideoContentAnalyzer:
             score += 0.1
             
         return max(0.0, min(1.0, score))
+    
+    async def cleanup_analysis_resources(self):
+        """Cleanup resources used during video analysis (called on timeout/error)"""
+        try:
+            # Kill any hanging OpenCV processes
+            import subprocess
+            import os
+            import signal
+            
+            # Find and kill any hanging python processes doing OpenCV work
+            result = subprocess.run(['pgrep', '-f', 'python.*opencv'], capture_output=True, text=True)
+            if result.stdout.strip():
+                pids = result.stdout.strip().split('\n')
+                for pid in pids:
+                    try:
+                        os.kill(int(pid), signal.SIGTERM)
+                        print(f"Terminated OpenCV process: {pid}")
+                    except (ProcessLookupError, ValueError):
+                        pass  # Process already dead or invalid PID
+            
+            # Clear any temporary analysis files or locks
+            if hasattr(self, '_temp_analysis_files'):
+                for temp_file in self._temp_analysis_files:
+                    try:
+                        temp_file.unlink(missing_ok=True)
+                    except:
+                        pass
+                self._temp_analysis_files = []
+                        
+        except Exception as e:
+            print(f"Warning: Cleanup failed: {e}")
+            # Don't raise exception in cleanup

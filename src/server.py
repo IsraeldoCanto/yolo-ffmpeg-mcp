@@ -2,8 +2,10 @@ import asyncio
 import json
 import logging
 import os
+import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+from functools import wraps
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -116,7 +118,27 @@ video_comparison_tool = VideoComparisonTool(ffmpeg, file_manager, content_analyz
 
 # FileInfo and ProcessResult classes are now in models.py
 
+def timing_decorator(func):
+    """Decorator to add timing logs to MCP operations"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        start_time = time.time()
+        operation_name = func.__name__
+        logger.info(f"⏱️  Starting MCP operation: {operation_name}")
+        try:
+            result = await func(*args, **kwargs)
+            duration = time.time() - start_time
+            logger.info(f"✅ MCP operation {operation_name} completed in {duration:.2f}s")
+            return result
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ MCP operation {operation_name} failed after {duration:.2f}s: {e}")
+            raise
+    return wrapper
+
 @mcp.tool()
+@timing_decorator
+@timing_decorator
 async def list_files() -> Dict[str, Any]:
     """🎬 CORE WORKFLOW - List available source files with smart suggestions and quick actions
     
@@ -236,6 +258,7 @@ async def list_files() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def get_file_info(file_id: str) -> Dict[str, Any]:
     """📋 FILE INFO - Get detailed metadata for a file by ID
     
@@ -270,12 +293,14 @@ async def get_file_info(file_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def get_available_operations() -> Dict[str, Dict[str, str]]:
     """Get list of available FFMPEG operations"""
     operations = ffmpeg.get_available_operations()
     return {"operations": operations}
 
 @mcp.tool()
+@timing_decorator
 async def get_available_transitions() -> Dict[str, Any]:
     """Get catalog of available video transition effects with parameters and examples"""
     
@@ -501,6 +526,7 @@ async def get_available_transitions() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def process_file(
     input_file_id: str,
     operation: str,  # Available: convert, extract_audio, trim, resize, normalize_audio, to_mp3, replace_audio, concatenate_simple, image_to_video, reverse
@@ -544,6 +570,7 @@ async def process_file(
 
 
 @mcp.tool()
+@timing_decorator
 async def analyze_video_content(file_id: str, force_reanalysis: bool = False) -> Dict[str, Any]:
     """Analyze video content to understand scenes, objects, and generate intelligent editing suggestions"""
     
@@ -560,8 +587,29 @@ async def analyze_video_content(file_id: str, force_reanalysis: bool = False) ->
         return {"success": False, "error": f"Content analysis only supported for video files"}
         
     try:
-        result = await content_analyzer.analyze_video_content(file_path, file_id, force_reanalysis)
+        # Calculate timeout based on file size (5 minutes base + 1 minute per 10MB)
+        file_size_mb = file_path.stat().st_size / (1024 * 1024)
+        timeout_seconds = min(300 + (file_size_mb * 6), 1800)  # Max 30 minutes
+        operation_id = f"analyze_content_{file_id}_{int(time.time())}"
+        
+        logger.info(f"Starting video analysis with {timeout_seconds:.0f}s timeout (file: {file_size_mb:.1f}MB)")
+        
+        # Wrap with timeout protection
+        result = await timeout_manager.execute_with_timeout(
+            content_analyzer.analyze_video_content(file_path, file_id, force_reanalysis),
+            operation_id=operation_id,
+            timeout_seconds=timeout_seconds,
+            cleanup_callback=lambda: content_analyzer.cleanup_analysis_resources()
+        )
         return result
+        
+    except TimeoutError as e:
+        logger.error(f"Video analysis timed out for {file_id}: {e}")
+        return {
+            "success": False, 
+            "error": f"Analysis timed out after {timeout_seconds:.0f} seconds", 
+            "suggestion": "Try with a smaller video file or increase timeout limits"
+        }
     except Exception as e:
         return {"success": False, "error": f"Analysis failed: {str(e)}"}
 
@@ -610,6 +658,7 @@ async def get_video_insights(file_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def smart_trim_suggestions(file_id: str, desired_duration: float = 10.0) -> Dict[str, Any]:
     """Get intelligent trim suggestions based on video content analysis"""
     
@@ -639,6 +688,7 @@ async def smart_trim_suggestions(file_id: str, desired_duration: float = 10.0) -
 
 
 @mcp.tool()
+@timing_decorator
 async def get_scene_screenshots(file_id: str) -> Dict[str, Any]:
     """Get scene screenshots with URLs for visual scene selection"""
     
@@ -669,6 +719,7 @@ async def get_scene_screenshots(file_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def list_generated_files() -> Dict[str, Any]:
     """📁 GENERATED FILES - List all processed files with metadata
     
@@ -730,6 +781,7 @@ async def list_generated_files() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def batch_process(operations: List[Dict[str, Any]]) -> Dict[str, Any]:
     """🔧 WORKFLOW TOOL - Execute multiple video operations in sequence with atomic transaction support
     
@@ -833,6 +885,7 @@ async def batch_process(operations: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def cleanup_temp_files() -> Dict[str, str]:
     """Clean up temporary files"""
     try:
@@ -843,6 +896,7 @@ async def cleanup_temp_files() -> Dict[str, str]:
 
 
 @mcp.tool()
+@timing_decorator
 async def get_registry_status() -> Dict[str, Any]:
     """📊 REGISTRY STATUS - Get file registry health and statistics
     
@@ -2217,6 +2271,7 @@ def _suggest_quality_improvements() -> str:
 # process_file_internal and process_file_as_finished functions are now moved to video_operations.py
 
 @mcp.tool()
+@timing_decorator
 async def process_komposition_file(komposition_path: str) -> Dict[str, Any]:
     """Process a komposition JSON file to create beat-synchronized music video
     
@@ -2255,6 +2310,7 @@ async def process_komposition_file(komposition_path: str) -> Dict[str, Any]:
 # process_file_internal and process_file_as_finished functions are now moved to video_operations.py
 
 @mcp.tool()
+@timing_decorator
 async def process_transition_effects_komposition(komposition_path: str) -> Dict[str, Any]:
     """Process a komposition JSON file with advanced transition effects tree
     
@@ -2292,6 +2348,7 @@ async def process_transition_effects_komposition(komposition_path: str) -> Dict[
 
 
 @mcp.tool()
+@timing_decorator
 async def process_speech_komposition(komposition_path: str) -> Dict[str, Any]:
     """Process a komposition JSON file with speech overlay capabilities
     
@@ -2350,6 +2407,7 @@ async def process_speech_komposition(komposition_path: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def detect_speech_segments(file_id: str, force_reanalysis: bool = False, threshold: float = 0.5, 
                                 min_speech_duration: int = 250, min_silence_duration: int = 100) -> Dict[str, Any]:
     """
@@ -2437,6 +2495,7 @@ async def detect_speech_segments(file_id: str, force_reanalysis: bool = False, t
 
 
 @mcp.tool()
+@timing_decorator
 async def get_speech_insights(file_id: str) -> Dict[str, Any]:
     """
     Get detailed insights and analysis from cached speech detection results.
@@ -2521,6 +2580,7 @@ async def get_speech_insights(file_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def analyze_composition_sources(source_filenames: List[str], force_reanalysis: bool = False) -> Dict[str, Any]:
     """
     Analyze multiple video sources for intelligent composition planning.
@@ -2633,6 +2693,7 @@ async def analyze_composition_sources(source_filenames: List[str], force_reanaly
 
 
 @mcp.tool()
+@timing_decorator
 async def generate_composition_plan(
     source_filenames: List[str], 
     background_music: str,
@@ -2714,6 +2775,7 @@ async def generate_composition_plan(
 
 
 @mcp.tool()
+@timing_decorator
 async def process_composition_plan(plan_file_path: str) -> Dict[str, Any]:
     """
     Execute an intelligent composition plan with speech-aware processing.
@@ -2918,6 +2980,7 @@ async def process_composition_plan(plan_file_path: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def preview_composition_timing(
     source_filenames: List[str],
     total_duration: float = 24.0,
@@ -3054,6 +3117,7 @@ async def preview_composition_timing(
 
 
 @mcp.tool()
+@timing_decorator
 async def generate_komposition_from_description(
     description: str,
     title: str = "Generated Composition",
@@ -3134,6 +3198,7 @@ async def generate_komposition_from_description(
 
 
 @mcp.tool()
+@timing_decorator
 async def generate_enhanced_komposition_from_description(
     description: str,
     title: str = "Enhanced Content-Aware Composition",
@@ -3218,6 +3283,7 @@ async def generate_enhanced_komposition_from_description(
 
 
 @mcp.tool()
+@timing_decorator
 async def create_build_plan_from_komposition(
     komposition_file: str,
     render_start_beat: Optional[int] = None,
@@ -3290,6 +3356,7 @@ async def create_build_plan_from_komposition(
 
 
 @mcp.tool()
+@timing_decorator
 async def validate_build_plan_for_bpms(
     build_plan_file: str,
     test_bpms: List[int] = [120, 135, 140, 100]
@@ -3412,6 +3479,7 @@ async def validate_build_plan_for_bpms(
 
 
 @mcp.tool()
+@timing_decorator
 async def generate_and_build_from_description(
     description: str,
     title: str = "Generated Video",
@@ -3537,6 +3605,7 @@ async def generate_and_build_from_description(
 
 
 @mcp.tool()
+@timing_decorator
 async def build_video_from_audio_manifest(
     manifest_file: str = "AUDIO_TIMING_MANIFEST.json",
     execution_strategy: str = "ffmpeg_direct"
@@ -3873,6 +3942,7 @@ async def _internal_create_video_from_description(
 
 
 @mcp.tool()
+@timing_decorator
 async def create_video_from_description(
     description: str,
     title: str = "Generated Video",
@@ -3992,6 +4062,7 @@ async def create_video_from_description(
 
 
 @mcp.tool()
+@timing_decorator
 async def estimate_processing_time(
     description: str,
     execution_mode: str = "full",
@@ -4055,6 +4126,7 @@ async def estimate_processing_time(
 
 
 @mcp.tool()
+@timing_decorator
 async def get_operation_status(operation_id: Optional[str] = None) -> Dict[str, Any]:
     """📋 OPERATION MONITORING - Get real-time status of running operations
     
@@ -4103,6 +4175,7 @@ async def get_operation_status(operation_id: Optional[str] = None) -> Dict[str, 
 
 
 @mcp.tool()
+@timing_decorator
 async def scan_zombie_processes() -> Dict[str, Any]:
     """🔍 PROCESS SCANNER - Detect potential zombie processes from video operations
     
@@ -4359,6 +4432,7 @@ async def scan_zombie_processes() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def kill_zombie_processes(pids: List[int], force: bool = False) -> Dict[str, Any]:
     """☠️ PROCESS KILLER - Kill specified zombie processes with safety checks
     
@@ -4523,6 +4597,7 @@ async def kill_zombie_processes(pids: List[int], force: bool = False) -> Dict[st
 
 
 @mcp.tool()
+@timing_decorator
 async def kill_all_safe_zombies(force: bool = False) -> Dict[str, Any]:
     """☠️ AUTO ZOMBIE KILLER - Automatically kill all safe zombie processes
     
@@ -4634,6 +4709,7 @@ async def cleanup_partial_operations() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def get_available_video_effects(category: str = None, provider: str = None) -> Dict[str, Any]:
     """📹 VIDEO EFFECTS - List all available video effects with parameter discovery
     
@@ -4681,6 +4757,7 @@ async def get_available_video_effects(category: str = None, provider: str = None
 
 
 @mcp.tool()
+@timing_decorator
 async def apply_video_effect(file_id: str, effect_name: str, parameters: Dict[str, Any] = None) -> Dict[str, Any]:
     """📹 VIDEO EFFECTS - Apply single video effect with parameter control
     
@@ -4748,6 +4825,7 @@ async def apply_video_effect(file_id: str, effect_name: str, parameters: Dict[st
 
 
 @mcp.tool()
+@timing_decorator
 async def apply_video_effect_chain(file_id: str, effects_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
     """📹 VIDEO EFFECTS - Apply multiple effects in sequence with chaining
     
@@ -4820,6 +4898,7 @@ async def apply_video_effect_chain(file_id: str, effects_chain: List[Dict[str, A
 
 
 @mcp.tool()
+@timing_decorator
 async def suggest_efficient_workflow(goal_description: str, available_files: List[str] = None) -> Dict[str, Any]:
     """🎯 WORKFLOW OPTIMIZATION - Get optimized workflow suggestions to minimize function calls
     
@@ -4996,6 +5075,7 @@ async def suggest_efficient_workflow(goal_description: str, available_files: Lis
 
 
 @mcp.tool()
+@timing_decorator
 async def estimate_effect_processing_time(file_id: str, effects_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
     """📹 VIDEO EFFECTS - Estimate processing time for effects chain
     
@@ -5051,6 +5131,7 @@ async def estimate_effect_processing_time(file_id: str, effects_chain: List[Dict
 
 
 @mcp.tool()
+@timing_decorator
 async def analyze_video_formats(file_ids: List[str]) -> Dict[str, Any]:
     """
     Analyze aspect ratios of multiple videos and suggest optimal target format.
@@ -5103,6 +5184,7 @@ async def analyze_video_formats(file_ids: List[str]) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def preview_format_conversion(
     file_id: str, 
     target_format: str, 
@@ -5164,6 +5246,7 @@ async def preview_format_conversion(
 
 
 @mcp.tool()
+@timing_decorator
 async def create_format_conversion_plan(
     file_ids: List[str],
     target_format: str = "auto",
@@ -5226,6 +5309,7 @@ async def create_format_conversion_plan(
 
 
 @mcp.tool()
+@timing_decorator
 async def get_format_presets() -> Dict[str, Any]:
     """
     Get list of available format presets for different platforms and use cases.
@@ -5277,6 +5361,7 @@ async def get_format_presets() -> Dict[str, Any]:
 # Audio Effects Tools
 
 @mcp.tool()
+@timing_decorator
 async def get_available_audio_effects(category: Optional[str] = None) -> Dict[str, Any]:
     """🎵 AUDIO EFFECTS - List all available audio effects with parameter discovery
     
@@ -5316,6 +5401,7 @@ async def get_available_audio_effects(category: Optional[str] = None) -> Dict[st
 
 
 @mcp.tool()
+@timing_decorator
 async def apply_audio_effect(file_id: str, effect_name: str, parameters: Dict[str, Any] = None) -> Dict[str, Any]:
     """🎵 AUDIO EFFECTS - Apply single audio effect with parameter control
     
@@ -5383,6 +5469,7 @@ async def apply_audio_effect(file_id: str, effect_name: str, parameters: Dict[st
 
 
 @mcp.tool()
+@timing_decorator
 async def apply_audio_effect_chain(file_id: str, effects_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
     """🎵 AUDIO EFFECTS - Apply multiple audio effects in sequence with chaining
     
@@ -5456,6 +5543,7 @@ async def apply_audio_effect_chain(file_id: str, effects_chain: List[Dict[str, A
 
 
 @mcp.tool()
+@timing_decorator
 async def apply_audio_template(file_id: str, template_name: str) -> Dict[str, Any]:
     """🎵 AUDIO TEMPLATES - Apply pre-defined or user-created audio effect templates
     
@@ -5500,6 +5588,7 @@ async def apply_audio_template(file_id: str, template_name: str) -> Dict[str, An
 
 
 @mcp.tool()
+@timing_decorator
 async def list_audio_templates() -> Dict[str, Any]:
     """🎵 AUDIO TEMPLATES - List all available audio effect templates
     
@@ -5542,6 +5631,7 @@ async def list_audio_templates() -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def save_audio_template(template_name: str, template_data: Dict[str, Any]) -> Dict[str, Any]:
     """🎵 AUDIO TEMPLATES - Save custom audio effect template
     
@@ -5613,6 +5703,7 @@ async def save_audio_template(template_name: str, template_data: Dict[str, Any])
 # Video Comparison Tools
 
 @mcp.tool()
+@timing_decorator
 async def create_video_comparison(
     file_id_1: str, 
     file_id_2: str, 
@@ -5682,6 +5773,7 @@ async def create_video_comparison(
 
 
 @mcp.tool()
+@timing_decorator
 async def analyze_video_differences(file_id_1: str, file_id_2: str) -> Dict[str, Any]:
     """🔍 VIDEO ANALYSIS - Analyze technical and content differences between two videos
     
@@ -5735,6 +5827,7 @@ async def analyze_video_differences(file_id_1: str, file_id_2: str) -> Dict[str,
 
 
 @mcp.tool()
+@timing_decorator
 async def create_multi_video_comparison(
     file_ids: List[str],
     labels: List[str] = None,
@@ -5804,6 +5897,7 @@ async def create_multi_video_comparison(
 
 
 @mcp.tool()
+@timing_decorator
 async def verify_music_video(
     file_id: str,
     expected_duration: Optional[float] = None,
@@ -5952,6 +6046,7 @@ async def verify_music_video(
 # === DOWNLOAD SERVICE TOOLS ===
 
 @mcp.tool()
+@timing_decorator
 async def download_youtube_video(
     url: str,
     quality: str = "best",
@@ -6031,6 +6126,7 @@ async def download_youtube_video(
 
 
 @mcp.tool()
+@timing_decorator
 async def download_from_url(
     url: str,
     source_type: str = "auto",
@@ -6104,6 +6200,7 @@ async def download_from_url(
 
 
 @mcp.tool()
+@timing_decorator
 async def batch_download_urls(
     urls: List[str],
     quality: str = "best",
@@ -6192,6 +6289,7 @@ async def batch_download_urls(
 
 
 @mcp.tool()
+@timing_decorator
 async def get_download_info(url: str) -> Dict[str, Any]:
     """ℹ️ DOWNLOAD - Get information about downloadable content
 
@@ -6232,6 +6330,7 @@ async def get_download_info(url: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def detect_loop_points(file_id: str, desired_duration: float = 10.0) -> Dict[str, Any]:
     """🔄 YOUTUBE SHORTS - AI-powered loop point detection
     
@@ -6399,6 +6498,7 @@ async def create_seamless_loop(
 
 
 @mcp.tool()
+@timing_decorator
 async def youtube_shorts_optimize(file_id: str) -> Dict[str, Any]:
     """📱 YOUTUBE SHORTS - Optimize video for YouTube Shorts platform
     
@@ -6551,6 +6651,7 @@ async def _validate_youtube_shorts_compliance(file_info: Dict[str, Any]) -> Dict
 
 
 @mcp.tool()
+@timing_decorator
 async def upload_youtube_short(file_id: str, 
                               title: str,
                               description: str = "",
@@ -6612,6 +6713,7 @@ async def upload_youtube_short(file_id: str,
 
 
 @mcp.tool()
+@timing_decorator
 async def validate_youtube_short(file_id: str) -> Dict[str, Any]:
     """🔍 YOUTUBE VALIDATION - Validate video meets YouTube Shorts requirements
     
@@ -6675,6 +6777,7 @@ async def validate_youtube_short(file_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def cleanup_download_cache(max_age_days: int = 7) -> Dict[str, Any]:
     """🧹 DOWNLOAD - Clean up old downloaded files
 
@@ -6707,6 +6810,7 @@ async def cleanup_download_cache(max_age_days: int = 7) -> Dict[str, Any]:
 
 
 @mcp.tool()
+@timing_decorator
 async def upload_youtube_video(
     video_file_id: str,
     title: str,
@@ -6784,6 +6888,7 @@ async def upload_youtube_video(
 
 
 @mcp.tool()
+@timing_decorator
 async def validate_youtube_video(video_file_id: str) -> Dict[str, Any]:
     """
     Validate video file meets YouTube Shorts requirements
