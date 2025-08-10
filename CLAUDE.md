@@ -55,3 +55,4 @@ This dual approach optimizes for development speed while maintaining production 
   - Current state of the component
   - Desired future state and recommended improvements
   - Potential impact on overall system performance
+- this project is a learning process. Each run is to validate our assumptions, find flaws and improvements. MCP server is for exploratory, Komposteur is for make it production ready with lessons learned
