@@ -67,11 +67,23 @@ class HaikuSubagent:
     def __init__(self, 
                  anthropic_api_key: Optional[str] = None,
                  cost_limits: Optional[CostLimits] = None,
-                 fallback_enabled: bool = True):
-        """Initialize Haiku subagent"""
+                 fallback_enabled: bool = True,
+                 mcp_bridge: Optional['MCPHybridBridge'] = None):
+        """Initialize Haiku subagent with optional MCP bridge"""
         self.client = None
         self.cost_limits = cost_limits or CostLimits()
         self.fallback_enabled = fallback_enabled
+        
+        # Initialize MCP bridge (hybrid by default)
+        if mcp_bridge is not None:
+            self.mcp_bridge = mcp_bridge
+        else:
+            try:
+                from mcp_hybrid_bridge import MCPHybridBridge
+                self.mcp_bridge = MCPHybridBridge()
+            except ImportError:
+                logger.warning("⚠️ MCPHybridBridge not available, using fallback mode only")
+                self.mcp_bridge = None
         
         # Initialize Anthropic client if key provided
         if anthropic and anthropic_api_key:

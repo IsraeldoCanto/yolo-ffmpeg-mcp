@@ -1,0 +1,115 @@
+{
+  "title": "MCP vs Direct FFmpeg Timing Analysis",
+  "date": "2025-08-09",
+  "purpose": "Validate timing calculations and identify quality differences",
+  "approaches": {
+    "manual_keyframe_aligned": {
+      "description": "Our proven approach using keyframe boundaries",
+      "benefits": [
+        "100% frame preservation",
+        "No decoder errors",
+        "Perfect video quality",
+        "Keyframe-aware extraction"
+      ],
+      "method": "ffprobe keyframe detection + manual timing"
+    },
+    "mcp_uniform_calculated": {
+      "description": "MCP's uniform time division approach",
+      "concerns": [
+        "No keyframe awareness",
+        "Potential frame loss",
+        "Quality degradation possible",
+        "May not respect video structure"
+      ],
+      "method": "uniform_time_division"
+    }
+  },
+  "critical_findings": [
+    {
+      "segment": "seg02",
+      "manual_start": 5.291667,
+      "mcp_start": 15.0,
+      "difference": 9.708333,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg03",
+      "manual_start": 10.625,
+      "mcp_start": 30.0,
+      "difference": 19.375,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg04",
+      "manual_start": 15.958333,
+      "mcp_start": 45.0,
+      "difference": 29.041667,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg06",
+      "manual_start": 2.5,
+      "mcp_start": 15.0,
+      "difference": 12.5,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg07",
+      "manual_start": 5.0,
+      "mcp_start": 30.0,
+      "difference": 25.0,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg08",
+      "manual_start": 7.5,
+      "mcp_start": 45.0,
+      "difference": 37.5,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg10",
+      "manual_start": 2.5,
+      "mcp_start": 15.0,
+      "difference": 12.5,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg11",
+      "manual_start": 4.416667,
+      "mcp_start": 30.0,
+      "difference": 25.583333,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    },
+    {
+      "segment": "seg12",
+      "manual_start": 6.916667,
+      "mcp_start": 45.0,
+      "difference": 38.083332999999996,
+      "impact": "HIGH - Could cause frame loss or quality issues"
+    }
+  ],
+  "recommendations": {
+    "for_mcp": [
+      "Add keyframe detection to MCP interface",
+      "Implement frame loss prevention",
+      "Consider video structure in timing calculations"
+    ],
+    "for_komposteur": [
+      "Integrate keyframe-aligned extraction",
+      "Add quality validation steps",
+      "Implement multi-step processing pipeline"
+    ],
+    "for_production": [
+      "Use keyframe-aligned approach as baseline",
+      "Add MCP convenience layer on top",
+      "Implement quality gates and validation"
+    ]
+  },
+  "next_steps": [
+    "Create actual MCP video using uniform timing",
+    "Compare video quality frame-by-frame",
+    "Document specific quality issues",
+    "Propose MCP improvements for Komposteur integration"
+  ]
+}

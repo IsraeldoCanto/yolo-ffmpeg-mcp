@@ -1,0 +1,52 @@
+{
+  "test_date": "2025-08-10 19:38:05",
+  "performance_metrics": {
+    "start_time": 1754847485.03004,
+    "stages": {
+      "initialization": 9.703636169433594e-05,
+      "fallback_generation": 2.5033950805664062e-05
+    },
+    "total_time": 0.0013179779052734375
+  },
+  "video_info": {
+    "videos": [
+      {
+        "id": "Oa8iS1W3OCM",
+        "file": "Oa8iS1W3OCM.mp4",
+        "description": "Deep ocean underwater scenes with marine life and blue lighting",
+        "duration": 60.0,
+        "mood": "mysterious, deep, atmospheric"
+      },
+      {
+        "id": "3xEMCU1fyl8",
+        "file": "3xEMCU1fyl8.mp4",
+        "description": "Ocean exploration and underwater adventure scenes",
+        "duration": 60.1,
+        "mood": "adventurous, exploratory, dynamic"
+      },
+      {
+        "id": "PLnPZVqiyjA",
+        "file": "PLnPZVqiyjA.mp4",
+        "description": "Subnautica game footage with underwater creatures and environments",
+        "duration": 107.4,
+        "mood": "immersive, gaming, futuristic"
+      }
+    ],
+    "audio": {
+      "file": "Subnautic Measures.flac",
+      "description": "Ambient electronic music with deep bass and atmospheric soundscape",
+      "bpm": 120,
+      "duration": 24.0
+    },
+    "target": {
+      "duration": 24.0,
+      "segments": 12,
+      "theme": "Subnautica deep ocean exploration",
+      "format": "YouTube Short (1080x1920, 24s)"
+    }
+  },
+  "descriptions": {
+    "fallback": "\ud83c\udfac SUBNAUTICA DEEP OCEAN MUSIC VIDEO\n\n\ud83c\udfaf CONCEPT: Subnautica deep ocean exploration\n\u23f1\ufe0f FORMAT: YouTube Short (1080x1920, 24s)\n\n\ud83c\udfa5 VIDEO SOURCES:\n  1. Deep ocean underwater scenes with marine life and blue lighting (60.0s)\n     \u2192 Segments 01-04: mysterious, deep, atmospheric\n  2. Ocean exploration and underwater adventure scenes (60.1s)\n     \u2192 Segments 05-08: adventurous, exploratory, dynamic\n  3. Subnautica game footage with underwater creatures and environments (107.4s)\n     \u2192 Segments 09-12: immersive, gaming, futuristic\n\n\ud83c\udfb5 AUDIO: Ambient electronic music with deep bass and atmospheric soundscape\n  \u2192 BPM: 120, Duration: 24.0s\n  \u2192 Sync: 12 segments \u00d7 2s = 24s total\n\n\ud83c\udfac NARRATIVE STRUCTURE:\n  Act 1 (0-8s): Deep ocean mystery and discovery\n    - Segments from Oa8iS1W3OCM: mysterious, deep, atmospheric\n    - Gradual descent into oceanic depths\n  \n  Act 2 (8-16s): Exploration and adventure  \n    - Segments from 3xEMCU1fyl8: adventurous, exploratory, dynamic\n    - Dynamic movement through underwater landscapes\n  \n  Act 3 (16-24s): Immersive gaming experience\n    - Segments from PLnPZVqiyjA: immersive, gaming, futuristic\n    - Futuristic underwater world revelation\n\n\ud83c\udfa8 VISUAL EFFECTS:\n  - Vignette effect for deep ocean atmosphere\n  - Scale to 1080x1920 for vertical format\n  - Unsharp filter for enhanced detail\n  - Audio fade in/out for smooth transitions\n\n\u26a1 TECHNICAL: Content-aware segmentation with keyframe alignment\n\ud83d\udc8e QUALITY TARGET: Professional YouTube Short ready for upload",
+    "ai_powered": null
+  }
+}

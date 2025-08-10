@@ -1,0 +1,100 @@
+{
+  "test_start": 1754847661.6154969,
+  "tests": {
+    "fallback_mode": {
+      "success": true,
+      "total_time": 0.0003871917724609375,
+      "initialization_time": 8.606910705566406e-05,
+      "analysis_time": 0.00029587745666503906,
+      "cost_check_time": 2.1457672119140625e-06,
+      "analysis_result": {
+        "strategy": "standard_concat",
+        "confidence": 0.7,
+        "has_frame_issues": false,
+        "reasoning_length": 36
+      },
+      "cost_status": {
+        "daily_spend": 0.0,
+        "daily_limit": 5.0,
+        "analysis_count": 0,
+        "remaining_budget": 5.0,
+        "can_afford_analysis": true
+      }
+    },
+    "api_mode": {
+      "skipped": true,
+      "reason": "No API key"
+    },
+    "video_analysis_scenarios": {
+      "total_time": 0.00028514862060546875,
+      "scenarios": {
+        "single_video": {
+          "success": true,
+          "time": 6.723403930664062e-05,
+          "strategy": "direct_process",
+          "confidence": 0.7,
+          "file_count": 1
+        },
+        "two_videos": {
+          "success": true,
+          "time": 5.91278076171875e-05,
+          "strategy": "standard_concat",
+          "confidence": 0.7,
+          "file_count": 2
+        },
+        "all_three": {
+          "success": true,
+          "time": 6.508827209472656e-05,
+          "strategy": "standard_concat",
+          "confidence": 0.7,
+          "file_count": 3
+        },
+        "empty_list": {
+          "success": true,
+          "time": 2.6941299438476562e-05,
+          "strategy": "standard_concat",
+          "confidence": 0.7,
+          "file_count": 0
+        },
+        "nonexistent": {
+          "success": true,
+          "time": 4.601478576660156e-05,
+          "strategy": "direct_process",
+          "confidence": 0.7,
+          "file_count": 1
+        }
+      }
+    },
+    "music_video_generation": {
+      "success": true,
+      "total_time": 0.00021505355834960938,
+      "generation_time": 3.0994415283203125e-06,
+      "description_length": 2416,
+      "output_file": "haiku_generated_music_video_description.txt"
+    }
+  },
+  "video_info": {
+    "sources": [
+      {
+        "id": "Oa8iS1W3OCM",
+        "file": "Oa8iS1W3OCM.mp4",
+        "description": "Deep ocean scenes",
+        "mood": "mysterious"
+      },
+      {
+        "id": "3xEMCU1fyl8",
+        "file": "3xEMCU1fyl8.mp4",
+        "description": "Ocean exploration",
+        "mood": "adventurous"
+      },
+      {
+        "id": "PLnPZVqiyjA",
+        "file": "PLnPZVqiyjA.mp4",
+        "description": "Subnautica gameplay",
+        "mood": "immersive"
+      }
+    ],
+    "target": "24s YouTube Short, 120 BPM sync, 12 segments"
+  },
+  "total_time": 0.0009911060333251953
+}

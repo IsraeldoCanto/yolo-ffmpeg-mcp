@@ -1,0 +1,22 @@
+{
+  "keyframe_aligned_approach": {
+    "file_size_mb": 9.230464935302734,
+    "duration_seconds": 24.0,
+    "bitrate_kbps": 3226.281,
+    "resolution": "1080x1920",
+    "frame_rate": "30/1"
+  },
+  "mcp_uniform_approach": {
+    "file_size_mb": 9.259215354919434,
+    "duration_seconds": 24.0,
+    "bitrate_kbps": 3236.33,
+    "resolution": "1080x1920",
+    "frame_rate": "30/1"
+  },
+  "quality_differences": {
+    "file_size_difference_mb": 0.02875041961669922,
+    "duration_difference_seconds": 0.0,
+    "bitrate_difference_kbps": 10.048999999999978,
+    "quality_assessment": "TBD - requires visual inspection"
+  }
+}

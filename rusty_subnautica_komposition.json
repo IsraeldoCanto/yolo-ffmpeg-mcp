@@ -1,0 +1,80 @@
+{
+  "metadata": {
+    "title": "Rusty Subnautica YouTube Shorts",
+    "description": "Rusty music video with fade-to-white transitions",
+    "bpm": 120,
+    "beatsPerMeasure": 4,
+    "totalBeats": 40,
+    "estimatedDuration": 20.0
+  },
+  "segments": [
+    {
+      "id": "seg_1",
+      "startBeat": 0,
+      "endBeat": 4,
+      "duration": 2.0,
+      "sourceType": "video",
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "params": {
+        "start": 0,
+        "duration": 2.0
+      },
+      "effects": [
+        {"type": "rusty_filter", "intensity": 0.8},
+        {"type": "resize", "width": 1080, "height": 1920}
+      ],
+      "description": "Rusty segment 1"
+    },
+    {
+      "id": "seg_2",
+      "startBeat": 4,
+      "endBeat": 8,
+      "duration": 2.0,
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "trim",
+      "params": {
+        "start": 2,
+        "duration": 2.0
+      },
+      "effects": [
+        {"type": "rusty_filter", "intensity": 0.8},
+        {"type": "resize", "width": 1080, "height": 1920}
+      ],
+      "description": "Rusty segment 2"
+    },
+    {
+      "id": "seg_3",
+      "startBeat": 8,
+      "endBeat": 12,
+      "duration": 2.0,
+      "sourceType": "video",
+      "sourceRef": "PXL_20250306_132546255.mp4",
+      "operation": "trim",
+      "params": {
+        "start": 1,
+        "duration": 2.0
+      },
+      "effects": [
+        {"type": "rusty_filter", "intensity": 0.8},
+        {"type": "resize", "width": 1080, "height": 1920}
+      ],
+      "description": "Rusty segment 3"
+    }
+  ],
+  "globalAudio": {
+    "backgroundMusic": "Subnautic Measures.flac",
+    "musicStartOffset": 0.0,
+    "musicVolume": 0.8,
+    "fadeIn": 0.5,
+    "fadeOut": 0.5
+  },
+  "outputSettings": {
+    "resolution": "1080x1920",
+    "fps": 30,
+    "videoCodec": "libx264",
+    "audioCodec": "aac",
+    "audioSampleRate": 44100
+  }
+}
