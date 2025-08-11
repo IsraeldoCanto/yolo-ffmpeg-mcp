@@ -55,6 +55,22 @@ class MCPHybridBridge:
         # Tool registry
         self.standalone_tools = self._register_standalone_tools()
         
+        # Video intelligence analyzer
+        try:
+            from video_intelligence import VideoIntelligenceAnalyzer
+            self.video_intelligence = VideoIntelligenceAnalyzer()
+        except ImportError:
+            logger.warning("⚠️ Video intelligence not available")
+            self.video_intelligence = None
+        
+        # AI context enhancer
+        try:
+            from ai_context_enhancement import AIContextEnhancer
+            self.ai_context_enhancer = AIContextEnhancer()
+        except ImportError:
+            logger.warning("⚠️ AI context enhancement not available")
+            self.ai_context_enhancer = None
+        
         if self.enable_logging:
             logger.info(f"🔗 MCPHybridBridge initialized in {self.operational_mode.value} mode")
     
@@ -96,7 +112,16 @@ class MCPHybridBridge:
             "get_haiku_cost_status": self._standalone_get_haiku_cost_status,
             "process_file": self._standalone_process_file,
             "get_file_info": self._standalone_get_file_info,
-            "list_files": self._standalone_list_files
+            "list_files": self._standalone_list_files,
+            # Video Intelligence APIs
+            "detect_optimal_cut_points": self._standalone_detect_optimal_cut_points,
+            "analyze_keyframes": self._standalone_analyze_keyframes,
+            "detect_scene_boundaries": self._standalone_detect_scene_boundaries,
+            "calculate_complexity_metrics": self._standalone_calculate_complexity_metrics,
+            # AI Context Enhancement APIs
+            "generate_ai_context": self._standalone_generate_ai_context,
+            "get_video_characteristics": self._standalone_get_video_characteristics,
+            "record_processing_result": self._standalone_record_processing_result
         }
     
     async def call_tool(self, tool_name: str, **kwargs) -> ToolResult:
@@ -399,6 +424,182 @@ class MCPHybridBridge:
             "method": "standalone"
         }
     
+    # Video Intelligence API implementations
+    async def _standalone_detect_optimal_cut_points(self, 
+                                                  video_path: str,
+                                                  target_segments: int = 4,
+                                                  target_duration: float = None) -> Dict[str, Any]:
+        """Detect optimal cut points - KEY API that solves timing calculation problems"""
+        
+        if not self.video_intelligence:
+            # Fallback to simple uniform calculation with warning
+            video_path_obj = Path(video_path)
+            if video_path_obj.exists():
+                try:
+                    # Get duration for uniform fallback
+                    import subprocess
+                    cmd = ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration',
+                           '-of', 'csv=p=0', str(video_path_obj)]
+                    result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=10)
+                    duration = float(result.stdout.strip())
+                    
+                    # Generate uniform cut points with warning
+                    interval = duration / target_segments
+                    cut_points = [i * interval for i in range(target_segments)]
+                    
+                    return {
+                        "success": True,
+                        "cut_points": cut_points,
+                        "method": "uniform_fallback",
+                        "confidence": 0.5,
+                        "reasoning": "Video intelligence not available - using uniform division (may cause timing issues)",
+                        "segment_durations": [interval] * (target_segments - 1) + [duration - cut_points[-1]],
+                        "quality_score": 0.5,
+                        "warning": "This is the problematic approach that causes 9.7s-29s timing differences"
+                    }
+                    
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"Video intelligence unavailable and fallback failed: {e}",
+                        "method": "standalone"
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": f"File not found: {video_path}",
+                    "method": "standalone"
+                }
+        
+        # Use full video intelligence analysis
+        try:
+            result = await self.video_intelligence.detect_optimal_cut_points(
+                video_path, target_segments, target_duration
+            )
+            
+            return {
+                "success": True,
+                "cut_points": result.cut_points,
+                "method": result.method.value,
+                "confidence": result.confidence,
+                "reasoning": result.reasoning,
+                "segment_durations": result.segment_durations,
+                "quality_score": result.quality_score,
+                "analysis_type": "video_intelligence"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
+    async def _standalone_analyze_keyframes(self, video_path: str) -> Dict[str, Any]:
+        """Analyze keyframes in video"""
+        
+        if not self.video_intelligence:
+            return {
+                "success": False,
+                "error": "Video intelligence not available",
+                "method": "standalone"
+            }
+        
+        try:
+            keyframes = await self.video_intelligence.analyze_keyframes(video_path)
+            
+            return {
+                "success": True,
+                "keyframes": [
+                    {
+                        "timestamp": kf.timestamp,
+                        "frame_type": kf.frame_type,
+                        "scene_boundary": kf.scene_boundary,
+                        "confidence": kf.confidence,
+                        "size_bytes": kf.size_bytes
+                    } for kf in keyframes
+                ],
+                "count": len(keyframes),
+                "method": "ffprobe_analysis"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
+    async def _standalone_detect_scene_boundaries(self, 
+                                                video_path: str,
+                                                sensitivity: float = 0.3) -> Dict[str, Any]:
+        """Detect scene boundaries in video"""
+        
+        if not self.video_intelligence:
+            return {
+                "success": False,
+                "error": "Video intelligence not available",
+                "method": "standalone"
+            }
+        
+        try:
+            boundaries = await self.video_intelligence.detect_scene_boundaries(video_path, sensitivity)
+            
+            return {
+                "success": True,
+                "scene_boundaries": [
+                    {
+                        "timestamp": sb.timestamp,
+                        "confidence": sb.confidence,
+                        "change_type": sb.change_type,
+                        "previous_scene_duration": sb.previous_scene_duration
+                    } for sb in boundaries
+                ],
+                "count": len(boundaries),
+                "sensitivity": sensitivity,
+                "method": "ffmpeg_scene_detection"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
+    async def _standalone_calculate_complexity_metrics(self, video_path: str) -> Dict[str, Any]:
+        """Calculate video complexity metrics"""
+        
+        if not self.video_intelligence:
+            return {
+                "success": False,
+                "error": "Video intelligence not available", 
+                "method": "standalone"
+            }
+        
+        try:
+            metrics = await self.video_intelligence.calculate_complexity_metrics(video_path)
+            
+            return {
+                "success": True,
+                "complexity_metrics": {
+                    "resolution_factor": metrics.resolution_factor,
+                    "duration_factor": metrics.duration_factor,
+                    "motion_complexity": metrics.motion_complexity,
+                    "color_complexity": metrics.color_complexity,
+                    "overall_complexity": metrics.overall_complexity,
+                    "processing_recommendation": metrics.processing_recommendation
+                },
+                "method": "video_analysis"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
     # Convenience methods for common operations
     async def yolo_smart_video_concat(self, video_file_ids: List[str]) -> ToolResult:
         """Convenience method for video concatenation"""
@@ -411,6 +612,202 @@ class MCPHybridBridge:
     async def get_haiku_cost_status(self) -> ToolResult:
         """Convenience method for cost status"""
         return await self.call_tool("get_haiku_cost_status")
+    
+    # Video Intelligence convenience methods
+    async def detect_optimal_cut_points(self, video_path: str, target_segments: int = 4) -> ToolResult:
+        """Convenience method for optimal cut point detection - KEY API for timing problems"""
+        return await self.call_tool("detect_optimal_cut_points", 
+                                   video_path=video_path, 
+                                   target_segments=target_segments)
+    
+    async def analyze_keyframes(self, video_path: str) -> ToolResult:
+        """Convenience method for keyframe analysis"""
+        return await self.call_tool("analyze_keyframes", video_path=video_path)
+    
+    async def detect_scene_boundaries(self, video_path: str, sensitivity: float = 0.3) -> ToolResult:
+        """Convenience method for scene boundary detection"""
+        return await self.call_tool("detect_scene_boundaries", 
+                                   video_path=video_path,
+                                   sensitivity=sensitivity)
+    
+    async def calculate_complexity_metrics(self, video_path: str) -> ToolResult:
+        """Convenience method for complexity analysis"""
+        return await self.call_tool("calculate_complexity_metrics", video_path=video_path)
+    
+    # AI Context Enhancement convenience methods
+    async def generate_ai_context(self, video_path: str, target_operation: str, resource_constraints: dict = None) -> ToolResult:
+        """Convenience method for AI context generation - KEY API for intelligent decision making"""
+        return await self.call_tool("generate_ai_context", 
+                                   video_path=video_path,
+                                   target_operation=target_operation,
+                                   resource_constraints=resource_constraints)
+    
+    async def get_video_characteristics(self, video_path: str) -> ToolResult:
+        """Convenience method for detailed video characteristics"""
+        return await self.call_tool("get_video_characteristics", video_path=video_path)
+    
+    async def record_processing_result(self, tool_name_param: str, video_path: str, processing_time: float, success: bool, **kwargs) -> ToolResult:
+        """Convenience method for recording processing results for AI learning"""
+        # The _standalone_record_processing_result method expects tool_name as a parameter
+        kwargs_with_tool_name = {
+            'tool_name': tool_name_param,
+            'video_path': video_path,
+            'processing_time': processing_time,
+            'success': success,
+            **kwargs
+        }
+        return await self.call_tool("record_processing_result", **kwargs_with_tool_name)
+    
+    # AI Context Enhancement API implementations
+    async def _standalone_generate_ai_context(self,
+                                            video_path: str,
+                                            target_operation: str,
+                                            resource_constraints: dict = None) -> Dict[str, Any]:
+        """Generate AI context for intelligent video processing decisions"""
+        
+        if not self.ai_context_enhancer:
+            return {
+                "success": False,
+                "error": "AI context enhancement not available",
+                "method": "standalone"
+            }
+        
+        try:
+            ai_context = await self.ai_context_enhancer.generate_ai_context(
+                video_path, target_operation, resource_constraints
+            )
+            
+            # Convert to serializable format
+            return {
+                "success": True,
+                "ai_context": {
+                    "video_analysis": {
+                        "duration": ai_context.video_analysis.duration,
+                        "resolution": ai_context.video_analysis.resolution,
+                        "bitrate": ai_context.video_analysis.bitrate,
+                        "codec": ai_context.video_analysis.codec,
+                        "frame_rate": ai_context.video_analysis.frame_rate,
+                        "has_audio": ai_context.video_analysis.has_audio,
+                        "estimated_keyframes": ai_context.video_analysis.estimated_keyframes,
+                        "motion_level": ai_context.video_analysis.motion_level,
+                        "color_complexity": ai_context.video_analysis.color_complexity,
+                        "file_size_mb": ai_context.video_analysis.file_size_mb
+                    },
+                    "complexity_assessment": ai_context.complexity_assessment.value,
+                    "tool_recommendations": [
+                        {
+                            "tool": rec.recommended_tool.value,
+                            "confidence": rec.confidence,
+                            "reasoning": rec.reasoning,
+                            "expected_processing_time": rec.expected_processing_time,
+                            "expected_cpu_usage": rec.expected_cpu_usage,
+                            "expected_memory_mb": rec.expected_memory_mb,
+                            "cost_estimate": rec.cost_estimate,
+                            "quality_expectation": rec.quality_expectation,
+                            "risk_factors": rec.risk_factors,
+                            "optimization_tips": rec.optimization_tips,
+                            "fallback_options": [opt.value for opt in rec.fallback_options]
+                        } for rec in ai_context.tool_recommendations
+                    ],
+                    "performance_predictions": ai_context.performance_predictions,
+                    "contextual_warnings": ai_context.contextual_warnings,
+                    "optimization_opportunities": ai_context.optimization_opportunities,
+                    "resource_constraints": ai_context.resource_constraints
+                },
+                "method": "ai_context_enhancement"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
+    async def _standalone_get_video_characteristics(self, video_path: str) -> Dict[str, Any]:
+        """Get detailed video characteristics for AI context"""
+        
+        if not self.ai_context_enhancer:
+            return {
+                "success": False,
+                "error": "AI context enhancement not available",
+                "method": "standalone"
+            }
+        
+        try:
+            characteristics = await self.ai_context_enhancer._analyze_video_characteristics(video_path)
+            
+            return {
+                "success": True,
+                "video_characteristics": {
+                    "duration": characteristics.duration,
+                    "resolution": characteristics.resolution,
+                    "bitrate": characteristics.bitrate,
+                    "codec": characteristics.codec,
+                    "frame_rate": characteristics.frame_rate,
+                    "has_audio": characteristics.has_audio,
+                    "estimated_keyframes": characteristics.estimated_keyframes,
+                    "motion_level": characteristics.motion_level,
+                    "color_complexity": characteristics.color_complexity,
+                    "file_size_mb": characteristics.file_size_mb
+                },
+                "method": "video_analysis"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
+    
+    async def _standalone_record_processing_result(self,
+                                                 tool_name: str,
+                                                 video_path: str,
+                                                 processing_time: float,
+                                                 success: bool,
+                                                 **kwargs) -> Dict[str, Any]:
+        """Record processing result for AI learning"""
+        
+        if not self.ai_context_enhancer:
+            return {
+                "success": False,
+                "error": "AI context enhancement not available",
+                "method": "standalone"
+            }
+        
+        try:
+            # Get video characteristics for the record
+            video_characteristics = await self.ai_context_enhancer._analyze_video_characteristics(video_path)
+            
+            # Record the result
+            self.ai_context_enhancer.record_processing_result(
+                tool_name=tool_name,
+                video_characteristics=video_characteristics,
+                processing_time=processing_time,
+                success=success,
+                cpu_usage=kwargs.get('cpu_usage', 0.0),
+                memory_usage_mb=kwargs.get('memory_usage_mb', 0.0),
+                output_quality=kwargs.get('output_quality', 0.0),
+                error_message=kwargs.get('error_message', None)
+            )
+            
+            return {
+                "success": True,
+                "recorded": True,
+                "tool_name": tool_name,
+                "video_path": video_path,
+                "processing_time": processing_time,
+                "result_success": success,
+                "method": "ai_learning"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "method": "standalone"
+            }
     
     def get_bridge_status(self) -> Dict[str, Any]:
         """Get current bridge operational status"""
