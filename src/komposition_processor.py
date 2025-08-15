@@ -48,6 +48,10 @@ class KompositionProcessor:
         except Exception as e:
             logger.error(f"❌ Failed to initialize bridge processor: {e}")
             raise
+    
+    async def load_komposition(self, komposition_path: str) -> Dict[str, Any]:
+        """Load komposition JSON file - delegate to MCP processor"""
+        return await self.mcp_processor.load_komposition(komposition_path)
         
     async def process_komposition(self, kompost_data: Dict[str, Any]) -> Dict[str, Any]:
         """
