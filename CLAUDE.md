@@ -47,6 +47,52 @@ else:
 
 This dual approach optimizes for development speed while maintaining production reliability.
 
+## 🤖 **HIERARCHICAL MULTI-AGENT SYSTEM** ✅ **NEW ARCHITECTURE**
+
+### **YOLO as Master Orchestrator**
+YOLO-FFMPEG-MCP now operates as the **master video processing orchestrator** with specialized subagents:
+
+- **Komposteur Subagent**: Beat-synchronization, S3 infrastructure, Java 24 ecosystem
+- **VideoRenderer Subagent**: FFmpeg optimization, crossfade processing, performance tuning
+- **VDVIL Subagent**: DJ-mixing infrastructure, audio composition, binding layer operations
+
+### **Intelligent Task Delegation**
+```bash
+# Automatic intelligent routing based on task analysis
+/komposteur "Create beat-synchronized music video for 135 BPM track"
+/videorenderer "Optimize crossfade processing for 4K videos" 
+/vdvil "Create professional DJ mix with crossfading for music video"
+```
+
+### **Multi-Subagent Coordination**  
+- **Parallel Processing**: All subagents work simultaneously on complex workflows
+- **Seamless Handoffs**: Audio flows VDVIL → Komposteur → VideoRenderer → YOLO
+- **Quality Coordination**: Consistent standards across all processing stages
+- **Resource Optimization**: Intelligent resource sharing and conflict avoidance
+
+### **Master Agent Benefits**
+- **Workflow Orchestration**: YOLO handles high-level video workflows and user interaction
+- **Specialized Expertise**: Deep domain knowledge from dedicated subagents
+- **Quality Assurance**: Master oversight ensures consistent results
+- **Scalable Architecture**: Easy addition of new specialist subagents
+
+### **Usage Patterns**
+```bash
+# Complex music video creation
+User: "Create beat-synchronized music video with professional audio and smooth crossfades"
+→ YOLO analyzes: DJ mixing (VDVIL) + Beat-sync (Komposteur) + Crossfades (VideoRenderer)
+→ Coordinates all subagents for optimal result
+→ Assembles final video with quality validation
+
+# Performance optimization  
+User: "Speed up video processing pipeline"
+→ YOLO delegates: S3 caching (Komposteur) + FFmpeg optimization (VideoRenderer)
+→ Monitors combined improvements
+→ Reports unified performance gains
+```
+
+This hierarchical system transforms YOLO into a comprehensive video processing ecosystem while maintaining the simplicity and intelligence users expect.
+
 ## LLM Issue Reporting and Improvement Tracking
 
 ### Komposteur and Video Renderer Improvement Guidelines
