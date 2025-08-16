@@ -1,56 +1,59 @@
 # FFMPEG MCP Server - Optimized Base Image (Performance First)  
 # This image prioritizes build speed over image size
-FROM python:3.13-bullseye
+FROM python:3.13-alpine
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies in one layer with optimized ordering
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Core utilities (fast installs first)
-    curl \
-    netcat \
+# Install system dependencies optimized for Alpine
+RUN apk add --no-cache \
+    # Core utilities
     bash \
-    # FFmpeg (pre-built binary - fast)
+    curl \
+    netcat-openbsd \
+    # FFmpeg and multimedia
     ffmpeg \
-    mediainfo \
-    # Audio processing (pre-built)
-    libsndfile1 \
-    libsndfile1-dev \
-    # OpenCV dependencies (avoid compilation)
-    libglib2.0-0 \
-    libglib2.0-dev \
-    # Build tools (needed for some packages)
+    # Build tools and development libraries
     gcc \
     g++ \
-    libc6-dev \
+    musl-dev \
+    linux-headers \
+    # OpenCV dependencies
+    glib-dev \
+    pkgconfig \
+    # Audio processing
+    libsndfile-dev \
     # Python development
     python3-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    # Build dependencies for pip packages
+    build-base \
+    cmake \
+    openblas-dev \
+    jpeg-dev \
+    libpng-dev \
+    tiff-dev \
+    libwebp-dev \
+    zlib-dev
 
-# Pre-install heavy packages using wheels (avoid compilation)  
-# Use specific platform wheels to avoid build times
+# Install Python dependencies with Alpine-specific handling
 RUN pip install --no-cache-dir \
-    # Scientific computing first
+    # Scientific computing first (required by OpenCV)
     numpy>=1.24.0 \
-    # Image processing  
+    # Image processing
     pillow>=10.0.0 \
     # System utilities
-    psutil>=5.9.0 \
-    # OpenCV headless (fast wheel install vs 15min compilation)
-    opencv-python-headless>=4.8.0
+    psutil>=5.9.0 && \
+    # OpenCV separately with build timeout (can take 10+ minutes on Alpine)
+    pip install --no-cache-dir opencv-python-headless>=4.8.0
 
 # Create working directory
 WORKDIR /app
 
-# Create non-root user with better defaults
-RUN groupadd -r mcp --gid=1000 && \
-    useradd -r -g mcp --uid=1000 --shell=/bin/bash --create-home mcp
+# Create non-root user 
+RUN addgroup -g 1000 mcp && adduser -u 1000 -G mcp -s /bin/bash -D mcp
 
 # Create directories for file processing with proper permissions
 RUN mkdir -p /tmp/music/{source,temp,screenshots,metadata,finished} \
@@ -65,4 +68,4 @@ RUN ffmpeg -version > /dev/null 2>&1 && \
 # Labels
 LABEL maintainer="Stig Lau" \
       version="1.0.0-base-optimized" \
-      description="FFMPEG MCP Server - Optimized Base (Debian + Pre-built Wheels)"
+      description="FFMPEG MCP Server - Optimized Base (Alpine + Python 3.13)"
