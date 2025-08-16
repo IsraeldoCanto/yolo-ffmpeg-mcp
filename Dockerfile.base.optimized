@@ -8,46 +8,22 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies optimized for Alpine
+# Install minimal system dependencies for FFMPEG + Java + Python
 RUN apk add --no-cache \
-    # Core utilities
     bash \
     curl \
-    netcat-openbsd \
-    # FFmpeg and multimedia
     ffmpeg \
-    # Build tools and development libraries
-    gcc \
-    g++ \
-    musl-dev \
-    linux-headers \
-    # OpenCV dependencies
-    glib-dev \
-    pkgconfig \
-    # Audio processing
+    openjdk11-jre \
+    # Audio processing (for VDVIL)
     libsndfile-dev \
-    # Python development
+    # Minimal Python build support
     python3-dev \
-    # Build dependencies for pip packages
-    build-base \
-    cmake \
-    openblas-dev \
-    jpeg-dev \
-    libpng-dev \
-    tiff-dev \
-    libwebp-dev \
-    zlib-dev
+    gcc \
+    musl-dev
 
-# Install Python dependencies with Alpine-specific handling
-RUN pip install --no-cache-dir \
-    # Scientific computing first (required by OpenCV)
-    numpy>=1.24.0 \
-    # Image processing
-    pillow>=10.0.0 \
-    # System utilities
-    psutil>=5.9.0 && \
-    # OpenCV separately with build timeout (can take 10+ minutes on Alpine)
-    pip install --no-cache-dir opencv-python-headless>=4.8.0
+# Install minimal Python dependencies
+RUN pip install --no-cache-dir --root-user-action=ignore \
+    psutil>=5.9.0
 
 # Create working directory
 WORKDIR /app
@@ -61,11 +37,11 @@ RUN mkdir -p /tmp/music/{source,temp,screenshots,metadata,finished} \
 
 # Test that critical tools work
 RUN ffmpeg -version > /dev/null 2>&1 && \
-    python -c "import cv2; print('OpenCV OK')" && \
-    python -c "import numpy; print('NumPy OK')" && \
-    echo "✅ Base image validation passed"
+    java -version > /dev/null 2>&1 && \
+    python -c "import psutil; print('Python OK')" && \
+    echo "✅ Minimal base image validation passed"
 
 # Labels
 LABEL maintainer="Stig Lau" \
-      version="1.0.0-base-optimized" \
-      description="FFMPEG MCP Server - Optimized Base (Alpine + Python 3.13)"
+      version="1.0.0-base-minimal" \
+      description="FFMPEG MCP Server - Minimal Base (Alpine + FFMPEG + Java + Python 3.13)"
