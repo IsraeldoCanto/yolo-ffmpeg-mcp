@@ -4,6 +4,9 @@ FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
 # Copy dependency files first for better layer caching
 COPY pyproject.toml ./
 
+# Cache bust for UV dependency fix - Force rebuild after syntax fix
+RUN echo "Cache bust: $(date)" > /tmp/cache_bust_uv_fix
+
 # Install core Python dependencies (fast - heavy packages pre-installed in base)
 RUN uv pip install --system --no-cache \
     "fastmcp>=2.7.1" \
