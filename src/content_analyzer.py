@@ -176,105 +176,174 @@ class VideoContentAnalyzer:
             return {"success": False, "error": error_msg}
     
     async def _detect_scenes(self, video_path: Path) -> List[Tuple[float, float]]:
-        """Detect scene boundaries using PySceneDetect"""
-        print(f"  Detecting scenes in {video_path.name}...")
-
-        if not SCENEDETECT_AVAILABLE:
-            print("  PySceneDetect not available. Using fallback: single scene for the video.")
-            # Fallback: create a single scene for the entire video.
-            # The existing fallback assumes 60s; a future improvement could be to get actual video duration.
-            return [(0.0, 60.0)] 
+        """Detect scene boundaries using subprocess isolation to prevent hanging"""
+        print(f"  Detecting scenes in {video_path.name} (subprocess isolation)...")
         
         try:
-            # Use ContentDetector for general scene changes
-            # Ensure scenedetect components are available (they should be if SCENEDETECT_AVAILABLE is True)
-            if not detect or not ContentDetector:
-                # This case should ideally not be reached if SCENEDETECT_AVAILABLE is True
-                # and imports were successful.
-                raise ImportError("PySceneDetect components (detect or ContentDetector) are not available even though SCENEDETECT_AVAILABLE is True.")
+            import asyncio
+            import subprocess
+            import json
             
-            scene_list = detect(str(video_path), ContentDetector(threshold=30.0))
+            # Path to subprocess script
+            subprocess_script = Path(__file__).parent / "opencv_subprocess.py"
             
-            # Convert to list of (start, end) tuples in seconds
-            scenes = []
-            for i, scene in enumerate(scene_list):
-                start_time = scene[0].get_seconds()
-                end_time = scene[1].get_seconds()
-                scenes.append((start_time, end_time))
+            # Run scene detection in subprocess with timeout
+            process = await asyncio.create_subprocess_exec(
+                'python', str(subprocess_script), 'detect_scenes', str(video_path),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            # Wait for completion with timeout (max 2 minutes for scene detection)
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=120.0
+                )
+            except asyncio.TimeoutError:
+                print("  Scene detection subprocess timed out, terminating...")
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
                 
-            print(f"  Found {len(scenes)} scenes")
+                # Fallback to single scene
+                return [(0.0, 60.0)]
+            
+            if process.returncode != 0:
+                print(f"  Scene detection subprocess failed: {stderr.decode()}")
+                return [(0.0, 60.0)]
+                
+            # Parse result
+            result = json.loads(stdout.decode())
+            
+            if not result.get("success", False):
+                print(f"  Scene detection failed: {result.get('error', 'Unknown error')}")
+                return [(0.0, 60.0)]
+                
+            # Convert scenes to tuple format
+            scenes = []
+            for scene in result.get("scenes", []):
+                scenes.append((scene["start"], scene["end"]))
+                
+            print(f"  Found {len(scenes)} scenes via subprocess")
             return scenes
             
         except Exception as e:
-            print(f"  Scene detection using PySceneDetect failed: {e}")
+            print(f"  Subprocess scene detection failed: {e}")
             # Fallback: create a single scene for the entire video
-            return [(0.0, 60.0)]  # Assume max 60 seconds if we can't detect properly
+            return [(0.0, 60.0)]
     
     async def _analyze_scene_content(self, video_path: Path, scenes_data: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
-        """Extract keyframes from scenes and analyze visual content"""
-        print(f"  Analyzing content of {len(scenes_data)} scenes...")
-        
-        enhanced_scenes = []
-        
-        # Create sourceRef directory for screenshots
-        source_ref = video_path.stem  # filename without extension
-        screenshots_source_dir = self.screenshots_dir / source_ref
-        screenshots_source_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Open video for frame extraction
-        cap = cv2.VideoCapture(str(video_path))
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        """Extract keyframes from scenes and analyze visual content using subprocess isolation"""
+        print(f"  Analyzing content of {len(scenes_data)} scenes (subprocess isolation)...")
         
         try:
+            import asyncio
+            import subprocess
+            import json
+            
+            # Convert scenes data to format expected by subprocess
+            scenes_for_subprocess = []
             for i, (start_time, end_time) in enumerate(scenes_data):
-                duration = end_time - start_time
-                mid_time = start_time + (duration / 2)
-                
-                # Extract keyframe from middle of scene
-                frame_number = int(mid_time * fps)
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-                ret, frame = cap.read()
-                
-                scene_data = {
+                scenes_for_subprocess.append({
                     "scene_id": i,
                     "start": start_time,
                     "end": end_time,
-                    "duration": duration,
-                    "mid_time": mid_time,
-                    "objects": [],
-                    "characteristics": [],
-                    "screenshot_url": None
-                }
+                    "duration": end_time - start_time
+                })
+            
+            # Path to subprocess script
+            subprocess_script = Path(__file__).parent / "opencv_subprocess.py"
+            
+            # Run object analysis in subprocess with timeout
+            process = await asyncio.create_subprocess_exec(
+                'python', str(subprocess_script), 'analyze_objects', str(video_path),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            # Send scenes data to subprocess
+            input_data = json.dumps({"scenes": scenes_for_subprocess}).encode()
+            
+            # Wait for completion with timeout (max 3 minutes for object analysis)
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(input=input_data),
+                    timeout=180.0
+                )
+            except asyncio.TimeoutError:
+                print("  Object analysis subprocess timed out, terminating...")
+                process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.wait()
                 
-                if ret and frame is not None:
-                    # Analyze frame content
-                    objects = self._detect_objects_in_frame(frame)
-                    characteristics = self._analyze_frame_characteristics(frame)
-                    
-                    scene_data["objects"] = objects
-                    scene_data["characteristics"] = characteristics
-                    
-                    # Generate screenshot from scene start
+                # Return basic scenes without detailed analysis
+                return self._create_fallback_scenes(scenes_data)
+            
+            if process.returncode != 0:
+                print(f"  Object analysis subprocess failed: {stderr.decode()}")
+                return self._create_fallback_scenes(scenes_data)
+                
+            # Parse result
+            result = json.loads(stdout.decode())
+            
+            if not result.get("success", False):
+                print(f"  Object analysis failed: {result.get('error', 'Unknown error')}")
+                return self._create_fallback_scenes(scenes_data)
+            
+            enhanced_scenes = result.get("scenes", [])
+            
+            # Generate screenshots for each scene (keep this in main process for now)
+            source_ref = video_path.stem
+            screenshots_source_dir = self.screenshots_dir / source_ref
+            screenshots_source_dir.mkdir(parents=True, exist_ok=True)
+            
+            for i, scene in enumerate(enhanced_scenes):
+                try:
                     screenshot_url = await _generate_screenshot_for_scene(
                         video_path,
-                        start_time,
-                        i,  # scene_id
-                        screenshots_source_dir, # Full path to dir for this source's screenshots
+                        scene["start"],
+                        scene["scene_id"],
+                        screenshots_source_dir,
                         SecurityConfig.FFMPEG_PATH,
                         SecurityConfig.PROCESS_TIMEOUT,
                         SecurityConfig.SCREENSHOTS_BASE_URL,
-                        source_ref # source_ref for URL construction
+                        source_ref
                     )
-                    scene_data["screenshot_url"] = screenshot_url
-                else:
-                    print(f"    Warning: Could not extract keyframe for scene {i}")
-                
-                enhanced_scenes.append(scene_data)
-                
-        finally:
-            cap.release()
+                    scene["screenshot_url"] = screenshot_url
+                except Exception as e:
+                    print(f"    Warning: Could not generate screenshot for scene {i}: {e}")
+                    scene["screenshot_url"] = None
             
-        return enhanced_scenes
+            print(f"  Analyzed {len(enhanced_scenes)} scenes via subprocess")
+            return enhanced_scenes
+            
+        except Exception as e:
+            print(f"  Subprocess object analysis failed: {e}")
+            return self._create_fallback_scenes(scenes_data)
+    
+    def _create_fallback_scenes(self, scenes_data: List[Tuple[float, float]]) -> List[Dict[str, Any]]:
+        """Create basic scene data without detailed analysis as fallback"""
+        fallback_scenes = []
+        for i, (start_time, end_time) in enumerate(scenes_data):
+            fallback_scenes.append({
+                "scene_id": i,
+                "start": start_time,
+                "end": end_time,
+                "duration": end_time - start_time,
+                "mid_time": start_time + ((end_time - start_time) / 2),
+                "objects": ["unknown"],
+                "characteristics": ["analyzed_externally"],
+                "screenshot_url": None
+            })
+        return fallback_scenes
     
     def _detect_objects_in_frame(self, frame: np.ndarray) -> List[str]:
         """Detect objects in a video frame using OpenCV"""
@@ -555,3 +624,229 @@ class VideoContentAnalyzer:
             "total_scenes": len(screenshots),
             "screenshots": screenshots
         }
+    
+    async def detect_loop_points(self, file_id: str, desired_duration: float = 10.0) -> Dict[str, Any]:
+        """
+        Detect optimal loop points for creating seamless YouTube Shorts loops
+        
+        Analyzes video content to find segments that can loop seamlessly based on:
+        - Visual similarity between start and end frames
+        - Natural motion patterns 
+        - Scene boundaries and content flow
+        - Audio characteristics
+        
+        Args:
+            file_id: Video file ID
+            desired_duration: Target loop duration in seconds
+            
+        Returns:
+            Dict with loop point suggestions and quality scores
+        """
+        try:
+            analysis = await self.get_cached_analysis(file_id)
+            
+            if not analysis:
+                return {"success": False, "error": "No analysis found for this file"}
+            
+            scenes = analysis.get("scenes", [])
+            total_duration = analysis.get("total_duration", 0)
+            
+            if total_duration < desired_duration:
+                return {
+                    "success": False, 
+                    "error": f"Video duration {total_duration:.1f}s is shorter than desired loop duration {desired_duration}s"
+                }
+            
+            loop_suggestions = []
+            
+            # Strategy 1: Single scene loops (best for seamless content)
+            for scene in scenes:
+                if scene["duration"] >= desired_duration:
+                    # Find segment within scene that can loop well
+                    loop_start = scene["start"]
+                    loop_end = min(scene["end"], loop_start + desired_duration)
+                    
+                    # Score based on scene characteristics
+                    score = self._calculate_loop_quality_score(scene, loop_end - loop_start, desired_duration)
+                    
+                    loop_suggestions.append({
+                        "type": "single_scene_loop",
+                        "start": loop_start,
+                        "end": loop_end,
+                        "duration": loop_end - loop_start,
+                        "scene_id": scene["scene_id"],
+                        "quality_score": score,
+                        "characteristics": scene.get("characteristics", []),
+                        "objects": scene.get("objects", []),
+                        "loop_strategy": "direct_cut",
+                        "crossfade_recommended": score < 0.7,
+                        "description": f"Loop from scene {scene['scene_id']} with {score:.2f} quality score"
+                    })
+            
+            # Strategy 2: Multi-scene loops with natural transitions
+            if len(scenes) >= 2:
+                for i in range(len(scenes) - 1):
+                    current_scene = scenes[i]
+                    next_scene = scenes[i + 1]
+                    
+                    # Check if we can create a meaningful loop across scenes
+                    potential_duration = min(current_scene["duration"] + next_scene["duration"], desired_duration)
+                    
+                    if potential_duration >= desired_duration * 0.8:  # Allow 80% of desired duration
+                        loop_start = current_scene["start"]
+                        loop_end = current_scene["start"] + potential_duration
+                        
+                        # Calculate transition quality
+                        transition_score = self._calculate_transition_quality(current_scene, next_scene)
+                        
+                        loop_suggestions.append({
+                            "type": "multi_scene_loop",
+                            "start": loop_start,
+                            "end": loop_end,
+                            "duration": loop_end - loop_start,
+                            "scene_range": [current_scene["scene_id"], next_scene["scene_id"]],
+                            "quality_score": transition_score,
+                            "characteristics": list(set(current_scene.get("characteristics", []) + next_scene.get("characteristics", []))),
+                            "objects": list(set(current_scene.get("objects", []) + next_scene.get("objects", []))),
+                            "loop_strategy": "crossfade_transition",
+                            "crossfade_recommended": True,
+                            "crossfade_duration": 0.5,
+                            "description": f"Multi-scene loop from scenes {current_scene['scene_id']}-{next_scene['scene_id']}"
+                        })
+            
+            # Strategy 3: Ping-pong loops (forward + reverse)
+            best_scenes = sorted(scenes, key=lambda s: len(s.get("objects", [])) + len(s.get("characteristics", [])), reverse=True)[:3]
+            
+            for scene in best_scenes:
+                if scene["duration"] >= desired_duration / 2:  # Need at least half duration for ping-pong
+                    segment_duration = min(scene["duration"], desired_duration / 2)
+                    loop_start = scene["start"]
+                    loop_end = loop_start + segment_duration
+                    
+                    # Ping-pong works well with motion and symmetric content
+                    pingpong_score = self._calculate_pingpong_quality(scene)
+                    
+                    loop_suggestions.append({
+                        "type": "pingpong_loop",
+                        "start": loop_start,
+                        "end": loop_end,
+                        "duration": segment_duration * 2,  # Forward + reverse
+                        "scene_id": scene["scene_id"],
+                        "quality_score": pingpong_score,
+                        "characteristics": scene.get("characteristics", []),
+                        "objects": scene.get("objects", []),
+                        "loop_strategy": "reverse_mirror",
+                        "crossfade_recommended": False,
+                        "description": f"Ping-pong loop (forward+reverse) from scene {scene['scene_id']}"
+                    })
+            
+            # Sort by quality score and duration match
+            loop_suggestions.sort(key=lambda x: (x["quality_score"], -abs(x["duration"] - desired_duration)), reverse=True)
+            
+            return {
+                "success": True,
+                "file_info": analysis.get("file_info", {}),
+                "target_duration": desired_duration,
+                "total_suggestions": len(loop_suggestions),
+                "loop_suggestions": loop_suggestions[:5],  # Return top 5 suggestions
+                "analysis_metadata": {
+                    "total_scenes": len(scenes),
+                    "video_duration": total_duration,
+                    "best_strategy": loop_suggestions[0]["type"] if loop_suggestions else "none_found"
+                }
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Loop point detection failed: {str(e)}"
+            }
+    
+    def _calculate_loop_quality_score(self, scene: Dict[str, Any], actual_duration: float, desired_duration: float) -> float:
+        """Calculate quality score for a potential loop segment"""
+        score = 0.5  # Base score
+        
+        # Duration match bonus
+        duration_match = 1.0 - abs(actual_duration - desired_duration) / desired_duration
+        score += duration_match * 0.3
+        
+        # Content richness bonus
+        objects_count = len(scene.get("objects", []))
+        characteristics_count = len(scene.get("characteristics", []))
+        content_richness = min(1.0, (objects_count + characteristics_count) / 5.0)
+        score += content_richness * 0.2
+        
+        # Avoid very short or very long scenes
+        if scene["duration"] < desired_duration * 0.5:
+            score -= 0.2
+        elif scene["duration"] > desired_duration * 3:
+            score -= 0.1
+            
+        return max(0.0, min(1.0, score))
+    
+    def _calculate_transition_quality(self, scene1: Dict[str, Any], scene2: Dict[str, Any]) -> float:
+        """Calculate how well two scenes can transition for looping"""
+        score = 0.4  # Base score for multi-scene
+        
+        # Similar content bonus
+        objects1 = set(scene1.get("objects", []))
+        objects2 = set(scene2.get("objects", []))
+        if objects1 and objects2:
+            similarity = len(objects1.intersection(objects2)) / len(objects1.union(objects2))
+            score += similarity * 0.2
+        
+        # Duration balance
+        duration_balance = 1.0 - abs(scene1["duration"] - scene2["duration"]) / max(scene1["duration"], scene2["duration"])  
+        score += duration_balance * 0.1
+        
+        return max(0.0, min(1.0, score))
+    
+    def _calculate_pingpong_quality(self, scene: Dict[str, Any]) -> float:
+        """Calculate how well a scene works for ping-pong (forward+reverse) looping"""
+        score = 0.6  # Base score for ping-pong
+        
+        # Motion and dynamic content work better for ping-pong
+        characteristics = scene.get("characteristics", [])
+        if "motion" in characteristics or "dynamic" in characteristics:
+            score += 0.2
+        if "static" in characteristics:
+            score -= 0.1
+            
+        # People and faces often work well for ping-pong
+        objects = scene.get("objects", [])
+        if "person" in objects or "face" in objects:
+            score += 0.1
+            
+        return max(0.0, min(1.0, score))
+    
+    async def cleanup_analysis_resources(self):
+        """Cleanup resources used during video analysis (called on timeout/error)"""
+        try:
+            # Kill any hanging OpenCV processes
+            import subprocess
+            import os
+            import signal
+            
+            # Find and kill any hanging python processes doing OpenCV work
+            result = subprocess.run(['pgrep', '-f', 'python.*opencv'], capture_output=True, text=True)
+            if result.stdout.strip():
+                pids = result.stdout.strip().split('\n')
+                for pid in pids:
+                    try:
+                        os.kill(int(pid), signal.SIGTERM)
+                        print(f"Terminated OpenCV process: {pid}")
+                    except (ProcessLookupError, ValueError):
+                        pass  # Process already dead or invalid PID
+            
+            # Clear any temporary analysis files or locks
+            if hasattr(self, '_temp_analysis_files'):
+                for temp_file in self._temp_analysis_files:
+                    try:
+                        temp_file.unlink(missing_ok=True)
+                    except:
+                        pass
+                self._temp_analysis_files = []
+                        
+        except Exception as e:
+            print(f"Warning: Cleanup failed: {e}")
+            # Don't raise exception in cleanup

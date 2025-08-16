@@ -1,0 +1,40 @@
+{
+  "test_start": 1754847953.466256,
+  "stages": {
+    "haiku_initialization": 0.00011706352233886719,
+    "quality_analysis": 0.00011110305786132812,
+    "metadata_generation": 4.0531158447265625e-06,
+    "looping_analysis": 0.2665982246398926,
+    "youtube_upload": 3.387982130050659
+  },
+  "haiku_analysis": {
+    "recommended_strategy": "standard_concat",
+    "confidence": 0.7,
+    "has_frame_issues": false,
+    "reasoning": "2 files, 18.5MB - heuristic analysis",
+    "estimated_cost": 0.0
+  },
+  "upload_result": {
+    "success": true,
+    "video_id": "yl7v26Tml8g",
+    "video_url": "https://www.youtube.com/watch?v=yl7v26Tml8g",
+    "shorts_url": "https://www.youtube.com/shorts/yl7v26Tml8g",
+    "title": "\ud83c\udf0a Subnautica Deep Ocean Music Video | AI-Optimized Underwater Adventure | 24s Loop",
+    "privacy_status": "public",
+    "upload_timestamp": "2025-08-10T19:45:57.121374"
+  },
+  "looping_analysis": {
+    "loop_compatible": true,
+    "duration": 24.0,
+    "ideal_for_looping": true,
+    "youtube_shorts_compatible": true,
+    "beat_synchronized": true,
+    "analysis": {
+      "duration_check": "\u2705 24.0s (target: 24s)",
+      "shorts_check": "\u2705 Under 60s limit",
+      "beat_check": "\u2705 120 BPM synchronized",
+      "recommendation": "Perfect for looping"
+    }
+  },
+  "total_time": 3.655242919921875
+}

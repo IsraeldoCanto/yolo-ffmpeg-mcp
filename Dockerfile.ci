@@ -3,8 +3,8 @@ FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
 
 # Install only essential dependencies for CI testing
 RUN uv pip install --system --no-cache \
-    pytest>=8.4.0 \
-    pytest-asyncio>=1.0.0
+    "pytest>=8.4.0" \
+    "pytest-asyncio>=1.0.0"
 
 # Copy only test scripts needed for CI
 COPY test_fast_filter_ci.py ./

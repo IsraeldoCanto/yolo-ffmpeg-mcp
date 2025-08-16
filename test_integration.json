@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "CI/CD Integration Test",
+    "description": "Simple test for updated Komposteur integration",
+    "bpm": 120,
+    "beatsPerMeasure": 16,
+    "totalBeats": 32,
+    "estimatedDuration": 16.0
+  },
+  "segments": [
+    {
+      "id": "test_segment",
+      "sourceRef": "PXL_20250306_132546255.mp4",
+      "startBeat": 0,
+      "endBeat": 32,
+      "duration": 32,
+      "operation": "trim",
+      "params": {
+        "start": 0,
+        "duration": 8.0
+      }
+    }
+  ],
+  "outputSettings": {
+    "resolution": "1920x1080",
+    "fps": 30
+  }
+}

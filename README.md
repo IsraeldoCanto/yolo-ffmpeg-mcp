@@ -45,12 +45,11 @@ python examples/video-workflows/build_your_video.py
 
 ## 🎯 Key Features
 
-### ✅ Production Ready
-- **AI-Powered Content Analysis**: Automatic scene detection and object recognition
-- **Speech Detection**: Advanced VAD with Silero and quality assessment  
-- **Beat-Synchronized Videos**: Precise BPM timing for music video creation
-- **Form-Factor Control**: Smart aspect ratio conversion with intelligent cropping
-- **Video Effects System**: 12+ professional effects with multi-provider architecture
+- ✅ **AI-Powered Content Analysis**: Automatic scene detection and object recognition
+- ✅ **Speech Detection**: Advanced VAD with Silero and quality assessment
+- ✅ **Form-Factor Control**: Smart aspect ratio conversion with intelligent cropping
+- ✅ **Video Effects System**: 12+ professional effects with multi-provider architecture
+- ⏳ **Beat-Synchronized Videos**: Designed for precise BPM timing (integration blocked by Java API).
 
 ### 🔧 Developer Features  
 - **MCP Protocol Integration**: 40+ tools for video processing automation
@@ -131,7 +130,7 @@ aider --mcp-server localhost:8000
 
 - **AI Content Analysis** - Automatically understands video scenes, objects, and timing
 - **Speech Detection** - Finds and preserves speech segments in videos  
-- **Beat Synchronization** - Creates music videos perfectly timed to BPM
+- **Beat Synchronization** - Designed to create music videos perfectly timed to BPM (integration currently blocked)
 - **Smart Editing** - Suggests optimal cuts and transitions based on content analysis
 - **Intelligent Workflows** - One command creates complete music videos from description
 
@@ -149,7 +148,7 @@ aider --mcp-server localhost:8000
 - **Visual Scene Selection**: Preview scenes with screenshot URLs
 
 ### Advanced Music Video Creation
-- **Beat-Synchronized Editing**: Perfect timing to music BPM
+- **Beat-Synchronized Editing**: Designed for perfect timing to music BPM (integration currently blocked)
 - **Speech-Aware Processing**: Preserves dialogue while adding background music
 - **Transition Effects**: Professional fade, wipe, and crossfade transitions
 - **One-Command Creation**: Generate complete music videos from text descriptions
@@ -199,7 +198,7 @@ aider --mcp-server localhost:8000
 **PRODUCTION READY** - Complete intelligent video editing system with:
 - ✅ 15+ MCP tools for video processing
 - ✅ AI-powered content analysis and speech detection  
-- ✅ Beat-synchronized music video creation
+- ⏳ **Komposteur Integration**: Beat-synchronized video creation is designed, but **BLOCKED** pending Java API implementation.
 - ✅ Comprehensive test suite with CI/CD
 - ✅ Docker containerization for production deployment
 - ✅ Security-first architecture with proper validation

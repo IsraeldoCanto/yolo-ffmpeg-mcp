@@ -1,0 +1,155 @@
+{
+  "version": "1.0",
+  "title": "Subnautica MCP-Calculated Video",
+  "description": "Video created using MCP timing calculations for comparison",
+  "metadata": {
+    "creation_method": "MCP_uniform_timing",
+    "comparison_test": true,
+    "timing_approach": "uniform_division_vs_keyframe_aligned"
+  },
+  "audio": {
+    "source": "Subnautic Measures.flac",
+    "volume": 0.8,
+    "fade_in": 1.0,
+    "fade_out": 2.0
+  },
+  "video_segments": [
+    {
+      "id": "seg01",
+      "source_file": "Oa8iS1W3OCM.mp4",
+      "source_start": 0.0,
+      "duration": 2.0,
+      "target_start": 0.0,
+      "target_end": 2.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg02",
+      "source_file": "Oa8iS1W3OCM.mp4",
+      "source_start": 15.0,
+      "duration": 2.0,
+      "target_start": 2.0,
+      "target_end": 4.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg03",
+      "source_file": "Oa8iS1W3OCM.mp4",
+      "source_start": 30.0,
+      "duration": 2.0,
+      "target_start": 4.0,
+      "target_end": 6.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg04",
+      "source_file": "Oa8iS1W3OCM.mp4",
+      "source_start": 45.0,
+      "duration": 2.0,
+      "target_start": 6.0,
+      "target_end": 8.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg05",
+      "source_file": "3xEMCU1fyl8.mp4",
+      "source_start": 0.0,
+      "duration": 2.0,
+      "target_start": 8.0,
+      "target_end": 10.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg06",
+      "source_file": "3xEMCU1fyl8.mp4",
+      "source_start": 15.0,
+      "duration": 2.0,
+      "target_start": 10.0,
+      "target_end": 12.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg07",
+      "source_file": "3xEMCU1fyl8.mp4",
+      "source_start": 30.0,
+      "duration": 2.0,
+      "target_start": 12.0,
+      "target_end": 14.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg08",
+      "source_file": "3xEMCU1fyl8.mp4",
+      "source_start": 45.0,
+      "duration": 2.0,
+      "target_start": 14.0,
+      "target_end": 16.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg09",
+      "source_file": "PLnPZVqiyjA.mp4",
+      "source_start": 0.0,
+      "duration": 2.0,
+      "target_start": 16.0,
+      "target_end": 18.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg10",
+      "source_file": "PLnPZVqiyjA.mp4",
+      "source_start": 15.0,
+      "duration": 2.0,
+      "target_start": 18.0,
+      "target_end": 20.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg11",
+      "source_file": "PLnPZVqiyjA.mp4",
+      "source_start": 30.0,
+      "duration": 2.0,
+      "target_start": 20.0,
+      "target_end": 22.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    },
+    {
+      "id": "seg12",
+      "source_file": "PLnPZVqiyjA.mp4",
+      "source_start": 45.0,
+      "duration": 2.0,
+      "target_start": 22.0,
+      "target_end": 24.0,
+      "keyframe_aligned": false,
+      "processing_method": "MCP_uniform",
+      "expected_quality": "UNKNOWN - may have frame loss"
+    }
+  ],
+  "expected_issues": [
+    "Potential frame loss due to non-keyframe extraction points",
+    "Quality degradation from uniform timing vs keyframe alignment",
+    "Possible synchronization issues with 120 BPM beat"
+  ]
+}

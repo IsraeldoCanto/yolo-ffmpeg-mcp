@@ -9,12 +9,14 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 try:
-    from .komposition_processor import KompositionProcessor, BeatTiming
+    from .komposition_processor import KompositionProcessor
+    from .komposition_build_planner import BeatTiming
     from .file_manager import FileManager
     from .ffmpeg_wrapper import FFMPEGWrapper
     from .config import SecurityConfig
 except ImportError:
-    from komposition_processor import KompositionProcessor, BeatTiming
+    from komposition_processor import KompositionProcessor
+    from komposition_build_planner import BeatTiming
     from file_manager import FileManager
     from ffmpeg_wrapper import FFMPEGWrapper
     from config import SecurityConfig
@@ -22,8 +24,8 @@ except ImportError:
 class SpeechKompositionProcessor(KompositionProcessor):
     """Extended komposition processor with speech overlay capabilities"""
     
-    def __init__(self, file_manager: FileManager, ffmpeg_wrapper: FFMPEGWrapper):
-        super().__init__(file_manager, ffmpeg_wrapper)
+    def __init__(self):
+        super().__init__()
         self.temp_dir = Path("/tmp/music/temp")
         self.temp_dir.mkdir(exist_ok=True)
     

@@ -1,0 +1,30 @@
+{
+  "priority": "HIGH - Critical for production quality",
+  "core_requirements": {
+    "video_intelligence": {
+      "scene_detection": "Implement ffprobe-based scene boundary detection",
+      "keyframe_analysis": "Use GOP structure analysis for optimal cut points",
+      "content_awareness": "Analyze video flow and natural transition points"
+    },
+    "segmentation_algorithm": {
+      "replace_uniform_division": "Never use mathematical time division for video content",
+      "implement_content_based": "Use scene detection + keyframe alignment",
+      "quality_validation": "Verify segment boundaries respect video structure"
+    },
+    "processing_pipeline": {
+      "multi_pass": "First pass: analysis, Second pass: extraction, Third pass: validation",
+      "quality_gates": "Frame loss detection, content continuity validation",
+      "error_handling": "Fallback to manual keyframe detection if scene detection fails"
+    }
+  },
+  "specific_implementations": {
+    "scene_detection_command": "ffprobe -f lavfi -i movie=input.mp4,select='gt(scene\\,0.3)' -show_entries frame=pts_time -of csv=p=0",
+    "keyframe_detection_command": "ffprobe -show_entries frame=key_frame,pts_time -select_streams v:0 -of csv=p=0 input.mp4",
+    "quality_validation_command": "ffprobe -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0"
+  },
+  "mcp_compatibility_layer": {
+    "provide_simple_interface": "Hide complexity behind simple MCP tools",
+    "expose_quality_options": "Allow quality vs speed trade-offs",
+    "intelligent_defaults": "Use content-aware algorithms as default"
+  }
+}

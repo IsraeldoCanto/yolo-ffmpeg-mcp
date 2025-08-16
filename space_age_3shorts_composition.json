@@ -1,0 +1,579 @@
+{
+  "metadata": {
+    "title": "Space Age Journey - 3 YouTube Shorts",
+    "description": "Three futuristic YouTube Shorts with space age filtering and sci-fi atmosphere",
+    "bpm": 128,
+    "beatsPerMeasure": 4,
+    "totalBeats": 96,
+    "totalSegments": 12,
+    "segmentDuration": 3.75,
+    "estimatedDuration": 45.0,
+    "created": "2025-01-11T16:30:00Z",
+    "version": "2.1",
+    "theme": "space_age_futuristic",
+    "outputFormat": {
+      "resolution": "1080x1920",
+      "fps": 30,
+      "format": "mp4",
+      "orientation": "portrait"
+    }
+  },
+  "segments": [
+    {
+      "id": "stellar_intro_01",
+      "startBeat": 0,
+      "endBeat": 8,
+      "duration": 3.75,
+      "role": "intro",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "fade_in",
+          "duration": 0.8,
+          "curve": "smooth"
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.8,
+          "chrome_effect": true,
+          "metallic_sheen": 0.7,
+          "neon_glow": true,
+          "holographic_distortion": 0.3
+        },
+        {
+          "type": "scale_blur_bg",
+          "targetResolution": "1080x1920",
+          "blur_strength": 0.2
+        },
+        {
+          "type": "lens_flare",
+          "intensity": 0.6,
+          "color": "blue_white",
+          "position": "center"
+        }
+      ],
+      "description": "Stellar intro with holographic chrome effects and lens flares"
+    },
+    {
+      "id": "cybernetic_flow_02",
+      "startBeat": 8,
+      "endBeat": 16,
+      "duration": 3.75,
+      "role": "verse",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.4
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.9,
+          "digital_grid": true,
+          "circuit_overlay": 0.4,
+          "electric_blue_tint": 0.6,
+          "scan_lines": true
+        },
+        {
+          "type": "digital_glitch",
+          "frequency": 0.2,
+          "intensity": 0.3
+        },
+        {
+          "type": "chromatic_aberration",
+          "strength": 0.1
+        }
+      ],
+      "description": "Cybernetic flow with digital grid overlay and electric effects"
+    },
+    {
+      "id": "quantum_drift_03",
+      "startBeat": 16,
+      "endBeat": 24,
+      "duration": 3.75,
+      "role": "verse",
+      "sourceType": "video",
+      "sourceRef": "PLnPZVqiyjA.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.4
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.7,
+          "quantum_particles": true,
+          "energy_streams": 0.5,
+          "purple_nebula_tint": 0.4,
+          "warp_distortion": 0.2
+        },
+        {
+          "type": "particle_system",
+          "type": "energy_orbs",
+          "density": 0.3,
+          "animation_speed": 0.8
+        }
+      ],
+      "description": "Quantum drift with energy particles and nebula effects"
+    },
+    {
+      "id": "cosmic_transition_04",
+      "startBeat": 24,
+      "endBeat": 32,
+      "duration": 3.75,
+      "role": "transition",
+      "sourceType": "video",
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 1.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "warp_transition",
+          "duration": 0.5,
+          "warp_speed": "ludicrous"
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 1.0,
+          "star_field": true,
+          "cosmic_dust": 0.6,
+          "hyperspace_lines": true,
+          "time_dilation_effect": 0.3
+        },
+        {
+          "type": "speed_lines",
+          "density": 0.7,
+          "color": "electric_cyan"
+        }
+      ],
+      "description": "Cosmic transition with hyperspace effects and star fields"
+    },
+    {
+      "id": "neural_network_05",
+      "startBeat": 32,
+      "endBeat": 40,
+      "duration": 3.75,
+      "role": "chorus_build",
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 2.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "neural_transition",
+          "duration": 0.3
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.8,
+          "neural_connections": true,
+          "data_streams": 0.7,
+          "ai_matrix_effect": true,
+          "green_code_rain": 0.4
+        },
+        {
+          "type": "matrix_effect",
+          "code_density": 0.5,
+          "scroll_speed": 1.2
+        }
+      ],
+      "description": "Neural network visualization with AI matrix effects"
+    },
+    {
+      "id": "fusion_core_06",
+      "startBeat": 40,
+      "endBeat": 48,
+      "duration": 3.75,
+      "role": "peak",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 5.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "energy_burst_transition",
+          "duration": 0.2
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 1.0,
+          "fusion_reactor": true,
+          "plasma_effects": 0.9,
+          "energy_discharge": true,
+          "electromagnetic_field": 0.8
+        },
+        {
+          "type": "brightness_surge",
+          "intensity": 1.4,
+          "pulsation": true
+        },
+        {
+          "type": "bloom_effect",
+          "strength": 0.6,
+          "threshold": 0.7
+        }
+      ],
+      "description": "Fusion core energy with plasma effects and electromagnetic fields"
+    },
+    {
+      "id": "holodeck_07",
+      "startBeat": 48,
+      "endBeat": 56,
+      "duration": 3.75,
+      "role": "bridge",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 4.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "hologram_transition",
+          "duration": 0.4
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.6,
+          "hologram_effect": true,
+          "projection_lines": 0.5,
+          "transparency_waves": 0.3,
+          "digital_artifacts": true
+        },
+        {
+          "type": "scan_line_effect",
+          "frequency": 2.0,
+          "opacity": 0.3
+        }
+      ],
+      "description": "Holodeck simulation with projection effects and digital artifacts"
+    },
+    {
+      "id": "asteroid_field_08",
+      "startBeat": 56,
+      "endBeat": 64,
+      "duration": 3.75,
+      "role": "dynamic",
+      "sourceType": "video",
+      "sourceRef": "PLnPZVqiyjA.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 6.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "debris_transition",
+          "duration": 0.3
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.8,
+          "asteroid_field": true,
+          "space_debris": 0.6,
+          "gravitational_lensing": 0.4,
+          "cosmic_radiation": true
+        },
+        {
+          "type": "parallax_motion",
+          "layers": 3,
+          "speed_variation": 0.5
+        }
+      ],
+      "description": "Asteroid field navigation with gravitational effects"
+    },
+    {
+      "id": "wormhole_09",
+      "startBeat": 64,
+      "endBeat": 72,
+      "duration": 3.75,
+      "role": "climax_build",
+      "sourceType": "video",
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 8.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "vortex_transition",
+          "duration": 0.6
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 1.0,
+          "wormhole_effect": true,
+          "spacetime_distortion": 0.9,
+          "event_horizon": true,
+          "exotic_matter": 0.7
+        },
+        {
+          "type": "radial_blur",
+          "center": "0.5,0.5",
+          "strength": 0.4,
+          "animation": "pulsing"
+        }
+      ],
+      "description": "Wormhole traversal with spacetime distortion effects"
+    },
+    {
+      "id": "galactic_core_10",
+      "startBeat": 72,
+      "endBeat": 80,
+      "duration": 3.75,
+      "role": "climax",
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 6.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "supernova_transition",
+          "duration": 0.3
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 1.0,
+          "galactic_center": true,
+          "black_hole_accretion": 0.8,
+          "stellar_formation": true,
+          "cosmic_background_radiation": 0.6
+        },
+        {
+          "type": "brightness_boost",
+          "intensity": 1.6
+        },
+        {
+          "type": "color_temperature_shift",
+          "kelvin": 8000,
+          "intensity": 0.4
+        }
+      ],
+      "description": "Galactic core with black hole and stellar formation effects"
+    },
+    {
+      "id": "quantum_resolution_11",
+      "startBeat": 80,
+      "endBeat": 88,
+      "duration": 3.75,
+      "role": "resolution",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 10.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "quantum_fade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.5,
+          "quantum_foam": true,
+          "probability_waves": 0.4,
+          "dimensional_shift": 0.3,
+          "peaceful_drift": true
+        },
+        {
+          "type": "gaussian_blur",
+          "strength": 0.1,
+          "animation": "fade_in"
+        }
+      ],
+      "description": "Quantum resolution with peaceful dimensional shifts"
+    },
+    {
+      "id": "cosmic_outro_12",
+      "startBeat": 88,
+      "endBeat": 96,
+      "duration": 3.75,
+      "role": "outro",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 8.0,
+        "duration": 3.75,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "cosmic_fade_transition",
+          "duration": 0.4
+        },
+        {
+          "type": "space_age_filter",
+          "intensity": 0.6,
+          "deep_space": true,
+          "distant_galaxies": 0.5,
+          "cosmic_microwave_background": true,
+          "infinite_vastness": 0.8
+        },
+        {
+          "type": "fade_out",
+          "duration": 2.0,
+          "curve": "exponential"
+        }
+      ],
+      "description": "Cosmic outro fading into the infinite vastness of space"
+    }
+  ],
+  "audioConfiguration": {
+    "backgroundMusic": "Subnautic Measures.flac",
+    "extractStart": 0.0,
+    "extractDuration": 45.0,
+    "fadeIn": 0.8,
+    "fadeOut": 1.5,
+    "volume": 0.9,
+    "beatSyncEnabled": true,
+    "beatDetection": {
+      "autoDetect": true,
+      "manualBpm": 128,
+      "syncTolerance": 0.08
+    },
+    "processing": {
+      "normalize": true,
+      "highpassFilter": 30,
+      "lowpassFilter": 16000,
+      "compressor": {
+        "threshold": -14,
+        "ratio": 4.0,
+        "attack": 2,
+        "release": 80
+      },
+      "reverb": {
+        "enabled": true,
+        "roomSize": 0.9,
+        "damping": 0.2,
+        "wetLevel": 0.3,
+        "spaceEffect": true
+      },
+      "spatialAudio": {
+        "enabled": true,
+        "width": 1.2,
+        "depth": 0.8
+      }
+    }
+  },
+  "renderSettings": {
+    "quality": "ultra",
+    "codec": "libx264",
+    "preset": "slower",
+    "crf": 16,
+    "keyframeInterval": 24,
+    "audioCodec": "aac",
+    "audioBitrate": "256k",
+    "audioSampleRate": 48000,
+    "colorSpace": "bt709",
+    "pixelFormat": "yuv420p",
+    "seamlessLoop": false,
+    "optimization": {
+      "twoPass": true,
+      "bufsize": "3M",
+      "maxrate": "6M",
+      "profile": "high",
+      "level": "4.1"
+    },
+    "metadataEmbedding": {
+      "title": "Space Age Journey",
+      "description": "Futuristic music video with space age effects",
+      "tags": ["space", "futuristic", "sci-fi", "music video"]
+    }
+  },
+  "transitions": {
+    "globalTransition": {
+      "type": "space_warp",
+      "duration": 0.4,
+      "curve": "cubic_bezier",
+      "parameters": {
+        "distortion_strength": 0.3,
+        "energy_burst": true
+      }
+    },
+    "specialTransitions": [
+      {
+        "fromSegment": "cosmic_transition_04",
+        "toSegment": "neural_network_05",
+        "type": "neural_bridge",
+        "duration": 0.6,
+        "parameters": {
+          "synapse_flash": true,
+          "data_transfer_effect": 0.8
+        }
+      },
+      {
+        "fromSegment": "fusion_core_06",
+        "toSegment": "holodeck_07",
+        "type": "energy_dissipation",
+        "duration": 0.5,
+        "parameters": {
+          "plasma_cooldown": true,
+          "hologram_materialization": 0.7
+        }
+      },
+      {
+        "fromSegment": "wormhole_09",
+        "toSegment": "galactic_core_10",
+        "type": "spacetime_tear",
+        "duration": 0.8,
+        "parameters": {
+          "dimensional_rift": true,
+          "gravity_well_effect": 0.9
+        }
+      }
+    ]
+  },
+  "youtubeShortsOptimization": {
+    "verticalFormat": true,
+    "hookTiming": 2.0,
+    "engagementPoints": [8, 24, 40, 64, 80],
+    "visualDensity": "high",
+    "effectIntensity": "dynamic",
+    "audioLoudness": "youtube_shorts_standard"
+  }
+}

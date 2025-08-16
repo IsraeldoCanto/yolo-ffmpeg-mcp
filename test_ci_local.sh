@@ -17,7 +17,7 @@ export VIDEO_PLAYER=none
 # Test 1: Setup CI environment
 echo ""
 echo "📋 Test 1: CI Environment Setup"
-chmod +x test_ci_config.sh
+# Files should be executable from git - no chmod needed
 ./test_ci_config.sh setup
 
 # Test 2: Python dependencies
@@ -66,7 +66,7 @@ echo "✅ Video verification passed"
 # Test 6: Test scripts
 echo ""
 echo "📋 Test 6: Test Scripts"
-chmod +x test_music_video_creation.sh
+# Files should be executable from git - no chmod needed
 ./test_music_video_creation.sh "Local CI test" "" "natural_language" || echo "Test completed with expected limitations"
 
 # Test 7: Cleanup

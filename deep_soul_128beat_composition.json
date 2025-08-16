@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "title": "Deep Soul Loop - 128 Beat Music Video",
+    "description": "A 128-beat music video at 120 BPM optimized for YouTube Shorts with seamless looping",
+    "bpm": 120,
+    "totalBeats": 128,
+    "estimatedDuration": 64.0,
+    "created": "2025-08-06T21:42:00Z",
+    "version": "1.0",
+    "outputFormat": {
+      "resolution": "1080x1920",
+      "fps": 30,
+      "format": "mp4"
+    }
+  },
+  "segments": [
+    {
+      "id": "intro_segment",
+      "sourceRef": "seamless_loop_demo.mp4",
+      "startBeat": 0,
+      "endBeat": 32,
+      "duration": 16.0,
+      "role": "intro",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 3.5,
+        "loop": true,
+        "loopCount": 5
+      },
+      "effects": [
+        {
+          "type": "fade_in",
+          "duration": 1.0
+        },
+        {
+          "type": "scale_blur_bg",
+          "targetResolution": "1080x1920"
+        }
+      ]
+    },
+    {
+      "id": "verse_segment",
+      "sourceRef": "temp_2a274ebc.mp4",
+      "startBeat": 32,
+      "endBeat": 64,
+      "duration": 16.0,
+      "role": "verse",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 2.0,
+        "loop": true,
+        "loopCount": 8
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "chorus_segment",
+      "sourceRef": "youtube_shorts_demo.mp4",
+      "startBeat": 64,
+      "endBeat": 96,
+      "duration": 16.0,
+      "role": "chorus",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 3.5,
+        "loop": true,
+        "loopCount": 5
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "brightness_boost",
+          "intensity": 1.2
+        }
+      ]
+    },
+    {
+      "id": "outro_segment",
+      "sourceRef": "seamless_loop_demo.mp4",
+      "startBeat": 96,
+      "endBeat": 128,
+      "duration": 16.0,
+      "role": "outro",
+      "extractionParams": {
+        "start": 1.0,
+        "duration": 3.5,
+        "loop": true,
+        "loopCount": 5
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "fade_out",
+          "duration": 2.0
+        }
+      ]
+    }
+  ],
+  "audioConfiguration": {
+    "backgroundMusic": ".testdata/16BL - Deep In My Soul (Original Mix).mp3",
+    "extractStart": 60.0,
+    "extractDuration": 64.0,
+    "fadeIn": 1.0,
+    "fadeOut": 2.0,
+    "volume": 0.8,
+    "processing": {
+      "normalize": true,
+      "compressor": {
+        "threshold": -18,
+        "ratio": 2.5
+      }
+    }
+  },
+  "renderSettings": {
+    "quality": "high",
+    "codec": "libx264",
+    "preset": "medium",
+    "crf": 20,
+    "keyframeInterval": 30,
+    "audioCodec": "aac",
+    "audioBitrate": "128k",
+    "colorSpace": "bt709",
+    "seamlessLoop": true
+  }
+}
