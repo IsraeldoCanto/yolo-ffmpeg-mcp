@@ -15,8 +15,9 @@ RUN uv pip install --system --no-cache \
     "pytest>=8.4.0" \
     "pytest-asyncio>=1.0.0" \
     "jsonschema>=4.0.0" \
-    "PyYAML>=6.0"
-# Note: opencv-python-headless, pillow, numpy, psutil pre-installed in base image
+    "PyYAML>=6.0" \
+    "opencv-python-headless>=4.11.0"
+# Note: pillow, numpy, psutil should be pre-installed in base image
 
 # Copy application code
 COPY src/ ./src/
