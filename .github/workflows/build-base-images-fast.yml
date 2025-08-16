@@ -57,6 +57,7 @@ jobs:
             --tag test-${{ matrix.dockerfile.tag }} \
             --cache-from type=gha,scope=${{ matrix.dockerfile.tag }} \
             --cache-to type=gha,mode=max,scope=${{ matrix.dockerfile.tag }} \
+            --load \
             .
           
           end_time=$(date +%s)
