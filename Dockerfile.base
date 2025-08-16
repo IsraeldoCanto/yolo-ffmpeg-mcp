@@ -1,6 +1,6 @@
 # FFMPEG MCP Server - Base image with system dependencies only
 # This image is pre-built and stored in GitHub Container Registry
-FROM python:3.13-alpine
+FROM python:3.12-alpine
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -21,26 +21,36 @@ RUN apk add --no-cache \
     g++ \
     musl-dev \
     linux-headers \
-    # OpenCV dependencies 
+    # OpenCV dependencies - comprehensive build support
     glib-dev \
+    pkgconfig \
     # Audio processing
     libsndfile-dev \
-    # Python development
+    # Python development and compilation support
     python3-dev \
-    # For some pip packages
-    build-base
+    # Build dependencies for pip packages
+    build-base \
+    cmake \
+    openblas-dev \
+    jpeg-dev \
+    libpng-dev \
+    tiff-dev \
+    libwebp-dev \
+    zlib-dev
 
 # Install UV for fast Python package management
 RUN pip install --no-cache-dir uv
 
-# Install heavy Python dependencies that take long to build (cached in GHCR)
+# Install heavy Python dependencies with Alpine-specific handling
 RUN uv pip install --system --no-cache \
-    # Heavy packages that need compilation
-    opencv-python-headless>=4.8.0 \
-    pillow>=10.0.0 \
+    # Scientific computing first (required by OpenCV)
     numpy>=1.24.0 \
-    # Audio processing
-    psutil>=5.9.0
+    # Image processing
+    pillow>=10.0.0 \
+    # System utilities
+    psutil>=5.9.0 && \
+    # OpenCV separately with build timeout (can take 10+ minutes on Alpine)
+    uv pip install --system --no-cache opencv-python-headless>=4.8.0
 
 # Create working directory
 WORKDIR /app
