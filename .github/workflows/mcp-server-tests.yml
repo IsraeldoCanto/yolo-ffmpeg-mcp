@@ -32,7 +32,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra dev
         
       - name: Install system dependencies
         run: |
@@ -72,7 +72,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra dev
         
       - name: Install system dependencies with ffmpeg
         run: |
@@ -316,7 +316,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv sync
+          uv sync --extra dev
           
       - name: Install system dependencies
         run: |
@@ -434,7 +434,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv sync
+          uv sync --extra dev
           
       - name: Install system dependencies
         run: |

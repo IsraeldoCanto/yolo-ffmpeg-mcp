@@ -35,7 +35,7 @@ jobs:
       run: |
         uv venv --python 3.13 .venv
         source .venv/bin/activate
-        uv sync
+        uv sync --extra dev
     
     - name: Create test directories
       run: |
@@ -86,7 +86,7 @@ jobs:
       run: |
         uv venv --python 3.13 .venv
         source .venv/bin/activate
-        uv sync
+        uv sync --extra dev
     
     - name: Set up test environment
       run: |

@@ -55,6 +55,7 @@ YOLO-FFMPEG-MCP now operates as the **master video processing orchestrator** wit
 - **Komposteur Subagent**: Beat-synchronization, S3 infrastructure, Java 24 ecosystem
 - **VideoRenderer Subagent**: FFmpeg optimization, crossfade processing, performance tuning
 - **VDVIL Subagent**: DJ-mixing infrastructure, audio composition, binding layer operations
+- **Build Detective Subagent**: CI/build failure analysis, GitHub Actions debugging, dependency resolution
 
 ### **Intelligent Task Delegation**
 ```bash
@@ -62,6 +63,7 @@ YOLO-FFMPEG-MCP now operates as the **master video processing orchestrator** wit
 /komposteur "Create beat-synchronized music video for 135 BPM track"
 /videorenderer "Optimize crossfade processing for 4K videos" 
 /vdvil "Create professional DJ mix with crossfading for music video"
+/build-detective "Investigate CI failures in GitHub Actions"
 ```
 
 ### **Multi-Subagent Coordination**  
@@ -92,6 +94,17 @@ User: "Speed up video processing pipeline"
 ```
 
 This hierarchical system transforms YOLO into a comprehensive video processing ecosystem while maintaining the simplicity and intelligence users expect.
+
+### **Subagent Delegation Strategy**
+**CRITICAL**: Automatically delegate tasks to specialized subagents:
+
+- **CI/Build Analysis**: Use `build-detective` subagent for:
+  - GitHub Actions failures
+  - UV/Python dependency issues  
+  - Docker build problems
+  - Test execution failures
+  - MCP server startup issues
+  - FFmpeg processing timeouts
 
 ## LLM Issue Reporting and Improvement Tracking
 
