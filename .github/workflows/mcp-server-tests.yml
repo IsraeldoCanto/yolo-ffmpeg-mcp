@@ -419,7 +419,8 @@ jobs:
   mcp-performance-baseline:
     name: MCP Server Performance Baseline
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: mcp-server-unit-tests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'feature/'))
     
     steps:
       - name: Checkout code
@@ -460,7 +461,34 @@ jobs:
           print(f'File manager initialization: {end-start:.3f}s')
           "
           
+      - name: Performance test - Docker dependency fix validation
+        run: |
+          echo "🐳 Testing Docker opencv dependency fix..."
+          # Test the opencv import that was failing before our fix
+          uv run python -c "
+          import time
+          start = time.time()
+          try:
+              import cv2
+              end = time.time()
+              print(f'✅ OpenCV import successful: {end-start:.3f}s')
+          except ImportError as e:
+              print(f'❌ OpenCV import failed: {e}')
+              exit(1)
+          "
+          
+      - name: Performance test - FFmpeg integration
+        run: |
+          echo "🎬 Testing FFmpeg performance..."
+          time ffmpeg -f lavfi -i testsrc2=duration=1:size=320x240:rate=1 -y /tmp/test_perf.mp4
+          ls -lh /tmp/test_perf.mp4
+          echo "✅ FFmpeg basic operation completed"
+          
       - name: Save performance metrics
         run: |
           echo "📊 Performance baseline established"
-          echo "Startup time and file operations measured for future comparison"
+          echo "✅ Server startup time measured"
+          echo "✅ File manager initialization measured"  
+          echo "✅ OpenCV dependency availability confirmed"
+          echo "✅ FFmpeg basic operations measured"
+          echo "Performance metrics available for regression detection"
