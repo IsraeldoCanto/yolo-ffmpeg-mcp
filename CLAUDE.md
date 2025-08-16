@@ -2,6 +2,16 @@
 
 **🚨 CRITICAL: Read Registry Guidelines Below Before Using This Server**
 
+## ⚠️ CRITICAL: NO ARCHITECTURAL CHANGES WITHOUT PERMISSION ⚠️
+
+**MANDATORY CONSULTATION RULE:**
+- **NEVER** change base images, package managers, core dependencies without explicit ask
+- **NEVER** switch tech stacks (Alpine→Debian, pip→UV, Python versions) 
+- **ALWAYS** present options first: "Fix Alpine deps vs switch to Debian - which?"
+- **WAIT** for explicit permission before implementing architectural changes
+
+**VIOLATION = IMMEDIATE STOP**
+
 ## 🛠️ **Development vs Production JAR Strategy** ✅ **NEW**
 
 ### **Local Development Approach** ✅ **UPDATED for 1.0.0**
