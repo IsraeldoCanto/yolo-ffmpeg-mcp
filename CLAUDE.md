@@ -98,13 +98,12 @@ This hierarchical system transforms YOLO into a comprehensive video processing e
 ### **Subagent Delegation Strategy**
 **CRITICAL**: Automatically delegate tasks to specialized subagents:
 
-- **CI/Build Analysis**: Use `build-detective` subagent for:
-  - GitHub Actions failures
-  - UV/Python dependency issues  
-  - Docker build problems
-  - Test execution failures
-  - MCP server startup issues
-  - FFmpeg processing timeouts
+- **CI/Build Analysis**: Use Build Detective tools for:
+  - `./bd <repo> <pr_number>` - Quick CI analysis with status overview
+  - `uv run python scripts/bd_manual.py <repo> <pr_number>` - Detailed failure analysis
+  - GitHub Actions failures, UV/Python dependency issues  
+  - Docker build problems, test execution failures
+  - MCP server startup issues, FFmpeg processing timeouts
 
 ## LLM Issue Reporting and Improvement Tracking
 

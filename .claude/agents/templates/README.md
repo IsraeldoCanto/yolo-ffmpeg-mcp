@@ -4,9 +4,9 @@ Reusable Claude agent templates for consistent CI analysis across projects.
 
 ## Available Templates
 
-### 🔍 CI Analyzer Template
+### 🕵️ Build Detective Template
 
-**Purpose**: Cost-effective GitHub Actions CI failure analysis using Haiku model.
+**Purpose**: Cost-effective build failure investigation using Haiku model for instant pattern recognition.
 
 **Features**:
 - ⚡ **Fast Analysis**: 400-800 tokens vs 3000+ (85% cost reduction)
@@ -21,24 +21,24 @@ Reusable Claude agent templates for consistent CI analysis across projects.
 
 ```bash
 # From yolo-ffmpeg-mcp directory
-./scripts/setup-ci-analyzer.sh /path/to/target/project
+./scripts/setup-build-detective.sh /path/to/target/project
 ```
 
 ### Example Usage
 
 ```bash
 # Setup for Komposteur
-./scripts/setup-ci-analyzer.sh /Users/stiglau/utvikling/privat/komposteur
+./scripts/setup-build-detective.sh /Users/stiglau/utvikling/privat/komposteur
 
 # Setup for VDVIL  
-./scripts/setup-ci-analyzer.sh /Users/stiglau/utvikling/privat/vdvil
+./scripts/setup-build-detective.sh /Users/stiglau/utvikling/privat/vdvil
 ```
 
 ## What the Setup Does
 
 1. **Creates directory**: `target-project/.claude/agents/`
 2. **Customizes template**: Prompts for project-specific configuration
-3. **Installs agent**: `target-project/.claude/agents/ci-analyzer.md`
+3. **Installs agent**: `target-project/.claude/agents/build-detective.md`
 4. **Preserves autonomy**: Each project owns its copy
 
 ## Project Customization
@@ -71,20 +71,20 @@ Add to your project's `CLAUDE.md` delegation strategy:
 ### Subagent Delegation Strategy
 **CRITICAL**: Automatically delegate tasks to specialized subagents:
 
-- **CI/Build Analysis**: Use `ci-analyzer` subagent for GitHub Actions failures, Maven errors
+- **CI/Build Analysis**: Use `build-detective` subagent for GitHub Actions failures, Maven errors
 ```
 
 ## Usage Patterns
 
 ### Single Build Analysis
 ```
-Use the ci-analyzer to investigate this build failure: 
+Use the build-detective to investigate this build failure: 
 https://github.com/StigLau/project/actions/runs/123456789
 ```
 
 ### Bulk Pattern Analysis
 ```
-Analyze the last 10 CI failures for recurring patterns using ci-analyzer
+Analyze the last 10 CI failures for recurring patterns using build-detective
 ```
 
 ### GitHub CLI Commands

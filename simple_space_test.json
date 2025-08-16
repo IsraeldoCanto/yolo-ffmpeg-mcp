@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "title": "Simple Space Age Test",
+    "bpm": 120,
+    "totalBeats": 16,
+    "estimatedDuration": 8.0
+  },
+  "segments": [
+    {
+      "id": "test_segment",
+      "startBeat": 0,
+      "endBeat": 16,
+      "duration": 8.0,
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 8.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "space_age_filter",
+          "intensity": 0.8,
+          "chrome_effect": true,
+          "neon_glow": true
+        },
+        {
+          "type": "scale_blur_bg",
+          "targetResolution": "1080x1920"
+        }
+      ]
+    }
+  ],
+  "audioConfiguration": {
+    "backgroundMusic": "Subnautic Measures.flac",
+    "extractStart": 0.0,
+    "extractDuration": 8.0,
+    "volume": 0.8
+  },
+  "renderSettings": {
+    "quality": "medium",
+    "codec": "libx264",
+    "preset": "fast"
+  }
+}
