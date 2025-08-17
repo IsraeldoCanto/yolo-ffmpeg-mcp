@@ -29,7 +29,7 @@ jobs:
       matrix:
         dockerfile: 
           - { file: "Dockerfile.base", tag: "base-alpine" }
-          - { file: "Dockerfile.base.optimized", tag: "base-debian" }
+          - { file: "Dockerfile.base.optimized", tag: "base-alpine-minimal" }
     
     steps:
       - name: Checkout repository
@@ -67,7 +67,7 @@ jobs:
           # Test the built image
           echo "🧪 Testing image functionality..."
           docker run --rm test-${{ matrix.dockerfile.tag }} \
-            sh -c "ffmpeg -version && python --version && python -c 'import cv2; print(\"OpenCV OK\")'"
+            sh -c "ffmpeg -version && python --version && python -c 'import psutil; print(\"Basic deps OK\")'"
           
           echo "build_time_${{ matrix.dockerfile.tag }}=${build_time}" >> $GITHUB_ENV
 
@@ -116,8 +116,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=base-debian
-          cache-to: type=gha,mode=max,scope=base-debian
+          cache-from: type=gha,scope=base-alpine-minimal
+          cache-to: type=gha,mode=max,scope=base-alpine-minimal
           # Only AMD64 for now - ARM64 can be added later if needed
           platforms: linux/amd64
 
@@ -125,7 +125,7 @@ jobs:
         run: |
           echo "🧪 Testing production image..."
           docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base-optimized-latest \
-            sh -c "ffmpeg -version && python --version && python -c 'import cv2, numpy, psutil; print(\"All deps OK\")'"
+            sh -c "ffmpeg -version && python --version && python -c 'import psutil; print(\"Minimal deps OK\")'"
           echo "✅ Production base image test passed"
 
   # Performance summary
@@ -140,7 +140,7 @@ jobs:
           echo "🚀 Docker Build Performance Summary"
           echo "=================================="
           echo "Alpine base build time: ${{ env.build_time_base-alpine || 'N/A' }} seconds"
-          echo "Debian base build time: ${{ env.build_time_base-debian || 'N/A' }} seconds"
+          echo "Alpine minimal build time: ${{ env.build_time_base-alpine-minimal || 'N/A' }} seconds"
           echo ""
           echo "🎯 Optimization goal: Reduce build time from 10+ minutes to under 5 minutes"
-          echo "📦 Strategy: Debian + pre-built wheels vs Alpine + compilation"
+          echo "📦 Strategy: Full Alpine vs Minimal Alpine (FFMPEG + Java + Python only)"

@@ -121,7 +121,7 @@ jobs:
         run: |
           echo "🧪 Testing Alpine optimized base image..."
           docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:base-alpine-optimized-latest \
-            sh -c "ffmpeg -version && python --version && python -c 'import cv2, numpy, psutil; print(\"All deps OK\")'"
+            sh -c "ffmpeg -version && python --version && python -c 'import psutil; print(\"Minimal deps OK\")'"
           echo "✅ Alpine optimized base image test passed"
 
   summary:
