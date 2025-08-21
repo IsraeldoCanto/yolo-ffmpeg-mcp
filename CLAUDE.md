@@ -12,6 +12,88 @@
 
 **VIOLATION = IMMEDIATE STOP**
 
+## ⚠️ **ARCHITECTURAL ANTI-PATTERNS - LESSONS LEARNED** ⚠️
+
+### **❌ DON'T: Git Submodules for Source Dependencies**
+**MISTAKE**: Including komposteur-repo, VideoRenderer/, vdvil/ as git submodules or embedded source.
+
+**WHY THIS WAS BAD:**
+- **Tight Coupling**: YOLO should consume these via APIs/JARs, not embed source code
+- **Repository Bloat**: Each project has its own lifecycle, history, development process
+- **Separation of Concerns**: Mixing multiple project sources violates single responsibility
+- **Git Submodule Hell**: Notoriously complex to manage, update, and collaborate on
+- **Ownership Confusion**: Unclear which project owns what code, leads to accidental commits
+- **Maintenance Nightmare**: Updates, branch tracking, team collaboration becomes exponentially harder
+
+**✅ CORRECT APPROACH:**
+- **API-First Integration**: Consume through well-defined Maven dependencies and GitHub Packages
+- **Dependency Management**: Use semantic versioning and proper release cycles
+- **Separate Repositories**: Each project maintains its own repo with independent development
+- **Integration Testing**: Pull dependencies through package managers, not source embedding
+- **Clear Boundaries**: YOLO = MCP server, Komposteur = core engine, VideoRenderer = video processing
+
+**LESSON**: Development convenience does NOT justify architectural coupling. Use proper dependency management instead of source embedding.
+
+**VIOLATION = IMMEDIATE STOP**
+
+## 🔍 **BUILD DETECTIVE WORKFLOW INTEGRATION** ✅ **PRODUCTION READY**
+
+### **BD-First Development Strategy** 
+**CRITICAL**: Always use Build Detective BEFORE expensive LLM operations for:
+
+- **Version Analysis**: `python3 scripts/bd_artifact_manager.py` - Local ~/.m2 + GitHub Packages comparison
+- **Build Validation**: `python3 scripts/bd_upgrade_test.py [subproject] [version]` - Complete upgrade test cycles  
+- **CI/Build Analysis**: `python3 scripts/bd_manual.py [repo] [pr_number]` - GitHub Actions failure analysis
+- **Pre-commit Testing**: Local Maven builds, test execution, artifact validation
+
+### **BD Confidence Framework**
+1. **HIGH BD Confidence** (>8/10): Accept BD recommendations directly, proceed with implementation
+2. **MEDIUM BD Confidence** (5-7/10): BD analysis + LLM verification for complex decisions
+3. **LOW BD Confidence** (<5/10): LLM investigation, then improve BD patterns and re-validate
+
+### **Token-Saving Protocol**
+- **Build/Test Operations**: Always use BD local execution vs. LLM token consumption
+- **Version Comparisons**: BD semantic versioning logic vs. manual analysis  
+- **Error Pattern Recognition**: BD regex patterns + caching vs. repeated LLM analysis
+- **Maven/Gradle Parsing**: BD XML/config parsing vs. LLM interpretation
+
+### **BD Continuous Improvement Loop**
+1. **BD Analysis**: Run appropriate BD tool for the task
+2. **LLM Verification**: If BD confidence <8/10, LLM validates and identifies improvements
+3. **BD Enhancement**: Update BD patterns/logic based on LLM insights  
+4. **Validation**: Re-run BD to verify improvement effectiveness
+5. **Documentation**: Update BD capabilities and confidence thresholds
+
+### **BD Tool Selection Guide**
+- **Artifact Status**: `bd_artifact_manager.py` - Dependency versions, local vs. remote
+- **Build Testing**: `bd_upgrade_test.py` - Pre/post upgrade validation with comparison
+- **CI Failures**: `bd_manual.py` - GitHub Actions log analysis and error patterns
+- **General Analysis**: Delegate to BD subagent for complex multi-tool coordination
+
+**BD VALIDATION**: This framework has been tested and verified with comprehensive test suite (8/8 tests passing) and real-world VideoRenderer upgrade analysis. BD correctly identified build environment issues (missing JAVA_HOME) that would have required expensive debugging tokens.
+
+### **Maven Multi-Module Build Expertise** ✅ **ENHANCED**
+BD now includes comprehensive Maven build log parsing for complex multi-module projects:
+
+- **Reactor Summary Analysis**: Parses build order, module status, and timing per module
+- **Per-Module Test Results**: Aggregates test results across modules with failure tracking
+- **Build Phase Recognition**: Compile → Test → Package → Install lifecycle awareness
+- **Dependency Resolution**: Identifies missing artifacts, version conflicts, repository issues
+- **Cross-Module Dependencies**: Tracks build dependencies and failure cascades
+- **Profile-Aware Parsing**: Handles Maven profiles and property resolution
+
+**Key Maven Patterns BD Recognizes:**
+```bash
+[INFO] Reactor Summary for project-name:
+[INFO] module-a ................................. SUCCESS [ 1.234 s]
+[INFO] module-b ................................. FAILURE [ 0.567 s] 
+[INFO] module-c ................................. SKIPPED
+[INFO] BUILD FAILURE
+[INFO] Total time: 8.256 s
+```
+
+**BD Documentation**: Complete Maven parsing guide available at `docs/bd_maven_parsing_guide.md` with regex patterns, error classification, and multi-module build lifecycle understanding.
+
 ## 🛠️ **Development vs Production JAR Strategy** ✅ **NEW**
 
 ### **Local Development Approach** ✅ **UPDATED for 1.0.0**
