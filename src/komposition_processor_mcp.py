@@ -428,6 +428,44 @@ class KompositionProcessor:
                 return source
         return None
     
+    async def ensure_compatibility_encoding(self, video_file_id: str) -> str:
+        """Ensure video output is compatible with all players (YUV420P, proper encoding)"""
+        try:
+            # Get input file path
+            input_path = self.file_manager.resolve_id(video_file_id)
+            if not input_path:
+                return video_file_id
+                
+            # Create temp output path  
+            output_file_id, output_path = self.file_manager.create_temp_file("mp4")
+            
+            # Build YouTube recommended encoding command for YUV420P compatibility
+            command = self.ffmpeg_wrapper.build_command(
+                "youtube_recommended_encode",
+                input_path,
+                output_path
+            )
+            
+            # Execute the encoding
+            result = await self.ffmpeg_wrapper.execute_command(command, timeout=300)
+            
+            if result and result.get("success"):
+                # Return the new compatible file ID
+                return output_file_id
+            else:
+                # If encoding failed, clean up and return original
+                if output_path.exists():
+                    output_path.unlink(missing_ok=True)
+                self.file_manager.invalidate_file_id(output_file_id)
+                return video_file_id
+            
+        except Exception as e:
+            # If compatibility encoding fails, return original
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Compatibility encoding failed, using original: {e}")
+            return video_file_id
+    
     def find_source_by_id(self, source_id: str, sources: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Find source by exact ID match"""
         for source in sources:
