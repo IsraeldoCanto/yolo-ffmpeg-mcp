@@ -520,10 +520,15 @@ class KompositionProcessor:
     
     async def apply_global_filters(self, video_file_id: str, komposition_data: Dict[str, Any]) -> str:
         """Apply global filters to the final video"""
+        # Support both global_filters and effects_tree formats
         global_filters = komposition_data.get("global_filters", [])
+        effects_tree = komposition_data.get("effects_tree", [])
         
-        if not global_filters:
-            # No global filters specified, return original video
+        # Combine both filter sources
+        all_filters = global_filters + effects_tree
+        
+        if not all_filters:
+            # No filters specified, return original video
             return video_file_id
         
         current_video = video_file_id
