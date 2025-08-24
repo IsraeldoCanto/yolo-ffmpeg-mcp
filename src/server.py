@@ -2310,6 +2310,28 @@ async def process_komposition_file(komposition_path: str) -> Dict[str, Any]:
         komposition_data = await komposition_processor.load_komposition(str(full_path))
         result = await komposition_processor.process_komposition(komposition_data)
         
+        # Apply compatibility encoding if video was created
+        if result.get("success") and result.get("output_file_id"):
+            try:
+                # Re-encode with YouTube recommended settings for YUV420P compatibility
+                compat_result = await mcp.call_tool('process_file', {
+                    'input_file_id': result["output_file_id"],
+                    'operation': 'youtube_recommended_encode',
+                    'output_extension': 'mp4'
+                })
+                
+                if compat_result and len(compat_result) > 0:
+                    compat_data = json.loads(compat_result[0].text) if hasattr(compat_result[0], 'text') else compat_result[0]
+                    if compat_data.get("success"):
+                        # Replace the output with the compatible version
+                        result["output_file_id"] = compat_data["output_file_id"]
+                        result["output_file"] = file_manager.resolve_id(compat_data["output_file_id"])
+                        result["compatibility_encoding_applied"] = True
+                        
+            except Exception as e:
+                logger.warning(f"Compatibility encoding failed: {e}")
+                result["compatibility_encoding_applied"] = False
+        
         return result
         
     except Exception as e:
