@@ -16,13 +16,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
 try:
     from haiku_api_client import haiku_client, HaikuResponse
     from sonnet_validator import validate_with_sonnet, ValidationResult
+    from pattern_learner import optimize_prompt, learn_from_success, get_learning_stats
     API_AVAILABLE = True
     SONNET_AVAILABLE = True
+    LEARNING_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ Haiku API client not available: {e}")
     print("Falling back to simulation mode")
     API_AVAILABLE = False
     SONNET_AVAILABLE = False
+    LEARNING_AVAILABLE = False
 
 async def call_haiku_llm_api(prompt, bmp=120, confidence_threshold=0.8) -> dict:
     """
@@ -212,15 +215,37 @@ async def async_main(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate video komposition from natural language")
-    parser.add_argument("--input", required=True, help="Natural language description")
+    parser.add_argument("--input", help="Natural language description")
     parser.add_argument("--bpm", type=int, default=120, help="BPM for timing calculations")
     parser.add_argument("--confidence-threshold", type=float, default=0.8, help="Minimum confidence score")
     parser.add_argument("--output", help="Output file path")
     parser.add_argument("--template", help="Template type (music_video, short_form, etc)")
     parser.add_argument("--api-mode", action="store_true", help="Force API mode (vs simulation)")
     parser.add_argument("--simulation-mode", action="store_true", help="Force simulation mode")
+    parser.add_argument("--learning-stats", action="store_true", help="Show pattern learning statistics")
     
     args = parser.parse_args()
+    
+    # Handle learning stats request
+    if args.learning_stats:
+        if LEARNING_AVAILABLE:
+            stats = get_learning_stats()
+            print("🧠 Pattern Learning Statistics:")
+            print(f"   Total patterns learned: {stats['total_patterns']}")
+            print(f"   Total successful kompositions: {stats['total_successes']}")
+            print(f"   Average confidence: {stats['avg_confidence']:.2f}")
+            if stats['total_patterns'] > 0:
+                print(f"   BPM range: {stats['bpm_range'][0]}-{stats['bpm_range'][1]}")
+                print(f"   Popular effects:")
+                for effect, count in stats['popular_effects']:
+                    print(f"     {effect}: {count} uses")
+        else:
+            print("⚠️ Pattern learning not available")
+        return 0
+    
+    # Check if input is required but missing
+    if not args.input and not args.learning_stats:
+        parser.error("--input is required unless using --learning-stats")
     
     try:
         # Override API availability based on arguments
@@ -230,6 +255,15 @@ def main():
         elif args.api_mode and not API_AVAILABLE:
             print("❌ API mode requested but API client not available")
             return 1
+        
+        # Optimize prompt using learned patterns
+        original_prompt = args.input
+        if LEARNING_AVAILABLE:
+            optimization = optimize_prompt(args.input, args.bpm)
+            if optimization.confidence_boost > 0.05:  # Meaningful improvement
+                print(f"🧠 Pattern-optimized prompt: +{optimization.confidence_boost:.2f} confidence")
+                print(f"💡 {optimization.reasoning}")
+                args.input = optimization.optimized_prompt
         
         # Run async main
         result = asyncio.run(async_main(args))
@@ -273,6 +307,17 @@ def main():
             print("🧠 Would escalate to Sonnet but Sonnet validator not available")
         else:
             print(f"✅ High confidence: {result['confidence']:.2f}")
+        
+        # Learn from successful results
+        if LEARNING_AVAILABLE and result["success"] and result["confidence"] >= 0.7:
+            learn_from_success(
+                original_prompt,  # Use original prompt for learning
+                args.bpm,
+                result["komposition"],
+                result["confidence"],
+                result["processing_time"]
+            )
+            print("🧠 Learned from this successful komposition")
         
         print(f"💰 Cost: ${result['cost_usd']:.3f}")
         print(f"⚡ Processing time: {result['processing_time']:.1f}s")
