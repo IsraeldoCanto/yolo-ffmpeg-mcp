@@ -197,6 +197,70 @@ This hierarchical system transforms YOLO into a comprehensive video processing e
   - Docker build problems, test execution failures
   - MCP server startup issues, FFmpeg processing timeouts
 
+## ⚠️ **VIDEO FORMAT OUTPUT STRATEGY** ⚠️
+
+### **User-Viewable Final Output Requirements** ✅ **CRITICAL**
+
+**RULE**: When creating final output for user verification/consumption, ALWAYS use YUV420P format for maximum compatibility.
+
+**Implementation:**
+- **Intermediate Processing**: YUV444P format is acceptable (higher quality, not user-facing)
+- **Draft/Internal Videos**: YUV444P format is acceptable for development/testing
+- **Final User Output**: MUST be YUV420P format - use `youtube_recommended_encode` operation
+- **Verification Step**: Test final videos open in VLC/QuickTime before claiming success
+
+**Encoding Command for Final Output:**
+```bash
+# Apply YouTube recommended encoding for user-viewable output
+mcp.call_tool('process_file', {
+    'input_file_id': draft_video_id,
+    'operation': 'youtube_recommended_encode',
+    'output_extension': 'mp4'
+})
+```
+
+**Quality vs Compatibility:**
+- YUV444P: Higher quality, limited player support (development use)
+- YUV420P: Universal compatibility, slight quality loss (user delivery)
+
+## ⚠️ **LOCAL CI BUILD SYSTEM** ⚠️
+
+### **CI Build Strategy** ✅ **IMPLEMENTATION REQUIRED**
+
+**Local CI Command:**
+```bash
+# Run complete CI validation before push
+uv run python test_basic_ci.py && echo "✅ CI PASSED - Ready to push"
+```
+
+**CI Components:**
+1. **Basic Validation**: `test_basic_ci.py` - Code structure and documentation
+2. **Build Detective Analysis**: Automated quality assessment post-commit
+3. **Integration Testing**: Video format strategy validation
+
+**Pre-Push Workflow:**
+```bash
+# 1. Run local CI tests
+uv run python test_basic_ci.py
+
+# 2. If tests pass, commit and push
+git add . && git commit -m "Feature implementation"
+git push origin feature-branch
+
+# 3. BD automatically analyzes pushed changes
+# (BD report available within minutes of push)
+```
+
+**Future Git Hook Integration:**
+- **NOT ENABLED YET** - User must observe CI build performance first
+- **When ready**: Add `test_basic_ci.py` to pre-push hook
+- **Estimated time**: ~5-10 seconds for basic validation
+
+**BD Integration:**
+- BD automatically analyzes all pushed branches
+- BD reports available via Build Detective subagent
+- Use BD confidence scores to validate positive changes
+
 ## LLM Issue Reporting and Improvement Tracking
 
 ### Komposteur and Video Renderer Improvement Guidelines
