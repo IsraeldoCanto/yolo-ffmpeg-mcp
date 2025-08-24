@@ -17,15 +17,18 @@ try:
     from haiku_api_client import haiku_client, HaikuResponse
     from sonnet_validator import validate_with_sonnet, ValidationResult
     from pattern_learner import optimize_prompt, learn_from_success, get_learning_stats
+    from budget_monitor import record_operation, get_budget_status, check_budget_available
     API_AVAILABLE = True
     SONNET_AVAILABLE = True
     LEARNING_AVAILABLE = True
+    BUDGET_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ Haiku API client not available: {e}")
     print("Falling back to simulation mode")
     API_AVAILABLE = False
     SONNET_AVAILABLE = False
     LEARNING_AVAILABLE = False
+    BUDGET_AVAILABLE = False
 
 async def call_haiku_llm_api(prompt, bmp=120, confidence_threshold=0.8) -> dict:
     """
@@ -223,6 +226,7 @@ def main():
     parser.add_argument("--api-mode", action="store_true", help="Force API mode (vs simulation)")
     parser.add_argument("--simulation-mode", action="store_true", help="Force simulation mode")
     parser.add_argument("--learning-stats", action="store_true", help="Show pattern learning statistics")
+    parser.add_argument("--budget-status", action="store_true", help="Show current budget status and usage")
     
     args = parser.parse_args()
     
@@ -243,9 +247,36 @@ def main():
             print("⚠️ Pattern learning not available")
         return 0
     
+    # Handle budget status request
+    if args.budget_status:
+        if BUDGET_AVAILABLE:
+            status = get_budget_status()
+            print("💰 Budget Status & Usage:")
+            print(f"   Daily usage: ${status.daily_usage:.3f} / ${status.daily_limit:.3f} ({status.daily_percent_used:.1f}%)")
+            print(f"   Daily remaining: ${status.daily_remaining:.3f}")
+            print(f"   Weekly usage: ${status.weekly_usage:.3f} / ${status.weekly_limit:.3f}")
+            print(f"   Monthly usage: ${status.monthly_usage:.3f} / ${status.monthly_limit:.3f}")
+            print(f"   Total operations today: {status.total_operations}")
+            print(f"   Average cost per operation: ${status.avg_cost_per_operation:.4f}")
+            
+            if status.is_over_limit:
+                print("   ⚠️ DAILY BUDGET LIMIT EXCEEDED")
+            elif status.daily_percent_used > 80:
+                print("   ⚠️ Approaching daily budget limit")
+            else:
+                print("   ✅ Budget status: OK")
+                
+            if status.active_alerts:
+                print(f"   Active alerts: {len(status.active_alerts)}")
+                for alert in status.active_alerts[-3:]:  # Show last 3 alerts
+                    print(f"     • {alert.alert_type}: {alert.message}")
+        else:
+            print("⚠️ Budget monitoring not available")
+        return 0
+    
     # Check if input is required but missing
-    if not args.input and not args.learning_stats:
-        parser.error("--input is required unless using --learning-stats")
+    if not args.input and not args.learning_stats and not args.budget_status:
+        parser.error("--input is required unless using --learning-stats or --budget-status")
     
     try:
         # Override API availability based on arguments
@@ -255,6 +286,16 @@ def main():
         elif args.api_mode and not API_AVAILABLE:
             print("❌ API mode requested but API client not available")
             return 1
+        
+        # Check budget before proceeding
+        estimated_cost = 0.03  # Rough estimate for simulation, real cost varies
+        if BUDGET_AVAILABLE:
+            budget_ok, budget_message = check_budget_available(estimated_cost)
+            if not budget_ok:
+                print(f"❌ Budget limit exceeded: {budget_message}")
+                return 1
+            elif "Warning" in budget_message:
+                print(f"⚠️ {budget_message}")
         
         # Optimize prompt using learned patterns
         original_prompt = args.input
@@ -307,6 +348,21 @@ def main():
             print("🧠 Would escalate to Sonnet but Sonnet validator not available")
         else:
             print(f"✅ High confidence: {result['confidence']:.2f}")
+        
+        # Record usage for budget monitoring
+        escalation_used = result.get("escalation_needed", False) and SONNET_AVAILABLE
+        if BUDGET_AVAILABLE:
+            alert = record_operation(
+                "haiku_komposition",
+                result["cost_usd"],
+                result["confidence"],
+                result["processing_time"],
+                len(original_prompt),
+                result["success"],
+                escalation_used
+            )
+            if alert:
+                print(f"🚨 Budget Alert: {alert.message}")
         
         # Learn from successful results
         if LEARNING_AVAILABLE and result["success"] and result["confidence"] >= 0.7:
