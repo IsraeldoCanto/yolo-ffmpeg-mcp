@@ -15,11 +15,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
 
 try:
     from haiku_api_client import haiku_client, HaikuResponse
+    from sonnet_validator import validate_with_sonnet, ValidationResult
     API_AVAILABLE = True
+    SONNET_AVAILABLE = True
 except ImportError as e:
     print(f"⚠️ Haiku API client not available: {e}")
     print("Falling back to simulation mode")
     API_AVAILABLE = False
+    SONNET_AVAILABLE = False
 
 async def call_haiku_llm_api(prompt, bmp=120, confidence_threshold=0.8) -> dict:
     """
@@ -231,9 +234,43 @@ def main():
         # Run async main
         result = asyncio.run(async_main(args))
         
-        if result["escalation_needed"]:
+        # Handle escalation to Sonnet if needed
+        if result["escalation_needed"] and SONNET_AVAILABLE:
             print(f"⚠️ Confidence {result['confidence']:.2f} below threshold {args.confidence_threshold}")
-            print("🧠 Would escalate to Sonnet for validation")
+            print("🧠 Escalating to Sonnet for validation...")
+            
+            try:
+                # Create HaikuResponse object for validation
+                from haiku_api_client import HaikuResponse
+                haiku_response = HaikuResponse(
+                    success=result["success"],
+                    content=json.dumps(result["komposition"]),
+                    confidence=result["confidence"],
+                    cost_usd=result["cost_usd"],
+                    processing_time=result["processing_time"],
+                    escalation_needed=result["escalation_needed"]
+                )
+                
+                validation = asyncio.run(validate_with_sonnet(haiku_response, args.input, args.bpm))
+                
+                if validation.validated and validation.improved_komposition:
+                    print(f"✅ Sonnet validation completed: {validation.confidence:.2f}")
+                    print(f"💡 {validation.validation_notes}")
+                    result["komposition"] = json.loads(validation.improved_komposition)
+                    result["confidence"] = validation.confidence
+                    result["cost_usd"] += validation.cost_usd
+                    result["processing_time"] += validation.processing_time
+                    result["escalation_needed"] = False
+                else:
+                    print(f"❌ Sonnet validation failed: {validation.error or 'Low confidence'}")
+                    if validation.validation_notes:
+                        print(f"📝 Notes: {validation.validation_notes}")
+            except Exception as e:
+                print(f"❌ Sonnet validation error: {e}")
+                print("🧠 Would escalate to Sonnet but API key not configured")
+        elif result["escalation_needed"]:
+            print(f"⚠️ Confidence {result['confidence']:.2f} below threshold {args.confidence_threshold}")
+            print("🧠 Would escalate to Sonnet but Sonnet validator not available")
         else:
             print(f"✅ High confidence: {result['confidence']:.2f}")
         
