@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run python3
 """
 Haiku LLM CLI Tool - Komposition Generator
 Generates video komposition JSON from natural language descriptions
@@ -7,7 +7,103 @@ import argparse
 import json
 import sys
 import time
+import asyncio
 from pathlib import Path
+
+# Add lib directory to path for API client
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib"))
+
+try:
+    from haiku_api_client import haiku_client, HaikuResponse
+    API_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Haiku API client not available: {e}")
+    print("Falling back to simulation mode")
+    API_AVAILABLE = False
+
+async def call_haiku_llm_api(prompt, bmp=120, confidence_threshold=0.8) -> dict:
+    """
+    Real Haiku API call for komposition generation
+    """
+    system_prompt = """You are a video komposition expert. Generate valid JSON kompositions from natural language descriptions.
+
+Focus on:
+- Precise BPM timing calculations
+- Segment structure with beat alignment  
+- Effect parameters based on style descriptions
+- Audio integration settings
+
+Return only valid JSON in this format:
+{
+  "metadata": {
+    "title": "string",
+    "bpm": number,
+    "estimatedDuration": number,
+    "created": "ISO datetime",
+    "generated_by": "haiku-llm"
+  },
+  "segments": [
+    {
+      "id": "string",
+      "startBeat": number,
+      "durationBeats": number, 
+      "startTime": number,
+      "duration": number,
+      "effects": []
+    }
+  ],
+  "audio": {
+    "backgroundMusic": "string",
+    "volume": number
+  }
+}"""
+    
+    try:
+        async with haiku_client() as client:
+            response = await client.call_haiku(prompt, system_prompt, confidence_threshold)
+            
+            if response.success:
+                try:
+                    # Parse JSON response
+                    komposition = json.loads(response.content)
+                    
+                    return {
+                        "success": True,
+                        "komposition": komposition,
+                        "confidence": response.confidence,
+                        "processing_time": response.processing_time,
+                        "cost_usd": response.cost_usd,
+                        "escalation_needed": response.escalation_needed
+                    }
+                except json.JSONDecodeError as e:
+                    return {
+                        "success": False,
+                        "error": f"Invalid JSON response: {e}",
+                        "confidence": 0.0,
+                        "processing_time": response.processing_time,
+                        "cost_usd": response.cost_usd,
+                        "escalation_needed": True,
+                        "raw_content": response.content
+                    }
+            else:
+                return {
+                    "success": False,
+                    "error": response.error,
+                    "confidence": 0.0,
+                    "processing_time": response.processing_time,
+                    "cost_usd": response.cost_usd,
+                    "escalation_needed": True
+                }
+                
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"API call failed: {e}",
+            "confidence": 0.0,
+            "processing_time": 0.0,
+            "cost_usd": 0.0,
+            "escalation_needed": True
+        }
 
 def simulate_haiku_llm_call(prompt, bpm=120, confidence_threshold=0.8):
     """
@@ -91,6 +187,26 @@ def simulate_haiku_llm_call(prompt, bpm=120, confidence_threshold=0.8):
         "escalation_needed": confidence < confidence_threshold
     }
 
+async def async_main(args):
+    """Async main function to handle API calls"""
+    try:
+        print(f"🎵 Haiku Komposition Generator")
+        print(f"Input: {args.input}")
+        print(f"BPM: {args.bpm}")
+        
+        # Try real API first, fall back to simulation
+        if API_AVAILABLE:
+            print("🔗 Connecting to Haiku API...")
+            result = await call_haiku_llm_api(args.input, args.bpm, args.confidence_threshold)
+        else:
+            print("🎭 Using simulation mode...")
+            result = simulate_haiku_llm_call(args.input, args.bpm, args.confidence_threshold)
+            
+        return result
+    except Exception as e:
+        print(f"❌ Error in async_main: {e}")
+        return {"success": False, "error": str(e), "confidence": 0.0, "processing_time": 0.0, "cost_usd": 0.0, "escalation_needed": True}
+
 def main():
     parser = argparse.ArgumentParser(description="Generate video komposition from natural language")
     parser.add_argument("--input", required=True, help="Natural language description")
@@ -98,17 +214,22 @@ def main():
     parser.add_argument("--confidence-threshold", type=float, default=0.8, help="Minimum confidence score")
     parser.add_argument("--output", help="Output file path")
     parser.add_argument("--template", help="Template type (music_video, short_form, etc)")
+    parser.add_argument("--api-mode", action="store_true", help="Force API mode (vs simulation)")
+    parser.add_argument("--simulation-mode", action="store_true", help="Force simulation mode")
     
     args = parser.parse_args()
     
     try:
-        print(f"🎵 Haiku Komposition Generator")
-        print(f"Input: {args.input}")
-        print(f"BPM: {args.bpm}")
-        print("Processing with Haiku LLM...")
+        # Override API availability based on arguments
+        global API_AVAILABLE
+        if args.simulation_mode:
+            API_AVAILABLE = False
+        elif args.api_mode and not API_AVAILABLE:
+            print("❌ API mode requested but API client not available")
+            return 1
         
-        # Call simulated Haiku API
-        result = simulate_haiku_llm_call(args.input, args.bpm, args.confidence_threshold)
+        # Run async main
+        result = asyncio.run(async_main(args))
         
         if result["escalation_needed"]:
             print(f"⚠️ Confidence {result['confidence']:.2f} below threshold {args.confidence_threshold}")
