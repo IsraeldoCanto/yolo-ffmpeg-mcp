@@ -1,41 +1,34 @@
-# FFMPEG MCP Server - Minimal Alpine production image
-FROM python:3.13-alpine
+# FFMPEG MCP Server - Stock Ubuntu image for minimal build time
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install minimal system dependencies for FFMPEG + Java + Python
-RUN apk add --no-cache \
-    bash \
-    curl \
+# Install system dependencies using stock Ubuntu packages (faster, cached)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    openjdk11-jre \
-    # Audio processing (for VDVIL)
-    libsndfile-dev \
-    # Minimal Python build support
-    python3-dev \
-    gcc \
-    musl-dev
+    mediainfo \
+    libsndfile1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install minimal Python dependencies
-RUN pip install --no-cache-dir --root-user-action=ignore \
-    psutil>=5.9.0 \
-    "fastmcp>=2.7.1" \
-    "mcp>=1.9.3" \
-    "pydantic>=2.11.5" \
-    "pytest>=8.4.0" \
-    "pytest-asyncio>=1.0.0" \
-    "jsonschema>=4.0.0" \
-    "PyYAML>=6.0"
+# ALPINE CONFIG MOVED ASIDE - uncomment if needed later
+# FROM python:3.13-alpine
+# RUN apk add --no-cache bash curl ffmpeg openjdk11-jre libsndfile-dev python3-dev gcc musl-dev
+
+# Standard pip for production simplicity (no UV dependency)
+COPY pyproject.toml ./
+RUN pip install --no-cache-dir -e .
 
 # Create working directory
 WORKDIR /app
 
-# Create non-root user 
-RUN addgroup -g 1000 mcp && adduser -u 1000 -G mcp -s /bin/bash -D mcp
+# Create non-root user (Ubuntu syntax)
+RUN groupadd -g 1000 mcp && useradd -u 1000 -g mcp -m -s /bin/bash mcp
 
 # Create directories for file processing with proper permissions
 RUN mkdir -p /tmp/music/{source,temp,screenshots,metadata,finished} \
