@@ -328,6 +328,102 @@ creative = haiku.recommend_creative_transition(analysis)  # circleopen for mediu
 
 This enhancement transforms FastTrack from a basic strategy recommender into a comprehensive video processing intelligence system with professional-grade quality assurance and technical precision.
 
+## 📁 **PROJECT NAVIGATION & ORGANIZATION** ✅ **CLEANED AUGUST 2025**
+
+### **Repository Cleanup Results**
+The root directory has been cleaned and organized for maximum clarity and navigation:
+
+**✅ Files Moved to Appropriate Locations:**
+- **Reports & Analysis** → `docs/reports/` (37 files)
+- **Configuration & JSON** → `archive/configs/` (23 files) 
+- **Test Scripts & Tools** → `tools/` (45 files)
+- **Media Files** → `archive/media/` (video, audio, images)
+- **Docker Configurations** → `docker/` (8 Dockerfiles)
+- **Requirements** → `config/` (specialized requirements files)
+
+**✅ Root Directory Now Contains Only:**
+- **Core Files**: `README.md`, `CLAUDE.md`, `pyproject.toml`
+- **Build Files**: `Dockerfile`, `Makefile`, `containerfile`
+- **Essential Directories**: `src/`, `tests/`, `docs/`, `tools/`, `examples/`
+
+### **🎯 Problem Domain Quick Navigation**
+
+#### **🎬 Video Processing Intelligence**
+```bash
+# FastTrack Implementation
+src/haiku_subagent.py              # Core FastTrack system
+tools/ft                           # FastTrack CLI tool  
+docs/FASTTRACK_COMPLETE_GUIDE.md   # Complete documentation
+docs/FASTTRACK_QUICK_REFERENCE.md  # Quick reference
+tests/test_haiku_*.py              # Test suite
+.claude/agents/fasttrack.md        # Claude agent config
+```
+
+#### **🔍 CI/Build Analysis**
+```bash
+# Build Detective System  
+tools/scripts/bd_*.py              # Build Detective scripts
+docs/ai-agents/BUILD_DETECTIVE_*.md # Documentation
+docs/ai-agents/maven-analyzer/     # Maven pattern library
+tools/scripts/tests/               # BD test reports
+```
+
+#### **🎵 Music Video Creation**
+```bash
+# Komposteur Integration
+integration/komposteur/            # Komposteur bridge
+examples/komposition-examples/     # Composition templates
+examples/video-workflows/          # Workflow examples
+haiku-integration/                 # Haiku-MCP integration
+```
+
+#### **📋 Development & Testing**
+```bash
+# Core Development
+src/                               # Main application code
+tests/                             # Test suites
+tools/                             # Development tools
+config/                            # Configuration files
+```
+
+#### **📚 Documentation & Reports**
+```bash  
+# Documentation Structure
+docs/                              # Main documentation
+├── reports/                       # Analysis reports (37 files)
+├── ai-agents/                     # AI agent documentation
+├── architecture/                  # Architecture guides
+└── FASTTRACK_*.md                 # FastTrack guides
+
+# Historical Data
+archive/                           # Historical files
+├── configs/                       # Old configurations (23 files)
+├── media/                         # Media files
+└── temp/                          # Temporary analysis data
+```
+
+### **🚫 Files Identified for Potential Removal**
+
+**Redundant/Duplicate Files (User Review Needed):**
+- `komposteur-repo/` - Large git submodule (violates architecture guidelines)
+- `temp-komposteur-analysis/` - Temporary analysis folder (160 files)
+- Multiple duplicate Docker configurations (consolidated to `docker/`)
+- Legacy test files moved to `archive/`
+
+**Knowledge Stored for Future:**
+- **Cleanup Strategy**: Move by problem domain, keep root minimal
+- **Navigation Pattern**: Use category-based directory structure
+- **File Removal Process**: Archive first, remove after validation
+
+### **🔄 Continuous Organization Protocol**
+1. **New Files**: Immediately categorize by problem domain
+2. **Reports**: Always go to `docs/reports/`
+3. **Configs**: Use `config/` or `archive/configs/`
+4. **Tools**: Place in `tools/` with category subdirectory
+5. **Documentation**: Use `docs/` with clear category structure
+
+**Root Directory Rule**: Only core project files (README, CLAUDE, pyproject.toml, Dockerfile, Makefile) and essential directories should remain in root.
+
 ## 🤖 **HIERARCHICAL MULTI-AGENT SYSTEM** ✅ **NEW ARCHITECTURE**
 
 ### **YOLO as Master Orchestrator**
