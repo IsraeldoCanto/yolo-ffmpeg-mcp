@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 # Add src to path for imports
-script_dir = Path(__file__).parent
+script_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(script_dir / "src"))
 
 try:
