@@ -10,17 +10,17 @@ from typing import Dict, List
 def should_takeover(bd_confidence: int, enhanced_analysis: Dict) -> bool:
     """Determine if we should take over from BD"""
     
-    # Always takeover if critical issues detected
+    # Always takeover if critical issues detected (Alpine build waste, etc.)
     if enhanced_analysis.get('critical_issues'):
         return True
     
-    # Takeover if BD confidence is low
-    if bd_confidence < 7:
+    # Takeover if BD confidence is very low AND enhanced analysis agrees
+    enhanced_conf = enhanced_analysis.get('confidence', 10)
+    if bd_confidence < 5 and enhanced_conf < 7:
         return True
         
-    # Takeover if enhanced confidence is much lower than BD
-    enhanced_conf = enhanced_analysis.get('confidence', 10)
-    if enhanced_conf < bd_confidence - 2:
+    # Takeover if enhanced confidence is much lower than BD (enhanced sees problems BD missed)
+    if enhanced_conf < bd_confidence - 3:
         return True
         
     return False
