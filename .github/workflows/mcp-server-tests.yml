@@ -225,11 +225,11 @@ jobs:
           echo "Debug: Container environment:"
           docker exec mcp-test-container pwd
           docker exec mcp-test-container ls -la /app
-          docker exec mcp-test-container python -c "import sys; print('Python path:', sys.path)"
+          docker exec mcp-test-container python3 -c "import sys; print('Python path:', sys.path)"
           docker exec mcp-test-container printenv | grep PYTHON || echo "No PYTHON env vars"
           
           # Test imports with explicit PYTHONPATH
-          OUTPUT=$(docker exec -e PYTHONPATH=/app mcp-test-container python -c "
+          OUTPUT=$(docker exec -e PYTHONPATH=/app mcp-test-container python3 -c "
           try:
               import src.server
               import src.file_manager  
