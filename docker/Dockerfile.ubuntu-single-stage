@@ -38,8 +38,9 @@ COPY pyproject.toml /app/
 COPY src/ /app/src/
 COPY tests/ /app/tests/
 
-# Install Python dependencies
-RUN python3 -m pip install --no-cache-dir .
+# Install Python dependencies with explicit MCP support
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir .[dev]
 
 # Switch to non-root user
 USER mcp
