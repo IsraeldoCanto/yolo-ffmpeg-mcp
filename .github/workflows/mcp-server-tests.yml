@@ -228,8 +228,9 @@ jobs:
           docker exec mcp-test-container python3 -c "import sys; print('Python path:', sys.path)"
           docker exec mcp-test-container printenv | grep PYTHON || echo "No PYTHON env vars"
           
-          # Test imports with explicit PYTHONPATH
-          OUTPUT=$(docker exec -e PYTHONPATH=/app mcp-test-container python3 -c "
+          # Test imports with explicit PYTHONPATH - show all output for debugging
+          echo "Testing MCP imports with PYTHONPATH=/app..."
+          docker exec -e PYTHONPATH=/app mcp-test-container python3 -c "
           try:
               import src.server
               import src.file_manager  
@@ -237,18 +238,13 @@ jobs:
               print('SUCCESS: All MCP modules imported')
           except Exception as e:
               print(f'FAILED: {e}')
+              import traceback
+              traceback.print_exc()
               exit(1)
-          " 2>&1)
-          
-          # Check if imports succeeded (look for SUCCESS message)
-          if echo "$OUTPUT" | grep -q "SUCCESS: All MCP modules imported"; then
-            echo "✅ All MCP modules import successfully in Docker"
-            echo "Note: PySceneDetect warnings are expected and filtered"
-          else
-            echo "❌ MCP module imports failed"
-            echo "Output: $OUTPUT"
+          " || {
+            echo "❌ MCP module imports failed - see error above"
             exit 1
-          fi
+          }
           
       - name: Test FFmpeg in Docker
         run: |
