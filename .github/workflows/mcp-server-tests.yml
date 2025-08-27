@@ -180,18 +180,19 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Build Docker image with cache
+      - name: Build Docker image with Ubuntu single-stage
         run: |
-          echo "🐳 Building Docker image for MCP server using pre-built base..."
+          echo "🐳 Building Docker image for MCP server using Ubuntu single-stage (no pre-built base required)..."
           docker buildx build \
-            --cache-from=type=gha \
-            --cache-to=type=gha,mode=max \
+            --file docker/Dockerfile.ubuntu-single-stage \
+            --cache-from=type=gha,scope=ubuntu-single-stage \
+            --cache-to=type=gha,mode=max,scope=ubuntu-single-stage \
             --load \
             --tag ffmpeg-mcp:ci \
             .
-          echo "✅ Docker image built successfully with pre-built base"
+          echo "✅ Docker image built successfully with Ubuntu single-stage approach"
           docker images ffmpeg-mcp:ci
-          echo "Note: PySceneDetect warning is expected - using fallback mechanism"
+          echo "Build time target: <3 minutes (vs 2+ hours Alpine compilation)"
           
       - name: Test Docker container health
         run: |
