@@ -1,5 +1,20 @@
-# FFMPEG MCP Server - Base image with system dependencies only
-# This image is pre-built and stored in GitHub Container Registry
+# DEPRECATED: FFMPEG MCP Server - Base image approach
+# 
+# PROBLEM: This approach was designed to make Alpine builds faster by pre-building
+# heavy dependencies (OpenCV, GCC toolchain, scientific computing stack).
+# However, this creates a complex multi-stage build process.
+#
+# ORIGINAL UBUNTU INTENT: Simple Ubuntu base + Java 21 + FFmpeg + ffprobe only.
+# NOT: Recreating the entire Alpine complexity on Ubuntu.
+#
+# DECISION: Moving away from Docker base approach. 
+# - Alpine complexity doesn't belong in "minimal" Ubuntu base
+# - Single-stage builds are simpler and more maintainable
+# - Use Dockerfile.haiku-minimal pattern for future builds
+#
+# This file is kept for reference but should not be used in CI.
+#
+# OBSOLETE - Use direct Ubuntu builds instead
 FROM python:3.13-alpine
 
 # Set environment variables

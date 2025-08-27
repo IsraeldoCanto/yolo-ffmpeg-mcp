@@ -1,17 +1,32 @@
-name: Build Base Docker Images (Fast)
+# DEPRECATED: Docker base image approach abandoned
+# See docker/Dockerfile.base for explanation
+# 
+# PROBLEM: Building complex Alpine base defeats simplicity purpose
+# SOLUTION: Use direct single-stage Ubuntu builds instead
+#
+name: Build Base Docker Images (Fast) - DISABLED
 
+# DISABLED - Docker base approach abandoned
+# on:
+#   push:
+#     branches: [ main, feature/docker-build-optimization ]
+#     paths:
+#       - 'Dockerfile.base*'
+#       - 'pyproject.toml'
+#       - '.github/workflows/build-base-images-fast.yml'
+#   pull_request:
+#     branches: [ main ]
+#     paths:
+#       - 'Dockerfile.base*'
+#   workflow_dispatch:
+
+# Dummy event to keep workflow valid but never triggered
 on:
-  push:
-    branches: [ main, feature/docker-build-optimization ]
-    paths:
-      - 'Dockerfile.base*'
-      - 'pyproject.toml'
-      - '.github/workflows/build-base-images-fast.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'Dockerfile.base*'
   workflow_dispatch:
+    inputs:
+      deprecated:
+        description: 'This workflow is deprecated - use single-stage builds instead'
+        required: false
 
 env:
   REGISTRY: ghcr.io
