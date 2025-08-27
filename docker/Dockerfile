@@ -1,7 +1,7 @@
 # FFMPEG MCP Server - Application Layer
 # Uses minimal Ubuntu base with Python + Java + FFmpeg
 
-FROM ffmpeg-mcp-ubuntu-base:test
+FROM ffmpeg-mcp-ubuntu-base:latest
 
 # Copy application code
 COPY pyproject.toml /app/
