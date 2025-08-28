@@ -5,14 +5,19 @@ FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
 COPY pyproject.toml ./
 
 # Install core Python dependencies (fast - heavy packages pre-installed in base)
-RUN uv pip install --system --no-cache \
-    fastmcp>=2.7.1 \
-    mcp>=1.9.3 \
-    pydantic>=2.11.5 \
-    pytest>=8.4.0 \
-    pytest-asyncio>=1.0.0 \
-    jsonschema>=4.0.0 \
-    PyYAML>=6.0
+RUN pip install --no-cache-dir --root-user-action=ignore \
+    psutil>=5.9.0 \
+    "fastmcp>=2.7.1" \
+    "mcp>=1.9.3" \
+    "pydantic>=2.11.5" \
+    "pytest>=8.4.0" \
+    "pytest-asyncio>=1.0.0" \
+    "jsonschema>=4.0.0" \
+    "PyYAML>=6.0" \
+    "opencv-python-headless>=4.8.0" \
+    "pillow>=10.0.0" \
+    "numpy>=1.24.0" \
+    "anthropic>=0.32.0"
 # Note: opencv-python-headless, pillow, numpy, psutil pre-installed in base image
 
 # Copy application code
