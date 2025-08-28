@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "title": "Landscape Music Video with Subnautic Measures",
+    "description": "96-second video using JJVtt947FfI_136.mp4 landscape video with Subnautic Measures background music",
+    "bpm": 120,
+    "beatsPerMeasure": 16,
+    "totalBeats": 192,
+    "estimatedDuration": 96.0
+  },
+  "sources": {
+    "JJVtt947FfI_136.mp4": "JJVtt947FfI_136.mp4",
+    "Subnautic Measures.flac": "Subnautic Measures.flac"
+  },
+  "segments": [
+    {
+      "id": "intro_segment",
+      "start_beat": 0,
+      "end_beat": 32,
+      "duration": 16.0,
+      "sourceType": "video",
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 0,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Opening 16 seconds from landscape video"
+    },
+    {
+      "id": "middle_segment_1", 
+      "start_beat": 32,
+      "end_beat": 64,
+      "duration": 16.0,
+      "sourceType": "video",
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 60,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Middle segment from 1 minute mark"
+    },
+    {
+      "id": "middle_segment_2",
+      "start_beat": 64,
+      "end_beat": 96,
+      "duration": 16.0,
+      "sourceType": "video",
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 120,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Middle segment from 2 minute mark"
+    },
+    {
+      "id": "middle_segment_3",
+      "start_beat": 96,
+      "end_beat": 128,
+      "duration": 16.0,
+      "sourceType": "video",
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 150,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Middle segment from 2.5 minute mark"
+    },
+    {
+      "id": "middle_segment_4",
+      "start_beat": 128,
+      "end_beat": 160,
+      "duration": 16.0,
+      "sourceType": "video",
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 180,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Middle segment from 3 minute mark"
+    },
+    {
+      "id": "outro_segment",
+      "start_beat": 160,
+      "end_beat": 192,
+      "duration": 16.0,
+      "sourceType": "video", 
+      "source_ref": "JJVtt947FfI_136.mp4",
+      "operation": "trim",
+      "trim_start": 200,
+      "trim_duration": 16.0,
+      "effects": [],
+      "description": "Ending segment from 3:20 mark"
+    }
+  ],
+  "globalAudio": {
+    "backgroundMusic": "Subnautic Measures.flac",
+    "musicStartOffset": 0.0,
+    "musicVolume": 0.8,
+    "fadeIn": 2.0,
+    "fadeOut": 3.0
+  },
+  "outputSettings": {
+    "resolution": "1920x1080",
+    "fps": 30,
+    "videoCodec": "libx264",
+    "audioCodec": "aac",
+    "audioSampleRate": 44100
+  }
+}

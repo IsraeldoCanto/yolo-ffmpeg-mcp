@@ -1,0 +1,637 @@
+{
+  "metadata": {
+    "title": "Subnautica Deep Ocean - 128 Beat Music Video",
+    "description": "A 128-beat underwater-themed music video at 120 BPM with Subnautic Measures soundtrack",
+    "bpm": 120,
+    "beatsPerMeasure": 4,
+    "totalBeats": 128,
+    "totalSegments": 16,
+    "segmentDuration": 4.0,
+    "estimatedDuration": 64.0,
+    "created": "2025-01-11T15:00:00Z",
+    "version": "2.0",
+    "theme": "underwater_exploration",
+    "outputFormat": {
+      "resolution": "1080x1920",
+      "fps": 30,
+      "format": "mp4",
+      "orientation": "portrait"
+    }
+  },
+  "segments": [
+    {
+      "id": "deep_intro_01",
+      "startBeat": 0,
+      "endBeat": 8,
+      "duration": 4.0,
+      "role": "intro",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "fade_in",
+          "duration": 1.0,
+          "curve": "smooth"
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.7,
+          "blue_tint": 0.6,
+          "ripple_effect": true
+        },
+        {
+          "type": "scale_blur_bg",
+          "targetResolution": "1080x1920",
+          "blur_strength": 0.3
+        }
+      ],
+      "description": "Deep ocean intro with fade in and underwater atmosphere"
+    },
+    {
+      "id": "exploration_02", 
+      "startBeat": 8,
+      "endBeat": 16,
+      "duration": 4.0,
+      "role": "verse",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.8,
+          "blue_tint": 0.7,
+          "caustics": true
+        },
+        {
+          "type": "slow_zoom",
+          "zoom_factor": 1.1,
+          "center": "0.5,0.5"
+        }
+      ],
+      "description": "Exploration segment with caustics and slow zoom"
+    },
+    {
+      "id": "discovery_03",
+      "startBeat": 16,
+      "endBeat": 24,
+      "duration": 4.0,
+      "role": "verse",
+      "sourceType": "video",
+      "sourceRef": "PLnPZVqiyjA.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 0.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.6,
+          "green_tint": 0.4,
+          "particle_effects": true
+        },
+        {
+          "type": "brightness_pulse",
+          "frequency": 0.5,
+          "intensity": 0.2
+        }
+      ],
+      "description": "Discovery moment with particle effects and brightness pulsing"
+    },
+    {
+      "id": "deep_current_04",
+      "startBeat": 24,
+      "endBeat": 32,
+      "duration": 4.0,
+      "role": "transition",
+      "sourceType": "video", 
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 1.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.9,
+          "blue_tint": 0.8,
+          "current_distortion": true
+        },
+        {
+          "type": "horizontal_drift",
+          "speed": 0.1,
+          "direction": "left"
+        }
+      ],
+      "description": "Deep current segment with water distortion and drift"
+    },
+    {
+      "id": "coral_garden_05",
+      "startBeat": 32,
+      "endBeat": 40,
+      "duration": 4.0,
+      "role": "chorus_build",
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 2.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.5,
+          "coral_highlights": true,
+          "color_enhancement": 1.3
+        },
+        {
+          "type": "gentle_sway",
+          "frequency": 0.3,
+          "amplitude": 0.02
+        }
+      ],
+      "description": "Coral garden with enhanced colors and gentle swaying"
+    },
+    {
+      "id": "leviathan_approach_06",
+      "startBeat": 40,
+      "endBeat": 48,
+      "duration": 4.0,
+      "role": "tension_build",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 5.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.7,
+          "darkness_gradient": 0.4,
+          "shadow_play": true
+        },
+        {
+          "type": "contrast_boost",
+          "intensity": 1.2
+        },
+        {
+          "type": "vignette",
+          "strength": 0.3
+        }
+      ],
+      "description": "Leviathan approach with increasing darkness and tension"
+    },
+    {
+      "id": "bioluminescence_07",
+      "startBeat": 48,
+      "endBeat": 56,
+      "duration": 4.0,
+      "role": "magical_moment",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 4.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.8,
+          "bioluminescence": true,
+          "glow_particles": true
+        },
+        {
+          "type": "brightness_boost",
+          "intensity": 1.1
+        },
+        {
+          "type": "color_shift",
+          "hue_shift": 0.1
+        }
+      ],
+      "description": "Bioluminescent creatures with magical glow effects"
+    },
+    {
+      "id": "thermal_vents_08",
+      "startBeat": 56,
+      "endBeat": 64,
+      "duration": 4.0,
+      "role": "chorus_peak",
+      "sourceType": "video",
+      "sourceRef": "PLnPZVqiyjA.mp4",
+      "operation": "extract_segment", 
+      "extractionParams": {
+        "start": 6.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.6,
+          "thermal_distortion": true,
+          "heat_shimmer": true
+        },
+        {
+          "type": "saturation_boost",
+          "intensity": 1.3
+        }
+      ],
+      "description": "Thermal vents with heat distortion and vibrant colors"
+    },
+    {
+      "id": "kelp_forest_09",
+      "startBeat": 64,
+      "endBeat": 72,
+      "duration": 4.0,
+      "role": "bridge",
+      "sourceType": "video",
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 8.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.7,
+          "kelp_sway": true,
+          "green_filter": 0.3
+        },
+        {
+          "type": "vertical_wave",
+          "frequency": 0.4,
+          "amplitude": 0.03
+        }
+      ],
+      "description": "Kelp forest with swaying motion and green tinting"
+    },
+    {
+      "id": "deep_trench_10",
+      "startBeat": 72,
+      "endBeat": 80,
+      "duration": 4.0,
+      "role": "breakdown",
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 6.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.9,
+          "deep_darkness": true,
+          "pressure_distortion": true
+        },
+        {
+          "type": "desaturation",
+          "intensity": 0.4
+        }
+      ],
+      "description": "Deep trench exploration with darkness and pressure effects"
+    },
+    {
+      "id": "ancient_ruins_11",
+      "startBeat": 80,
+      "endBeat": 88,
+      "duration": 4.0,
+      "role": "mystery",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 10.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.6,
+          "ancient_mystery": true,
+          "stone_texture": true
+        },
+        {
+          "type": "sepia_tint",
+          "intensity": 0.3
+        },
+        {
+          "type": "edge_enhance",
+          "strength": 0.2
+        }
+      ],
+      "description": "Ancient underwater ruins with mystery atmosphere"
+    },
+    {
+      "id": "school_of_fish_12",
+      "startBeat": 88,
+      "endBeat": 96,
+      "duration": 4.0,
+      "role": "energy_build",
+      "sourceType": "video",
+      "sourceRef": "3xEMCU1fyl8.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 8.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.7,
+          "schooling_motion": true,
+          "silver_shimmer": true
+        },
+        {
+          "type": "motion_blur",
+          "strength": 0.1,
+          "direction": "dynamic"
+        }
+      ],
+      "description": "School of fish with dynamic motion and shimmer effects"
+    },
+    {
+      "id": "surface_breakthrough_13",
+      "startBeat": 96,
+      "endBeat": 104,
+      "duration": 4.0,
+      "role": "climax_build",
+      "sourceType": "video",
+      "sourceRef": "PLnPZVqiyjA.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 12.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.4,
+          "surface_light": true,
+          "light_rays": true
+        },
+        {
+          "type": "brightness_gradient",
+          "from_bottom": 0.6,
+          "to_top": 1.2
+        }
+      ],
+      "description": "Breaking through to lighter waters with surface light rays"
+    },
+    {
+      "id": "sunbeam_cathedral_14",
+      "startBeat": 104,
+      "endBeat": 112,
+      "duration": 4.0,
+      "role": "climax",
+      "sourceType": "video",
+      "sourceRef": "JJVtt947FfI_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 12.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.3,
+          "cathedral_light": true,
+          "god_rays": true
+        },
+        {
+          "type": "brightness_boost",
+          "intensity": 1.4
+        },
+        {
+          "type": "contrast_enhance",
+          "intensity": 1.2
+        }
+      ],
+      "description": "Sunbeam cathedral effect with dramatic god rays"
+    },
+    {
+      "id": "peaceful_descent_15",
+      "startBeat": 112,
+      "endBeat": 120,
+      "duration": 4.0,
+      "role": "resolution",
+      "sourceType": "video",
+      "sourceRef": "_wZ5Hof5tXY_136.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 10.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.8,
+          "peaceful_drift": true,
+          "soft_focus": 0.2
+        },
+        {
+          "type": "slow_zoom_out",
+          "zoom_factor": 0.9
+        }
+      ],
+      "description": "Peaceful descent back to the depths with soft focus"
+    },
+    {
+      "id": "deep_outro_16",
+      "startBeat": 120,
+      "endBeat": 128,
+      "duration": 4.0,
+      "role": "outro",
+      "sourceType": "video",
+      "sourceRef": "Oa8iS1W3OCM.mp4",
+      "operation": "extract_segment",
+      "extractionParams": {
+        "start": 15.0,
+        "duration": 4.0,
+        "method": "keyframe_aligned"
+      },
+      "effects": [
+        {
+          "type": "crossfade_transition",
+          "duration": 0.5
+        },
+        {
+          "type": "underwater_filter",
+          "intensity": 0.9,
+          "deep_blue": true,
+          "fade_to_black": true
+        },
+        {
+          "type": "fade_out",
+          "duration": 2.0,
+          "curve": "exponential"
+        }
+      ],
+      "description": "Deep outro fading to black with final underwater atmosphere"
+    }
+  ],
+  "audioConfiguration": {
+    "backgroundMusic": "Subnautic Measures.flac",
+    "extractStart": 0.0,
+    "extractDuration": 64.0,
+    "fadeIn": 1.0,
+    "fadeOut": 2.0,
+    "volume": 0.85,
+    "beatSyncEnabled": true,
+    "beatDetection": {
+      "autoDetect": true,
+      "manualBpm": 120,
+      "syncTolerance": 0.1
+    },
+    "processing": {
+      "normalize": true,
+      "highpassFilter": 20,
+      "lowpassFilter": 18000,
+      "compressor": {
+        "threshold": -16,
+        "ratio": 3.0,
+        "attack": 3,
+        "release": 100
+      },
+      "reverb": {
+        "enabled": true,
+        "roomSize": 0.7,
+        "damping": 0.4,
+        "wetLevel": 0.2
+      }
+    }
+  },
+  "renderSettings": {
+    "quality": "high",
+    "codec": "libx264",
+    "preset": "medium", 
+    "crf": 18,
+    "keyframeInterval": 30,
+    "audioCodec": "aac",
+    "audioBitrate": "192k",
+    "audioSampleRate": 44100,
+    "colorSpace": "bt709",
+    "pixelFormat": "yuv420p",
+    "seamlessLoop": true,
+    "optimization": {
+      "twoPass": true,
+      "bufsize": "2M",
+      "maxrate": "4M"
+    }
+  },
+  "transitions": {
+    "globalTransition": {
+      "type": "crossfade",
+      "duration": 0.5,
+      "curve": "smooth"
+    },
+    "specialTransitions": [
+      {
+        "fromSegment": "deep_current_04",
+        "toSegment": "coral_garden_05",
+        "type": "underwater_swirl",
+        "duration": 0.7
+      },
+      {
+        "fromSegment": "thermal_vents_08",
+        "toSegment": "kelp_forest_09", 
+        "type": "bubble_transition",
+        "duration": 0.8
+      },
+      {
+        "fromSegment": "surface_breakthrough_13",
+        "toSegment": "sunbeam_cathedral_14",
+        "type": "light_burst",
+        "duration": 0.6
+      }
+    ]
+  }
+}

@@ -19,15 +19,34 @@ class KomposteurBridge:
     def __init__(self):
         self.jar_path = None
         self._initialized = False
+        self.version = "0.11.0"  # Updated with CI/CD-enabled release
         
     def initialize(self) -> bool:
         """Initialize the Komposteur bridge by locating the JAR"""
         try:
-            # Find Komposteur JAR
-            self.jar_path = os.path.expanduser(
-                "~/.m2/repository/no/lau/kompost/komposteur-core/0.8-SNAPSHOT/"
-                "komposteur-core-0.8-SNAPSHOT-jar-with-dependencies.jar"
-            )
+            # Find Komposteur JAR - prefer CI/CD-enabled version
+            # Try new CI/CD-enabled versions first
+            possible_jars = [
+                # Latest CI/CD-enabled release
+                "~/.m2/repository/no/lau/kompost/komposteur-core/0.11.0/komposteur-core-0.11.0-jar-with-dependencies.jar",
+                # Previous working release
+                "~/.m2/repository/no/lau/kompost/uber-kompost/0.10.1/uber-kompost-0.10.1-shaded.jar",
+                # Development snapshot
+                "~/.m2/repository/no/lau/kompost/komposteur-core/0.9-SNAPSHOT/komposteur-core-0.9-SNAPSHOT-jar-with-dependencies.jar",
+                # Fallback to old version
+                "~/.m2/repository/no/lau/kompost/komposteur-core/0.8-SNAPSHOT/komposteur-core-0.8-SNAPSHOT-jar-with-dependencies.jar"
+            ]
+            
+            for jar_path in possible_jars:
+                expanded_path = os.path.expanduser(jar_path)
+                if Path(expanded_path).exists():
+                    self.jar_path = expanded_path
+                    logger.info(f"🔧 Found Komposteur JAR: {Path(self.jar_path).name}")
+                    break
+            
+            if not self.jar_path:
+                logger.error("❌ No Komposteur JAR found in any expected location")
+                return False
             
             if not Path(self.jar_path).exists():
                 logger.error(f"Komposteur JAR not found at {self.jar_path}")
@@ -235,7 +254,8 @@ public class KomposteurWrapper {{
         """Get Komposteur version and status"""
         if not self.is_available():
             return "Komposteur bridge not available"
-        return "0.8-SNAPSHOT (JAR accessible, API documentation needed)"
+        jar_name = Path(self.jar_path).name if self.jar_path else "unknown"
+        return f"Komposteur {self.version} - CI/CD-enabled ({jar_name})"
 
 # Global bridge instance
 _bridge_instance: Optional[KomposteurBridge] = None

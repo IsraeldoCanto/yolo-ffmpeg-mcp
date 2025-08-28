@@ -32,10 +32,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
-        run: |
-          uv sync
-          # Verify pytest is available
-          uv run python -c "import pytest; print('✅ pytest available')"
+        run: uv sync --extra dev
         
       - name: Install system dependencies
         run: |
@@ -49,7 +46,7 @@ jobs:
           
       - name: Run Python unit tests
         run: |
-          uv run python -m pytest tests/ci/ -v
+          uv run pytest tests/ci/ -v
           
       - name: Test MCP server import
         run: |
@@ -75,10 +72,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
-        run: |
-          uv sync
-          # Verify pytest is available
-          uv run python -c "import pytest; print('✅ pytest available')"
+        run: uv sync --extra dev
         
       - name: Install system dependencies with ffmpeg
         run: |
@@ -186,18 +180,19 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Build Docker image with cache
+      - name: Build Docker image with Ubuntu single-stage
         run: |
-          echo "🐳 Building Docker image for MCP server using pre-built base..."
+          echo "🐳 Building Docker image for MCP server using Ubuntu single-stage (no pre-built base required)..."
           docker buildx build \
-            --cache-from=type=gha \
-            --cache-to=type=gha,mode=max \
+            --file docker/Dockerfile.ubuntu-single-stage \
+            --cache-from=type=gha,scope=ubuntu-single-stage \
+            --cache-to=type=gha,mode=max,scope=ubuntu-single-stage \
             --load \
             --tag ffmpeg-mcp:ci \
             .
-          echo "✅ Docker image built successfully with pre-built base"
+          echo "✅ Docker image built successfully with Ubuntu single-stage approach"
           docker images ffmpeg-mcp:ci
-          echo "Note: PySceneDetect warning is expected - using fallback mechanism"
+          echo "Build time target: <3 minutes (vs 2+ hours Alpine compilation)"
           
       - name: Test Docker container health
         run: |
@@ -230,11 +225,12 @@ jobs:
           echo "Debug: Container environment:"
           docker exec mcp-test-container pwd
           docker exec mcp-test-container ls -la /app
-          docker exec mcp-test-container python -c "import sys; print('Python path:', sys.path)"
+          docker exec mcp-test-container python3 -c "import sys; print('Python path:', sys.path)"
           docker exec mcp-test-container printenv | grep PYTHON || echo "No PYTHON env vars"
           
-          # Test imports with explicit PYTHONPATH
-          OUTPUT=$(docker exec -e PYTHONPATH=/app mcp-test-container python -c "
+          # Test imports with explicit PYTHONPATH - show all output for debugging
+          echo "Testing MCP imports with PYTHONPATH=/app..."
+          docker exec -e PYTHONPATH=/app mcp-test-container python3 -c "
           try:
               import src.server
               import src.file_manager  
@@ -242,18 +238,13 @@ jobs:
               print('SUCCESS: All MCP modules imported')
           except Exception as e:
               print(f'FAILED: {e}')
+              import traceback
+              traceback.print_exc()
               exit(1)
-          " 2>&1)
-          
-          # Check if imports succeeded (look for SUCCESS message)
-          if echo "$OUTPUT" | grep -q "SUCCESS: All MCP modules imported"; then
-            echo "✅ All MCP modules import successfully in Docker"
-            echo "Note: PySceneDetect warnings are expected and filtered"
-          else
-            echo "❌ MCP module imports failed"
-            echo "Output: $OUTPUT"
+          " || {
+            echo "❌ MCP module imports failed - see error above"
             exit 1
-          fi
+          }
           
       - name: Test FFmpeg in Docker
         run: |
@@ -322,7 +313,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv sync
+          uv sync --extra dev
           
       - name: Install system dependencies
         run: |
@@ -425,7 +416,8 @@ jobs:
   mcp-performance-baseline:
     name: MCP Server Performance Baseline
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: mcp-server-unit-tests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'feature/'))
     
     steps:
       - name: Checkout code
@@ -440,7 +432,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv sync
+          uv sync --extra dev
           
       - name: Install system dependencies
         run: |
@@ -466,7 +458,34 @@ jobs:
           print(f'File manager initialization: {end-start:.3f}s')
           "
           
+      - name: Performance test - Docker dependency fix validation
+        run: |
+          echo "🐳 Testing Docker opencv dependency fix..."
+          # Test the opencv import that was failing before our fix
+          uv run python -c "
+          import time
+          start = time.time()
+          try:
+              import cv2
+              end = time.time()
+              print(f'✅ OpenCV import successful: {end-start:.3f}s')
+          except ImportError as e:
+              print(f'❌ OpenCV import failed: {e}')
+              exit(1)
+          "
+          
+      - name: Performance test - FFmpeg integration
+        run: |
+          echo "🎬 Testing FFmpeg performance..."
+          time ffmpeg -f lavfi -i testsrc2=duration=1:size=320x240:rate=1 -y /tmp/test_perf.mp4
+          ls -lh /tmp/test_perf.mp4
+          echo "✅ FFmpeg basic operation completed"
+          
       - name: Save performance metrics
         run: |
           echo "📊 Performance baseline established"
-          echo "Startup time and file operations measured for future comparison"
+          echo "✅ Server startup time measured"
+          echo "✅ File manager initialization measured"  
+          echo "✅ OpenCV dependency availability confirmed"
+          echo "✅ FFmpeg basic operations measured"
+          echo "Performance metrics available for regression detection"

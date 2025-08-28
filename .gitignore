@@ -166,3 +166,15 @@ integration/*/build/
 .aider.tags.cache.*
 .aider/
 .aider*
+
+# OAuth and sensitive files
+token.json
+test-oauth-flow.py
+youtube-upload.sh
+YOUTUBE_AUTH_ANALYSIS.md
+
+# Generated video files (can be large)
+*.mp4
+*.mov
+*.avi
+

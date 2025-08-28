@@ -1,0 +1,28 @@
+{
+  "workflow": "subnautic_music_video_creation",
+  "timestamp": "2025-08-08 20:45:28",
+  "duration": 0.06708288192749023,
+  "status": "completed",
+  "komposition_file": "subnautic_music_video_komposition.json",
+  "target_format": "youtube_shorts",
+  "audio_source": "Subnautic Measures.flac",
+  "video_sources": [
+    "JJVtt947FfI_136.mp4",
+    "_wZ5Hof5tXY_136.mp4",
+    "PXL_20250306_132546255.mp4"
+  ],
+  "effects_applied": [
+    "bit_compression",
+    "color_grading",
+    "fade_to_black_transitions"
+  ],
+  "specifications": {
+    "bpm": 120,
+    "segments": 12,
+    "beats_per_segment": 4,
+    "segment_duration": 2.0,
+    "total_duration": 24.0,
+    "resolution": "1080x1920",
+    "framerate": 30
+  }
+}

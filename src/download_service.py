@@ -94,18 +94,12 @@ class DownloadService:
             self._initialize_service()
     
     def _find_komposteur_jar(self) -> Optional[Path]:
-        """Find Komposteur JAR - prefer latest 1.0.0 MCP artifacts"""
-        # Latest 1.0.0 MCP artifacts (should have YouTube download fixes)
-        mcp_jars = [
+        """Find Komposteur uber-JAR - prefer latest versions with download capabilities"""
+        # Latest uber-kompost JARs with download functionality
+        uber_jars = [
+            Path.home() / ".m2/repository/no/lau/kompost/mcp/uber-kompost/1.1.0/uber-kompost-1.1.0-shaded.jar",
             Path.home() / ".m2/repository/no/lau/kompost/mcp/uber-kompost/1.0.0/uber-kompost-1.0.0-shaded.jar",
-            Path.home() / ".m2/repository/no/lau/kompost/mcp/komposteur-core/1.0.0/komposteur-core-1.0.0-jar-with-dependencies.jar",
-            Path.home() / ".m2/repository/no/lau/kompost/mcp/komposteur-core/1.0/komposteur-core-1.0-jar-with-dependencies.jar"
-        ]
-        
-        # Previous local JARs (fallback)
-        legacy_jars = [
-            Path.home() / ".m2/repository/no/lau/kompost/komposteur-core/0.10.1/komposteur-core-0.10.1-jar-with-dependencies.jar",
-            Path.home() / ".m2/repository/no/lau/kompost/komposteur-core/0.9-SNAPSHOT/komposteur-core-0.9-SNAPSHOT-jar-with-dependencies.jar"
+            Path.home() / ".m2/repository/no/lau/kompost/uber-kompost/0.10.1/uber-kompost-0.10.1-shaded.jar"
         ]
         
         # Production JAR paths
@@ -114,17 +108,11 @@ class DownloadService:
             Path("integration/komposteur/uber-kompost.jar")
         ]
         
-        # Prefer latest 1.0.0 MCP JARs first
-        for mcp_jar in mcp_jars:
-            if mcp_jar.exists():
-                logger.info(f"🚀 Using latest 1.0.0 MCP JAR: {mcp_jar}")
-                return mcp_jar
-        
-        # Fallback to legacy local JARs
-        for legacy_jar in legacy_jars:
-            if legacy_jar.exists():
-                logger.info(f"🔧 Using legacy local JAR: {legacy_jar}")
-                return legacy_jar
+        # Prefer uber-JAR files (self-contained with download functionality)
+        for uber_jar in uber_jars:
+            if uber_jar.exists():
+                logger.info(f"🚀 Using uber-kompost JAR: {uber_jar}")
+                return uber_jar
         
         # Final fallback to production JARs
         for jar_path in production_paths:
@@ -132,35 +120,32 @@ class DownloadService:
                 logger.info(f"📦 Using production JAR: {jar_path}")
                 return jar_path
         
-        logger.warning("No Komposteur JAR found (checked 1.0.0 MCP, legacy local, and production)")
+        logger.warning("No uber-kompost JAR found - download functionality will not be available")
         return None
     
     def _initialize_service(self) -> bool:
-        """Initialize the download service"""
+        """Initialize the download service by testing uber-jar execution"""
         if not self.komposteur_jar:
             return False
         
         try:
-            # Test if Komposteur entry point is available (which has download capabilities)
-            test_cmd = [
-                "java", "-cp", str(self.komposteur_jar),
-                "no.lau.komposteur.core.KomposteurEntryPoint"
-            ]
+            # Test uber-jar execution (should return JSON response)
+            test_cmd = ["java", "-jar", str(self.komposteur_jar)]
             
             result = subprocess.run(test_cmd, capture_output=True, text=True, timeout=10)
             
-            # Check if output contains version info (indicates it's working)
-            if "Version:" in result.stdout or "Komposteur" in result.stdout:
-                logger.info("Komposteur download service initialized successfully")
-                logger.info(f"Komposteur version info: {result.stdout.strip()}")
+            # Check if we get help output (indicates uber-jar is working)
+            if "Commands:" in result.stderr and "download_youtube" in result.stderr:
+                logger.info("Uber-kompost JAR initialized successfully")
+                logger.info(f"Download service ready: {self.komposteur_jar}")
                 self._initialized = True
                 return True
             else:
-                logger.warning(f"Komposteur test failed: {result.stderr}")
+                logger.warning(f"Uber-jar test failed - stdout: {result.stdout}, stderr: {result.stderr}")
                 return False
                 
         except Exception as e:
-            logger.error(f"Failed to initialize download service: {e}")
+            logger.error(f"Failed to initialize uber-jar download service: {e}")
             return False
     
     def is_available(self) -> bool:
@@ -317,15 +302,28 @@ class DownloadService:
                 config_path = config_file.name
             
             try:
-                # Call multi-source download bridge
-                java_cmd = [
-                    "java", "-cp", f"{self.komposteur_jar}:.",
-                    "MultiSourceDownloadBridge",
-                    "download",
-                    request.url,
-                    str(self.download_cache_dir),
-                    request.quality
-                ]
+                # Generate output filename for download
+                output_filename = f"downloaded_{int(time.time())}.{request.format}"
+                output_path = self.download_cache_dir / output_filename
+                
+                # Execute uber-jar using proper CLI format
+                if request.source_type == "youtube":
+                    java_cmd = [
+                        "java", "-cp", str(self.komposteur_jar), 
+                        "no.lau.download.service.McpDownloadServiceCli",
+                        "download_youtube",
+                        request.url,
+                        request.quality,
+                        str(output_path)
+                    ]
+                else:
+                    java_cmd = [
+                        "java", "-cp", str(self.komposteur_jar),
+                        "no.lau.download.service.McpDownloadServiceCli", 
+                        "download_url",
+                        request.url,
+                        str(output_path)
+                    ]
                 
                 logger.info(f"Starting download: {request.url} (type: {request.source_type})")
                 
@@ -337,23 +335,30 @@ class DownloadService:
                 )
                 
                 if result.returncode == 0:
-                    # Parse response from our wrapper
-                    response_data = json.loads(result.stdout)
-                    
-                    # Parse successful response from Java wrapper
-                    download_result = DownloadResult(
-                        success=response_data.get("success", False),
-                        file_path=response_data.get("filePath"),
-                        original_url=request.url,
-                        download_duration=time.time() - start_time,
-                        file_size_bytes=response_data.get("fileSizeBytes", 0),
-                        format=response_data.get("format", request.format),
-                        resolution=response_data.get("resolution", ""),
-                        error=response_data.get("error") if not response_data.get("success") else None,
-                        metadata={
-                            "available_classes": response_data.get("availableClasses", [])
-                        }
-                    )
+                    # Check if output file was created successfully
+                    if output_path.exists() and output_path.stat().st_size > 0:
+                        download_result = DownloadResult(
+                            success=True,
+                            file_path=str(output_path),
+                            original_url=request.url,
+                            download_duration=time.time() - start_time,
+                            file_size_bytes=output_path.stat().st_size,
+                            format=request.format,
+                            resolution="",  # Could be extracted from ffprobe later
+                            error=None,
+                            metadata={
+                                "cli_output": result.stdout,
+                                "cli_stderr": result.stderr
+                            }
+                        )
+                    else:
+                        # Download command succeeded but no file created
+                        download_result = DownloadResult(
+                            success=False,
+                            original_url=request.url,
+                            download_duration=time.time() - start_time,
+                            error=f"Download completed but no file created: {result.stdout}"
+                        )
                     
                     # Register with file manager if available
                     if self.file_manager and download_result.file_path:
@@ -457,10 +462,9 @@ class DownloadService:
         
         try:
             java_cmd = [
-                "java", "-cp", f"{self.komposteur_jar}:.",
-                "MultiSourceDownloadBridge",
-                "info",
-                url
+                "java", "-cp", str(self.komposteur_jar),
+                "no.lau.download.service.McpDownloadServiceCli",
+                "health_check"  # Use health_check as info equivalent for now
             ]
             
             result = subprocess.run(java_cmd, capture_output=True, text=True, timeout=30)

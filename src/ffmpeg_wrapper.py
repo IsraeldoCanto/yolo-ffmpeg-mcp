@@ -9,6 +9,9 @@ import time
 # Analytics service temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md
 # from .analytics_service import get_analytics
 
+# Containerized FFmpeg support
+from .containerized_ffmpeg import ContainerizedFFmpeg, is_containerized_ffmpeg_available
+
 
 class FFMPEGWrapper:
     ALLOWED_OPERATIONS = {
@@ -158,11 +161,46 @@ class FFMPEGWrapper:
         "create_loop_with_reverse": {
             "args": ["-filter_complex", "[0]split=2[original][reverse];[reverse]reverse[rev];[original][rev]concat=n=2:v=1:a=0[video_pingpong];[0]asplit=2[a1][a2];[a2]areverse[a2rev];[a1][a2rev]concat=n=2:v=0:a=1[audio_pingpong]", "-map", "[video_pingpong]", "-map", "[audio_pingpong]", "-c:v", "libx264", "-preset", "slower", "-crf", "18", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-movflags", "+faststart"],
             "description": "Create ping-pong loop by playing video forward then reverse for seamless looping effect"
+        },
+        "youtube_recommended_encode": {
+            "args": ["-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "8000k", "-bufsize", "12000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Encode video with YouTube recommended settings for best quality and compatibility"
+        },
+        "youtube_shorts_premium": {
+            "args": ["-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "8000k", "-bufsize", "12000k", "-pix_fmt", "yuv420p", "-g", "24", "-keyint_min", "24", "-sc_threshold", "0", "-bf", "2", "-b_strategy", "0", "-refs", "3", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Premium YouTube Shorts encoding with optimal quality settings, faster GOP for mobile playback"
+        },
+        "youtube_1080p_optimize": {
+            "args": ["-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-maxrate", "5000k", "-bufsize", "10000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Optimize video for YouTube 1080p with recommended bitrate and quality settings"
+        },
+        "youtube_4k_optimize": {
+            "args": ["-vf", "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1:1", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-maxrate", "40000k", "-bufsize", "60000k", "-pix_fmt", "yuv420p", "-g", "48", "-keyint_min", "48", "-sc_threshold", "0", "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"],
+            "description": "Optimize video for YouTube 4K with high bitrate and premium quality settings"
         }
     }
 
-    def __init__(self, ffmpeg_path: str = None):
+    def __init__(self, ffmpeg_path: str = None, use_containerized: bool = None):
         self.ffmpeg_path = ffmpeg_path or self._find_ffmpeg_path() or "ffmpeg"
+        
+        # Auto-detect containerized mode if not specified
+        if use_containerized is None:
+            use_containerized = os.getenv("USE_CONTAINERIZED_FFMPEG", "false").lower() == "true"
+        
+        self.use_containerized = use_containerized
+        self.containerized_ffmpeg = None
+        
+        if self.use_containerized:
+            try:
+                self.containerized_ffmpeg = ContainerizedFFmpeg()
+                if not self.containerized_ffmpeg.is_available():
+                    print("⚠️ Containerized FFmpeg not available, falling back to native")
+                    self.use_containerized = False
+                else:
+                    print("✅ Using containerized FFmpeg execution")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize containerized FFmpeg: {e}, falling back to native")
+                self.use_containerized = False
         
     def build_command(self, operation: str, input_path: Path, output_path: Path, **params) -> List[str]:
         """Build safe FFMPEG command"""
@@ -347,6 +385,21 @@ class FFMPEGWrapper:
 
     async def execute_command(self, command: List[str], timeout: int = 300) -> Dict[str, Any]:
         """Execute FFMPEG command with timeout"""
+        from .trace_logger import get_trace_logger
+        
+        # Get operation ID from context or create one
+        op_id = getattr(asyncio.current_task(), 'trace_operation_id', None)
+        if not op_id:
+            op_id = get_trace_logger().start_operation("ffmpeg_standalone", {"command": command})
+        
+        # Use containerized FFmpeg if available
+        if self.use_containerized and self.containerized_ffmpeg:
+            get_trace_logger().log_step(op_id, "execution_mode", "containerized_ffmpeg")
+            return await self.containerized_ffmpeg.execute_command(command, timeout)
+        
+        # Native FFmpeg execution
+        get_trace_logger().log_step(op_id, "execution_mode", "native_ffmpeg")
+        
         try:
             process = await asyncio.create_subprocess_exec(
                 *command,
@@ -354,20 +407,35 @@ class FFMPEGWrapper:
                 stderr=asyncio.subprocess.PIPE
             )
             
+            # Log FFmpeg command with PID
+            get_trace_logger().log_ffmpeg_command(op_id, command, process.pid)
+            
+            start_time = time.time()
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(), 
                 timeout=timeout
             )
+            duration_ms = int((time.time() - start_time) * 1000)
+            
+            success = process.returncode == 0
+            stdout_str = stdout.decode('utf-8', errors='ignore')
+            stderr_str = stderr.decode('utf-8', errors='ignore')
+            
+            # Log FFmpeg result
+            get_trace_logger().log_ffmpeg_result(
+                op_id, success, duration_ms, stdout_str, stderr_str, process.pid
+            )
             
             return {
-                "success": process.returncode == 0,
+                "success": success,
                 "returncode": process.returncode,
-                "stdout": stdout.decode('utf-8', errors='ignore'),
-                "stderr": stderr.decode('utf-8', errors='ignore'),
+                "stdout": stdout_str,
+                "stderr": stderr_str,
                 "command": ' '.join(command)
             }
             
         except asyncio.TimeoutError:
+            get_trace_logger().log_timeout(op_id, timeout, "ffmpeg_command")
             return {
                 "success": False,
                 "error": f"Command timed out after {timeout} seconds",

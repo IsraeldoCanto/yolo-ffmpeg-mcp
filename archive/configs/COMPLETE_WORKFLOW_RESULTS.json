@@ -1,0 +1,47 @@
+{
+  "total_duration": 0.2108910083770752,
+  "steps": {
+    "batch_download": {
+      "start": 1754678672.373678,
+      "end": 1754678672.539587,
+      "duration": 0.1659090518951416,
+      "status": "success",
+      "details": "Downloaded 0 videos"
+    },
+    "video_analysis": {
+      "start": 1754678672.539723,
+      "end": 1754678672.5609732,
+      "duration": 0.021250247955322266,
+      "status": "success",
+      "details": "Analyzed 0 videos"
+    },
+    "audio_location": {
+      "start": 1754678672.5610611,
+      "end": 1754678672.561145,
+      "duration": 8.392333984375e-05,
+      "status": "success",
+      "details": "Found audio: Subnautic Measures.flac"
+    },
+    "komposition_generation": {
+      "start": 1754678672.561177,
+      "end": 1754678672.581328,
+      "duration": 0.02015089988708496,
+      "status": "success",
+      "details": "Generated komposition: workflow_test_komposition.json"
+    },
+    "komposition_processing": {
+      "start": 1754678672.581402,
+      "end": 1754678672.584403,
+      "duration": 0.003000974655151367,
+      "status": "success",
+      "details": "Processing result: <coroutine object KompositionProcessor.process_komposition at 0x125bb7810>"
+    },
+    "youtube_upload": {
+      "start": 1754678672.584507,
+      "end": 1754678672.58454,
+      "duration": 3.2901763916015625e-05,
+      "status": "error",
+      "details": "Google API libraries not installed. Run: pip install google-api-python-client google-auth-oauthlib"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "success": false,
+  "error": "Failed to process komposition: 'KompositionProcessor' object has no attribute 'load_komposition'"
+}

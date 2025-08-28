@@ -197,13 +197,26 @@ class TestFormatManagerWithFFmpeg:
         with pytest.raises(RuntimeError):
             self.format_manager.analyze_video_format("/nonexistent/file.mp4", "test")
     
-    @pytest.mark.skipif(True, reason="Requires actual test video file")
     def test_analyze_video_format_real_file(self):
         """Test video format analysis with real file (if available)"""
-        # This test would need an actual video file in tests/files/
+        # This test creates a minimal test video file if needed
         test_video = self.test_files_dir / "test_video.mp4"
+        
+        # Create test directory if it doesn't exist
+        self.test_files_dir.mkdir(exist_ok=True)
+        
+        # Create a minimal test video if none exists
         if not test_video.exists():
-            pytest.skip("No test video file available")
+            # Use FFmpeg to create a minimal 1-second test video
+            import subprocess
+            try:
+                subprocess.run([
+                    "ffmpeg", "-f", "lavfi", 
+                    "-i", "testsrc2=duration=1:size=320x240:rate=1",
+                    "-y", str(test_video)
+                ], check=True, capture_output=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pytest.skip("Could not create test video file - FFmpeg not available or failed")
         
         analysis = self.format_manager.analyze_video_format(str(test_video), "test")
         

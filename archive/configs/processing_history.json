@@ -1,0 +1,52 @@
+[
+  {
+    "tool_name": "keyframe_align",
+    "video_characteristics": {
+      "duration": 60.0,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "bitrate": 5000000,
+      "codec": "h264",
+      "frame_rate": 30.0,
+      "has_audio": true,
+      "estimated_keyframes": 12,
+      "motion_level": "medium",
+      "color_complexity": "moderate",
+      "file_size_mb": 100.0
+    },
+    "processing_time": 15.5,
+    "success": true,
+    "cpu_usage": 65.0,
+    "memory_usage_mb": 400.0,
+    "output_quality": 0.92,
+    "timestamp": "2025-08-10T22:24:43.997925",
+    "error_message": null
+  },
+  {
+    "tool_name": "direct_ffmpeg",
+    "video_characteristics": {
+      "duration": 60.0,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "bitrate": 5000000,
+      "codec": "h264",
+      "frame_rate": 30.0,
+      "has_audio": true,
+      "estimated_keyframes": 12,
+      "motion_level": "medium",
+      "color_complexity": "moderate",
+      "file_size_mb": 100.0
+    },
+    "processing_time": 8.2,
+    "success": false,
+    "cpu_usage": 45.0,
+    "memory_usage_mb": 200.0,
+    "output_quality": 0.0,
+    "timestamp": "2025-08-10T22:24:43.998533",
+    "error_message": "Timeout exceeded"
+  }
+]

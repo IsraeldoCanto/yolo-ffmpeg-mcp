@@ -1,0 +1,375 @@
+{
+  "id": "subnautic_music_video_workflow",
+  "name": "Subnautic Music Video - Complete Workflow Test",
+  "description": "120 BPM Subnautic background music with 12 segments, bit-compression effects",
+  "bpm": 120,
+  "duration": 24.0,
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "framerate": 30,
+    "codec": "libx264",
+    "preset": "fast"
+  },
+  "audio": {
+    "file": "Subnautic Measures.flac",
+    "volume": 0.8,
+    "effects": [
+      "normalize",
+      "limiter"
+    ]
+  },
+  "global_effects": [
+    {
+      "type": "bit_compression",
+      "parameters": {
+        "bit_depth": 8,
+        "sample_rate": 22050,
+        "strength": 0.7
+      }
+    }
+  ],
+  "transitions": {
+    "type": "fade_to_black",
+    "duration": 1.0,
+    "ease": "ease_in_out"
+  },
+  "segments": [
+    {
+      "id": "segment_01",
+      "start_time": 0.0,
+      "duration": 2.0,
+      "video": {
+        "source": "JJVtt947FfI_136.mp4",
+        "start": 0.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.6
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": true
+      }
+    },
+    {
+      "id": "segment_02",
+      "start_time": 2.0,
+      "duration": 2.0,
+      "video": {
+        "source": "_wZ5Hof5tXY_136.mp4",
+        "start": 3.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.7
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_03",
+      "start_time": 4.0,
+      "duration": 2.0,
+      "video": {
+        "source": "PXL_20250306_132546255.mp4",
+        "start": 6.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.8
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_04",
+      "start_time": 6.0,
+      "duration": 2.0,
+      "video": {
+        "source": "JJVtt947FfI_136.mp4",
+        "start": 9.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.6
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_05",
+      "start_time": 8.0,
+      "duration": 2.0,
+      "video": {
+        "source": "_wZ5Hof5tXY_136.mp4",
+        "start": 12.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.7
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": true
+      }
+    },
+    {
+      "id": "segment_06",
+      "start_time": 10.0,
+      "duration": 2.0,
+      "video": {
+        "source": "PXL_20250306_132546255.mp4",
+        "start": 15.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.8
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_07",
+      "start_time": 12.0,
+      "duration": 2.0,
+      "video": {
+        "source": "JJVtt947FfI_136.mp4",
+        "start": 18.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.6
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_08",
+      "start_time": 14.0,
+      "duration": 2.0,
+      "video": {
+        "source": "_wZ5Hof5tXY_136.mp4",
+        "start": 21.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.7
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_09",
+      "start_time": 16.0,
+      "duration": 2.0,
+      "video": {
+        "source": "PXL_20250306_132546255.mp4",
+        "start": 24.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.8
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": true
+      }
+    },
+    {
+      "id": "segment_10",
+      "start_time": 18.0,
+      "duration": 2.0,
+      "video": {
+        "source": "JJVtt947FfI_136.mp4",
+        "start": 27.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.6
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_11",
+      "start_time": 20.0,
+      "duration": 2.0,
+      "video": {
+        "source": "_wZ5Hof5tXY_136.mp4",
+        "start": 30.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.7
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    },
+    {
+      "id": "segment_12",
+      "start_time": 22.0,
+      "duration": 2.0,
+      "video": {
+        "source": "PXL_20250306_132546255.mp4",
+        "start": 33.0,
+        "duration": 2.0,
+        "scale": "fit_center",
+        "orientation": "portrait"
+      },
+      "effects": [
+        {
+          "type": "bit_compression",
+          "strength": 0.8
+        },
+        {
+          "type": "color_grading",
+          "preset": "underwater",
+          "intensity": 0.7
+        }
+      ],
+      "beat_sync": {
+        "beats_per_segment": 4,
+        "sync_to_beat": true,
+        "beat_emphasis": false
+      }
+    }
+  ]
+}

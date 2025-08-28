@@ -1,0 +1,153 @@
+{
+  "analysis_date": "2025-08-09",
+  "critical_finding": "MCP uniform timing creates 9.7s-29s content mismatches",
+  "root_cause": "Algorithm uses mathematical division vs content-aware segmentation",
+  "is_ffmpeg_limitation": false,
+  "is_programming_error": false,
+  "solution_required": "Enhanced video intelligence algorithms",
+  "video_analyses": {
+    "Oa8iS1W3OCM.mp4": {
+      "file": "Oa8iS1W3OCM.mp4",
+      "duration": 60.000363,
+      "bitrate": 345802,
+      "fps": 24.0,
+      "resolution": "360x640",
+      "total_frames": 1440,
+      "keyframes": [],
+      "keyframe_count": 0
+    },
+    "3xEMCU1fyl8.mp4": {
+      "file": "3xEMCU1fyl8.mp4",
+      "duration": 60.053333,
+      "bitrate": 336861,
+      "fps": 24.0,
+      "resolution": "360x640",
+      "total_frames": 1441,
+      "keyframes": [],
+      "keyframe_count": 0
+    },
+    "PLnPZVqiyjA.mp4": {
+      "file": "PLnPZVqiyjA.mp4",
+      "duration": 107.434667,
+      "bitrate": 595422,
+      "fps": 24.0,
+      "resolution": "360x640",
+      "total_frames": 2578,
+      "keyframes": [],
+      "keyframe_count": 0
+    }
+  },
+  "timing_analysis": {
+    "root_cause": "Algorithm Design Difference - Not FFmpeg Issue",
+    "mcp_approach": {
+      "method": "Mathematical uniform division",
+      "calculation": "60s video \u00f7 4 segments = 15s intervals",
+      "timing": [
+        0.0,
+        15.0,
+        30.0,
+        45.0
+      ],
+      "ignores": [
+        "Video structure",
+        "Scene boundaries",
+        "Keyframes",
+        "Content flow"
+      ]
+    },
+    "keyframe_approach": {
+      "method": "Content-aware scene detection",
+      "calculation": "ffprobe keyframe analysis + manual verification",
+      "timing": [
+        0.0,
+        5.291667,
+        10.625,
+        15.958333
+      ],
+      "considers": [
+        "Natural scene breaks",
+        "Keyframe boundaries",
+        "Content flow",
+        "Visual transitions"
+      ]
+    },
+    "differences": [
+      {
+        "segment": "seg02",
+        "mcp": 15.0,
+        "keyframe": 5.291667,
+        "diff": 9.708333,
+        "impact": "Shows different scene entirely"
+      },
+      {
+        "segment": "seg03",
+        "mcp": 30.0,
+        "keyframe": 10.625,
+        "diff": 19.375,
+        "impact": "Major content mismatch"
+      },
+      {
+        "segment": "seg04",
+        "mcp": 45.0,
+        "keyframe": 15.958333,
+        "diff": 29.041667,
+        "impact": "Completely different video content"
+      }
+    ]
+  },
+  "solution_analysis": {
+    "is_ffmpeg_issue": false,
+    "is_programming_error": false,
+    "is_algorithm_design": true,
+    "solution_type": "Enhanced Algorithm Design + Video Intelligence",
+    "ffmpeg_capabilities": {
+      "scene_detection": "ffmpeg -f lavfi -i movie=video.mp4,select='gt(scene\\,0.3)' -vsync vfr",
+      "keyframe_detection": "ffprobe -show_entries frame=key_frame,pts_time",
+      "content_analysis": "ffmpeg histogram, scene detection filters available"
+    },
+    "required_improvements": {
+      "mcp_server": [
+        "Add video content analysis",
+        "Implement scene detection algorithms",
+        "Use keyframe-aware timing calculations",
+        "Add content-based segment boundary detection"
+      ],
+      "komposteur": [
+        "Integrate ffprobe scene analysis",
+        "Add quality validation pipeline",
+        "Implement content-aware segmentation",
+        "Create multi-pass processing for quality assurance"
+      ]
+    }
+  },
+  "komposteur_instructions": {
+    "priority": "HIGH - Critical for production quality",
+    "core_requirements": {
+      "video_intelligence": {
+        "scene_detection": "Implement ffprobe-based scene boundary detection",
+        "keyframe_analysis": "Use GOP structure analysis for optimal cut points",
+        "content_awareness": "Analyze video flow and natural transition points"
+      },
+      "segmentation_algorithm": {
+        "replace_uniform_division": "Never use mathematical time division for video content",
+        "implement_content_based": "Use scene detection + keyframe alignment",
+        "quality_validation": "Verify segment boundaries respect video structure"
+      },
+      "processing_pipeline": {
+        "multi_pass": "First pass: analysis, Second pass: extraction, Third pass: validation",
+        "quality_gates": "Frame loss detection, content continuity validation",
+        "error_handling": "Fallback to manual keyframe detection if scene detection fails"
+      }
+    },
+    "specific_implementations": {
+      "scene_detection_command": "ffprobe -f lavfi -i movie=input.mp4,select='gt(scene\\,0.3)' -show_entries frame=pts_time -of csv=p=0",
+      "keyframe_detection_command": "ffprobe -show_entries frame=key_frame,pts_time -select_streams v:0 -of csv=p=0 input.mp4",
+      "quality_validation_command": "ffprobe -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0"
+    },
+    "mcp_compatibility_layer": {
+      "provide_simple_interface": "Hide complexity behind simple MCP tools",
+      "expose_quality_options": "Allow quality vs speed trade-offs",
+      "intelligent_defaults": "Use content-aware algorithms as default"
+    }
+  }
+}

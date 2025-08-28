@@ -1,0 +1,22 @@
+{
+  "id": "subnautic_workflow_test",
+  "name": "Subnautic Music Video - Workflow Test",
+  "bpm": 120,
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "framerate": 30
+  },
+  "audio": {
+    "file": "Subnautic Measures.flac",
+    "volume": 1.0
+  },
+  "segments": [],
+  "effects": [
+    "bit_compression"
+  ],
+  "transitions": {
+    "duration": 1.0,
+    "type": "fade_to_black"
+  }
+}

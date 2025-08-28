@@ -1,0 +1,179 @@
+{
+  "test_cycle_timestamp": "2025-08-22 08:09:22",
+  "subproject": ".",
+  "target_version": "clean install",
+  "before_upgrade": {
+    "build_result": {
+      "timestamp": "2025-08-22 08:09:21",
+      "project_path": "/Users/stiglau/utvikling/privat/lm-ai/mcp/yolo-ffmpeg-mcp",
+      "build_command": "mvn clean compile -DskipTests",
+      "success": false,
+      "duration_seconds": 0.07,
+      "exit_code": 1,
+      "stdout_lines": 1,
+      "stderr_lines": 3,
+      "test_results": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "test_classes": [],
+        "failed_tests": [],
+        "duration_seconds": 0,
+        "module_results": {},
+        "reactor_summary": {
+          "total_modules": 0,
+          "successful_modules": 0,
+          "failed_modules": 0,
+          "skipped_modules": 0,
+          "module_results": [],
+          "total_build_time": 0,
+          "build_status": "UNKNOWN"
+        }
+      },
+      "artifact_info": {
+        "jars_created": [],
+        "target_size_mb": 0.0,
+        "main_artifact": null
+      },
+      "build_hash": "d41d8cd98f00",
+      "errors": [],
+      "warnings": []
+    },
+    "version_analysis": {
+      "total_dependencies": 121,
+      "owned_dependencies": 26,
+      "build_system": "maven",
+      "key_versions": {
+        "no.lau.vdvil:image-core": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:video-renderer-core": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:ffmpeg": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:renderer": {
+          "current_pom": "${project.version}",
+          "latest_local": "v2"
+        },
+        "no.lau.vdvil:audio-renderer": {
+          "current_pom": "${project.version}",
+          "latest_local": "v2"
+        }
+      }
+    }
+  },
+  "upgrade_plan": {
+    "target_version": "clean install",
+    "current_state": {
+      "total_dependencies": 121,
+      "owned_dependencies": 26,
+      "build_system": "maven",
+      "key_versions": {
+        "no.lau.vdvil:image-core": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:video-renderer-core": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:ffmpeg": {
+          "current_pom": "${project.version}",
+          "latest_local": "v9"
+        },
+        "no.lau.vdvil:renderer": {
+          "current_pom": "${project.version}",
+          "latest_local": "v2"
+        },
+        "no.lau.vdvil:audio-renderer": {
+          "current_pom": "${project.version}",
+          "latest_local": "v2"
+        }
+      }
+    },
+    "upgrade_steps": [
+      "Update . POM version references to clean install",
+      "Update dependency management sections",
+      "Clean and rebuild all modules",
+      "Run integration tests with new version"
+    ],
+    "risks": [
+      "API compatibility changes between versions",
+      "Transitive dependency conflicts",
+      "Test failures due to behavioral changes",
+      "Performance regression possibilities"
+    ],
+    "validation_steps": [
+      "Compilation success verification",
+      "Unit test execution and results comparison",
+      "Integration test execution",
+      "Artifact size and structure validation",
+      "Performance benchmark comparison"
+    ]
+  },
+  "after_upgrade": {
+    "build_result": {
+      "timestamp": "2025-08-22 08:09:22",
+      "project_path": "/Users/stiglau/utvikling/privat/lm-ai/mcp/yolo-ffmpeg-mcp",
+      "build_command": "mvn clean compile -DskipTests",
+      "success": false,
+      "duration_seconds": 0.07,
+      "exit_code": 1,
+      "stdout_lines": 1,
+      "stderr_lines": 3,
+      "test_results": {
+        "tests_run": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "test_classes": [],
+        "failed_tests": [],
+        "duration_seconds": 0,
+        "module_results": {},
+        "reactor_summary": {
+          "total_modules": 0,
+          "successful_modules": 0,
+          "failed_modules": 0,
+          "skipped_modules": 0,
+          "module_results": [],
+          "total_build_time": 0,
+          "build_status": "UNKNOWN"
+        }
+      },
+      "artifact_info": {
+        "jars_created": [],
+        "target_size_mb": 0.0,
+        "main_artifact": null
+      },
+      "build_hash": "d41d8cd98f00",
+      "errors": [],
+      "warnings": []
+    }
+  },
+  "comparison": {
+    "timestamp_comparison": "2025-08-22 08:09:21 \u2192 2025-08-22 08:09:22",
+    "success_change": false,
+    "duration_change_seconds": 0.0,
+    "test_changes": {},
+    "artifact_changes": {},
+    "error_changes": {
+      "before_errors": 0,
+      "after_errors": 0,
+      "new_errors": [],
+      "resolved_errors": []
+    },
+    "hash_changed": false,
+    "summary": [
+      "\ud83d\udccb No significant changes detected"
+    ]
+  },
+  "recommendations": [
+    "\ud83d\udccb Minimal changes detected - upgrade appears low-risk"
+  ]
+}
