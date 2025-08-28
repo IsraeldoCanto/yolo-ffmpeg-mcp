@@ -5956,6 +5956,106 @@ async def cleanup_download_cache(max_age_days: int = 7) -> Dict[str, Any]:
         }
 
 
+# Haiku Debug Interface Tools
+# These tools can be disabled by setting HAIKU_DEBUG=false
+
+try:
+    from .haiku_debug_interface import (
+        analyze_debug_sessions, 
+        get_debug_sessions, 
+        get_debug_session
+    )
+    
+    @mcp.tool()
+    async def haiku_debug_status() -> Dict[str, Any]:
+        """🐛 HAIKU DEBUG - Get status and analysis of Haiku debugging sessions
+        
+        Provides insights into Haiku LLM performance, file usage patterns, 
+        and recommendations for improving prompts and results.
+        
+        Returns:
+            Dictionary containing:
+            - enabled: Whether debugging is enabled
+            - sessions: Number of debug sessions
+            - total_cost_usd: Total API costs
+            - average_confidence: Average Haiku confidence scores
+            - success_rate: Success rate of Haiku operations
+            - file_mismatches: Count of file selection errors
+            - recommendations: AI-generated improvement suggestions
+        
+        Use this to understand why Haiku might be generating poor results
+        and get specific recommendations for improvement.
+        """
+        try:
+            return analyze_debug_sessions()
+        except Exception as e:
+            return {
+                "enabled": False,
+                "error": f"Debug analysis failed: {str(e)}"
+            }
+    
+    @mcp.tool()
+    async def haiku_debug_sessions() -> List[str]:
+        """🐛 HAIKU DEBUG - List all available debug sessions
+        
+        Returns list of debug session IDs that can be examined in detail.
+        Each session captures a complete Haiku interaction including
+        prompts, responses, FFmpeg commands, and file usage.
+        
+        Returns:
+            List of session IDs (e.g., ["haiku_debug_1756378237_abc123.json"])
+        """
+        try:
+            return get_debug_sessions()
+        except Exception as e:
+            return []
+    
+    @mcp.tool()
+    async def haiku_debug_session_details(session_id: str) -> Dict[str, Any]:
+        """🐛 HAIKU DEBUG - Get detailed information about a specific debug session
+        
+        Retrieve complete debug information for a specific Haiku session,
+        including prompts sent, responses received, FFmpeg commands generated,
+        and file usage patterns.
+        
+        Args:
+            session_id: Debug session ID from haiku_debug_sessions()
+        
+        Returns:
+            Complete session data including:
+            - user_request: Original user request
+            - haiku_prompt_sent: Exact prompt sent to Haiku
+            - haiku_response: Haiku's response 
+            - ffmpeg_commands_generated: FFmpeg commands Haiku generated
+            - actual_files_used: Files that were actually processed
+            - expected_files: Files that should have been used
+            - confidence_score: Haiku's confidence in its response
+            - cost_usd: API cost for the session
+            - success: Whether the operation succeeded
+            - errors: Any errors encountered
+        
+        This is perfect for understanding exactly what went wrong when
+        Haiku produces unexpected results.
+        """
+        try:
+            session_data = get_debug_session(session_id)
+            if session_data:
+                return session_data
+            else:
+                return {
+                    "error": f"Session {session_id} not found",
+                    "available_sessions": get_debug_sessions()
+                }
+        except Exception as e:
+            return {
+                "error": f"Failed to get session details: {str(e)}"
+            }
+
+except ImportError:
+    # Debug interface not available
+    pass
+
+
 # Run the server
 if __name__ == "__main__":
     import atexit

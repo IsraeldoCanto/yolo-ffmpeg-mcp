@@ -7,30 +7,30 @@ import { tmpdir } from "os";
 import { join, extname } from "path";
 import { randomUUID } from "crypto";
 
-import { createHaikuClient, HaikuFFmpegClient, VideoProcessingRequest } from "./haiku-client.js";
+import { createLLMClient, LLMClient, VideoProcessingRequest } from "./llm-client.js";
 import { protectedFFmpeg, FFmpegExecutionResult } from "./ffmpeg-executor.js";
 import { registryClient, RegistryFile } from "./registry-client.js";
 
 // Global state
-let haikuClient: HaikuFFmpegClient | null = null;
+let llmClient: LLMClient | null = null;
 const processedVideos = new Map<string, FFmpegExecutionResult>();
 
 /**
- * Initialize Haiku client on server startup
+ * Initialize LLM client on server startup
  */
-async function initializeHaikuClient() {
+async function initializeLLMClient() {
   try {
-    haikuClient = createHaikuClient();
-    if (haikuClient) {
-      console.error("✅ Haiku LLM client initialized");
-      const status = haikuClient.getDailySpendStatus();
+    llmClient = createLLMClient();
+    if (llmClient) {
+      console.error(`✅ ${process.env.LLM_PROVIDER || 'Anthropic'} LLM client initialized`);
+      const status = llmClient.getDailySpendStatus();
       console.error(`💰 Daily budget: $${status.remainingBudget.toFixed(3)} remaining`);
     } else {
-      console.error("⚠️ Haiku LLM client not available - using fallback mode");
+      console.error("⚠️ LLM client not available - using fallback mode");
     }
   } catch (error) {
-    console.error("❌ Failed to initialize Haiku client:", error);
-    haikuClient = null;
+    console.error("❌ Failed to initialize LLM client:", error);
+    llmClient = null;
   }
 }
 
@@ -40,14 +40,14 @@ const server = new McpServer({
   version: "1.0.0"
 });
 
-// ====== TOOLS ======
+// ====== TOOLS ====== 
 
 // Tool 1: AI-powered FFmpeg command generation and execution
 server.registerTool(
   "smart-ffmpeg-process",
   {
-    title: "Smart FFmpeg Processing with Haiku LLM",
-    description: "Generate and execute safe FFmpeg commands using Haiku LLM analysis",
+    title: "Smart FFmpeg Processing with LLM",
+    description: "Generate and execute safe FFmpeg commands using LLM analysis",
     inputSchema: {
       operation: z.string().describe("Video processing operation (e.g., 'trim', 'resize', 'convert', 'extract_audio')"),
       fileIds: z.array(z.string()).describe("Input file IDs from the multimedia registry"),
@@ -99,21 +99,21 @@ server.registerTool(
         constraints
       };
 
-      // Step 4: Generate FFmpeg command using Haiku LLM or fallback
+      // Step 4: Generate FFmpeg command using LLM or fallback
       let commandResult;
-      if (haikuClient) {
+      if (llmClient) {
         try {
-          commandResult = await haikuClient.generateFFmpegCommand(request);
-          console.error(`🧠 Haiku generated command with ${commandResult.confidence} confidence`);
+          commandResult = await llmClient.generateFFmpegCommand(request);
+          console.error(`🧠 LLM generated command with ${commandResult.confidence} confidence`);
         } catch (error) {
-          console.error(`⚠️ Haiku LLM failed: ${error}, using fallback`);
-          commandResult = haikuClient.generateFallbackCommand(request);
+          console.error(`⚠️ LLM failed: ${error}, using fallback`);
+          commandResult = llmClient.generateFallbackCommand(request);
         }
       } else {
-        // Use a basic heuristic fallback when no Haiku client
+        // Use a basic heuristic fallback when no LLM client
         commandResult = {
           ffmpegCommand: ['ffmpeg', '-i', inputFiles[0], '-y', outputPath],
-          reasoning: 'Basic fallback command (no Haiku LLM available)',
+          reasoning: 'Basic fallback command (no LLM available)',
           safetyChecks: { validInputs: true, noDestructiveOps: true, outputPathSafe: true, resourceLimits: true },
           confidence: 0.5
         };
@@ -133,7 +133,7 @@ server.registerTool(
             source_files: fileInfos.map(f => f.id),
             operation,
             processing_parameters: parameters,
-            haiku_confidence: commandResult.confidence,
+            llm_confidence: commandResult.confidence,
             processing_time_ms: executionResult.processTime
           });
         } catch (regError) {
@@ -259,34 +259,35 @@ server.registerTool(
   }
 );
 
-// Tool 3: Get Haiku LLM status and cost information
+// Tool 3: Get LLM status and cost information
 server.registerTool(
-  "haiku-status",
+  "llm-status",
   {
-    title: "Haiku LLM Status",
-    description: "Check Haiku LLM availability, daily spend status, and budget information",
+    title: "LLM Status",
+    description: "Check LLM availability, daily spend status, and budget information",
     inputSchema: {}
   },
   async () => {
     try {
-      if (!haikuClient) {
+      if (!llmClient) {
         return {
           content: [{
             type: "text",
-            text: "🤖 Haiku LLM Status: DISABLED\n\n" +
-                  "❌ Haiku client not available\n" +
-                  "💡 Set ANTHROPIC_API_KEY environment variable to enable Haiku LLM features\n" +
+            text: "🤖 LLM Status: DISABLED\n\n" +
+                  "❌ LLM client not available\n" +
+                  "💡 Set LLM_PROVIDER and relevant API key to enable LLM features\n" +
                   "🔄 Fallback mode: Basic heuristic FFmpeg command generation active"
           }]
         };
       }
 
-      const status = haikuClient.getDailySpendStatus();
+      const status = llmClient.getDailySpendStatus();
+      const provider = process.env.LLM_PROVIDER || 'ANTHROPIC';
       
       return {
         content: [{
           type: "text",
-          text: `🤖 Haiku LLM Status: ACTIVE\n\n` +
+          text: `🤖 LLM Status: ACTIVE (${provider})\n\n` +
                 `💰 Daily Budget Status:\n` +
                 `   • Spent today: $${status.dailySpend.toFixed(4)}\n` +
                 `   • Daily limit: $${status.dailyLimit.toFixed(2)}\n` +
@@ -304,7 +305,7 @@ server.registerTool(
       return {
         content: [{
           type: "text",
-          text: `❌ Failed to get Haiku status: ${error instanceof Error ? error.message : String(error)}`
+          text: `❌ Failed to get LLM status: ${error instanceof Error ? error.message : String(error)}`
         }],
         isError: true
       };
@@ -339,12 +340,13 @@ server.registerTool(
       checks.push(`❌ Python MCP Registry: Not available - ${pythonHealth.error}`);
     }
 
-    // Check Haiku LLM
-    if (haikuClient) {
-      const status = haikuClient.getDailySpendStatus();
-      checks.push(`✅ Haiku LLM: Active (${status.canAffordTypicalRequest ? 'budget available' : 'budget exceeded'})`);
+    // Check LLM
+    if (llmClient) {
+      const status = llmClient.getDailySpendStatus();
+      const provider = process.env.LLM_PROVIDER || 'ANTHROPIC';
+      checks.push(`✅ LLM (${provider}): Active (${status.canAffordTypicalRequest ? 'budget available' : 'budget exceeded'})`);
     } else {
-      checks.push("⚠️ Haiku LLM: Disabled (ANTHROPIC_API_KEY not set)");
+      checks.push("⚠️ LLM: Disabled (API key not set)");
     }
 
     // Check processing stats
@@ -359,7 +361,7 @@ server.registerTool(
               `🏗️ Architecture: TypeScript MCP Frontend\n` +
               `🐍 Backend: Python MCP Registry Integration\n` +
               `🛡️ Protection: Advanced FFmpeg validation enabled\n` +
-              `🧠 AI: Haiku LLM smart command generation`
+              `🧠 AI: ${process.env.LLM_PROVIDER || 'Anthropic'} LLM smart command generation`
       }]
     };
   }
@@ -405,7 +407,7 @@ server.registerTool(
   }
 );
 
-// ====== RESOURCES ======
+// ====== RESOURCES ====== 
 
 // Resource: Server configuration
 server.registerResource(
@@ -427,16 +429,17 @@ server.registerResource(
           architecture: "TypeScript Frontend + Python Backend",
           capabilities: [
             "smart-ffmpeg-processing",
-            "haiku-llm-integration", 
+            "llm-integration", 
             "python-mcp-delegation",
             "registry-integration",
             "safety-validation"
           ]
         },
-        haiku: {
-          available: haikuClient !== null,
-          dailySpend: haikuClient?.getDailySpendStatus().dailySpend || 0,
-          dailyLimit: haikuClient?.getDailySpendStatus().dailyLimit || 0
+        llm: {
+          provider: process.env.LLM_PROVIDER || 'ANTHROPIC',
+          available: llmClient !== null,
+          dailySpend: llmClient?.getDailySpendStatus().dailySpend || 0,
+          dailyLimit: llmClient?.getDailySpendStatus().dailyLimit || 0
         },
         statistics: {
           totalProcessed: processedVideos.size,
@@ -447,14 +450,14 @@ server.registerResource(
   })
 );
 
-// ====== PROMPTS ======
+// ====== PROMPTS ====== 
 
 // Prompt: Smart video processing workflow
 server.registerPrompt(
   "smart-video-workflow",
   {
     title: "Smart Video Processing Workflow",
-    description: "Complete workflow for intelligent video processing with Haiku LLM",
+    description: "Complete workflow for intelligent video processing with LLM",
     argsSchema: {
       operation: z.string().describe("Video processing operation"),
       fileIds: z.string().describe("Comma-separated input file IDs from registry"),
@@ -466,12 +469,12 @@ server.registerPrompt(
       role: "user",
       content: {
         type: "text",
-        text: `I need to perform intelligent video processing using the TypeScript MCP server with Haiku LLM integration.\n\n` +
+        text: `I need to perform intelligent video processing using the TypeScript MCP server with LLM integration.\n\n` +
               `Operation: ${operation}\n` +
               `Input files: ${fileIds}\n` +
               `${customInstructions ? `Custom instructions: ${customInstructions}\n` : ''}` +
               `Please:\n` +
-              `1. Use smart-ffmpeg-process tool with Haiku LLM analysis\n` +
+              `1. Use smart-ffmpeg-process tool with LLM analysis\n` +
               `2. The AI will generate safe, optimal FFmpeg commands\n` +
               `3. Protected execution with safety validation\n` +
               `4. Automatic registry integration for output files\n\n` +
@@ -481,12 +484,12 @@ server.registerPrompt(
   })
 );
 
-// ====== SERVER STARTUP ======
+// ====== SERVER STARTUP ====== 
 async function startServer() {
   console.error("🚀 Starting Kompolight MCP Server...");
   
   // Initialize components
-  await initializeHaikuClient();
+  await initializeLLMClient();
   
   // Check Python MCP health
   const pythonHealth = await registryClient.checkPythonMcpHealth();
@@ -500,7 +503,7 @@ async function startServer() {
   await server.connect(transport);
   
   console.error("🎬 Kompolight MCP Server ready!");
-  console.error("🧠 Haiku LLM:", haikuClient ? "ENABLED" : "DISABLED");
+  console.error(`🧠 LLM Provider: ${process.env.LLM_PROVIDER || 'ANTHROPIC'} (${llmClient ? "ENABLED" : "DISABLED"})`);
   console.error("🐍 Python MCP:", pythonHealth.available ? "CONNECTED" : "DISCONNECTED");
 }
 

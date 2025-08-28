@@ -1,12 +1,12 @@
 # TypeScript MCP Server for YOLO FFMPEG
 
-**Frontend Interface for Video Processing with Haiku LLM Integration**
+**Frontend Interface for Video Processing with LLM Integration**
 
 ## Overview
 
 This TypeScript MCP server provides a modern frontend interface to the existing Python video processing functionality, featuring:
 
-- 🧠 **Haiku LLM Integration**: AI-powered FFmpeg command generation
+- 🧠 **LLM Integration**: AI-powered FFmpeg command generation with configurable providers (Anthropic Haiku, Google Gemini Flash).
 - 🛡️ **Advanced Protection**: Multi-layer safety validation for FFmpeg operations  
 - 🐍 **Python Backend Integration**: Seamless delegation to existing Python MCP functionality
 - 📁 **Registry Integration**: Full compatibility with multimedia file registry
@@ -20,7 +20,7 @@ This TypeScript MCP server provides a modern frontend interface to the existing 
 │   (Frontend)        │    │    (Backend)        │
 ├─────────────────────┤    ├─────────────────────┤
 │ • FFmpeg Wrappers   │◄──►│ • Complex Workflows │
-│ • Haiku LLM         │    │ • AI Analysis       │
+│ • LLM Client        │    │ • AI Analysis       │
 │ • Safety Validation │    │ • Registry System   │
 │ • Direct Operations │    │ • Production Tools  │
 └─────────────────────┘    └─────────────────────┘
@@ -30,7 +30,7 @@ This TypeScript MCP server provides a modern frontend interface to the existing 
 
 ### 🧠 AI-Powered FFmpeg Generation
 
-- **Haiku LLM Integration**: Generate safe, optimized FFmpeg commands from natural language
+- **LLM Integration**: Generate safe, optimized FFmpeg commands from natural language with configurable providers.
 - **Cost Control**: Daily budget limits ($5/day default) with real-time tracking
 - **Fallback System**: Heuristic command generation when AI unavailable
 - **Safety First**: Multi-layer validation prevents destructive operations
@@ -62,11 +62,17 @@ npm run build
 ### Environment Variables
 
 ```bash
-# Required for Haiku LLM features
+# LLM Provider: ANTHROPIC or GOOGLE (defaults to ANTHROPIC)
+export LLM_PROVIDER="ANTHROPIC"
+
+# Required for Anthropic (Haiku) LLM features
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
+# Required for Google (Gemini) LLM features
+export GEMINI_API_KEY="your-gemini-api-key"
+
 # Optional: Adjust daily spend limit
-export HAIKU_DAILY_LIMIT="5.00"
+export DAILY_LIMIT="5.00"
 ```
 
 ### Prerequisites
@@ -74,7 +80,7 @@ export HAIKU_DAILY_LIMIT="5.00"
 - Node.js 18+
 - FFmpeg installed and accessible via PATH
 - Python MCP server running (for backend integration)
-- Anthropic API key (for Haiku LLM features)
+- API key for the selected LLM provider
 
 ## Usage
 
@@ -95,6 +101,7 @@ Add to your Claude Desktop MCP configuration:
       "command": "node",
       "args": ["/path/to/typescript-mcp/dist/server.js"],
       "env": {
+        "LLM_PROVIDER": "ANTHROPIC",
         "ANTHROPIC_API_KEY": "your-api-key"
       }
     }
@@ -141,8 +148,8 @@ await delegateToPython("yolo_smart_video_concat", {
 // Check system component health
 await systemHealth();
 
-// Monitor Haiku LLM status and budget
-await haikuStatus();
+// Monitor LLM status and budget
+await llmStatus();
 ```
 
 ## Safety Features
@@ -186,7 +193,7 @@ npm test
 typescript-mcp/
 ├── src/
 │   ├── server.ts              # Main MCP server
-│   ├── haiku-client.ts        # Haiku LLM integration
+│   ├── llm-client.ts          # LLM integration (Anthropic, Gemini)
 │   ├── ffmpeg-executor.ts     # Protected FFmpeg execution
 │   └── registry-client.ts     # Python MCP integration
 ├── tests/                     # Test files
