@@ -2,6 +2,14 @@
 # MCP Natural Environment Test - End-to-End Workflow
 set -e
 
+# Use uv environment for MCP dependencies
+if command -v uv &> /dev/null; then
+    export UV_RUN_PYTHON="python3 -c"
+    PYTHON_CMD="uv run python3"
+else
+    PYTHON_CMD="python3"
+fi
+
 echo "🌿 MCP NATURAL ENVIRONMENT TEST - End-to-End Workflow"
 echo "====================================================="
 
@@ -19,7 +27,7 @@ echo "  Headless: $HEADLESS_MODE"
 # Test 1: MCP Server Natural Language Processing
 echo ""
 echo "🧠 Test 1: MCP Natural Language Processing"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:
@@ -43,7 +51,7 @@ except Exception as e:
 # Test 2: Environment Resource Validation  
 echo ""
 echo "🔍 Test 2: Environment Resource Validation"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:
@@ -70,7 +78,7 @@ except Exception as e:
 # Test 3: FFMPEG Integration Test
 echo ""
 echo "🎬 Test 3: FFMPEG Integration in Natural Environment"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:
@@ -123,7 +131,7 @@ fi
 # Test 5: MCP Tool Chain Validation
 echo ""
 echo "🔧 Test 5: MCP Tool Chain Validation"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:

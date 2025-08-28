@@ -2,6 +2,14 @@
 # Music Video Creation Test - MCP + Komposteur Integration
 set -e
 
+# Use uv environment for MCP dependencies
+if command -v uv &> /dev/null; then
+    export UV_RUN_PYTHON="python3 -c"
+    PYTHON_CMD="uv run python3"
+else
+    PYTHON_CMD="python3"
+fi
+
 echo "🎬 MUSIC VIDEO CREATION TEST - MCP + Komposteur Integration"
 echo "============================================================"
 
@@ -26,7 +34,7 @@ echo "  Headless: $HEADLESS_MODE"
 # Test 1: MCP Server Availability
 echo ""
 echo "🔌 Test 1: MCP Server Import and Availability"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:
@@ -47,7 +55,7 @@ except Exception as e:
 # Test 2: Komposteur JAR Availability
 echo ""
 echo "🎵 Test 2: Komposteur JAR Availability"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 from src.download_service import DownloadService
@@ -94,7 +102,7 @@ fi
 # Test 4: MCP Tool Functionality
 echo ""
 echo "🔧 Test 4: MCP Tool Functionality Test"
-python3 -c "
+$PYTHON_CMD -c "
 import sys
 sys.path.insert(0, 'src')
 try:
