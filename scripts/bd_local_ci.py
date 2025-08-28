@@ -42,7 +42,7 @@ def bd_local_ci_verify(include_docker=False):
          "Local pytest suite"),
     ]
     
-    # Docker tests (optional, slower)
+    # Docker tests (optional, slower) - Enhanced with CI-specific validation
     if include_docker:
         tests.extend([
             ("docker build -t ffmpeg-mcp:local-test . --quiet", 
@@ -50,6 +50,10 @@ def bd_local_ci_verify(include_docker=False):
              
             ("docker build -f Dockerfile.ci -t ffmpeg-mcp:local-ci-test . --quiet", 
              "CI Docker build"),
+             
+            # NEW: Test the CI Docker container actually runs the tests
+            ("docker run --rm ffmpeg-mcp:local-ci-test", 
+             "CI Docker test execution"),
         ])
     
     passed = 0
