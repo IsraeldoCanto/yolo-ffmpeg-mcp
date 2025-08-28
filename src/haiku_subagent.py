@@ -14,6 +14,7 @@ Key Benefits:
 import asyncio
 import json
 import logging
+import subprocess
 import time
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
@@ -25,6 +26,13 @@ try:
     import anthropic
 except ImportError:
     anthropic = None
+
+# PyMediaInfo for QC verification
+try:
+    from pymediainfo import MediaInfo
+    HAS_PYMEDIAINFO = True
+except ImportError:
+    HAS_PYMEDIAINFO = False
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +63,23 @@ class CostLimits:
     per_analysis_limit: float = 0.10  # USD
     current_daily_spend: float = 0.0
     analysis_count: int = 0
+
+@dataclass
+class QualityReport:
+    """Quality control analysis results"""
+    file_path: Path
+    is_valid: bool
+    duration: float
+    width: int
+    height: int
+    frame_rate: str
+    bit_rate: int
+    format: str
+    codec: str
+    pixel_format: str
+    has_audio: bool
+    issues: List[str]
+    confidence: float  # 0-1, quality confidence score
 
 class HaikuSubagent:
     """
@@ -319,6 +344,404 @@ Consider file count, sizes, and likelihood of format mismatches.
         self.cost_limits.current_daily_spend = 0.0
         self.cost_limits.analysis_count = 0
         logger.info("💰 Daily cost tracking reset")
+    
+    async def quality_check(self, output_file: Path) -> QualityReport:
+        """
+        Post-processing quality verification using PyMediaInfo or ffprobe fallback.
+        
+        Priority #1 Implementation: Comprehensive QC verification
+        """
+        if not output_file.exists():
+            return QualityReport(
+                file_path=output_file,
+                is_valid=False,
+                duration=0.0,
+                width=0,
+                height=0,
+                frame_rate="0/1",
+                bit_rate=0,
+                format="none",
+                codec="none",
+                pixel_format="none",
+                has_audio=False,
+                issues=["File does not exist"],
+                confidence=0.0
+            )
+        
+        issues = []
+        
+        # Try PyMediaInfo first (preferred)
+        if HAS_PYMEDIAINFO:
+            try:
+                return await self._pymediainfo_analysis(output_file, issues)
+            except Exception as e:
+                logger.warning(f"⚠️ PyMediaInfo failed: {e}, falling back to ffprobe")
+                issues.append(f"PyMediaInfo error: {e}")
+        
+        # Fallback to ffprobe
+        return await self._ffprobe_analysis(output_file, issues)
+    
+    async def _pymediainfo_analysis(self, file_path: Path, issues: List[str]) -> QualityReport:
+        """Use PyMediaInfo for detailed quality analysis"""
+        media_info = MediaInfo.parse(str(file_path))
+        
+        video_track = None
+        audio_track = None
+        
+        for track in media_info.tracks:
+            if track.track_type == "Video" and video_track is None:
+                video_track = track
+            elif track.track_type == "Audio" and audio_track is None:
+                audio_track = track
+        
+        if not video_track:
+            issues.append("No video track found")
+            return self._create_invalid_report(file_path, issues)
+        
+        # Extract video properties
+        duration = float(video_track.duration or 0) / 1000.0  # Convert ms to seconds
+        width = int(video_track.width or 0)
+        height = int(video_track.height or 0)
+        frame_rate = video_track.frame_rate or "unknown"
+        bit_rate = int(video_track.bit_rate or 0)
+        format_name = video_track.format or "unknown"
+        codec = video_track.codec_id or format_name
+        pixel_format = getattr(video_track, 'color_space', 'unknown')
+        has_audio = audio_track is not None
+        
+        # Quality validation
+        confidence = self._calculate_confidence(width, height, frame_rate, bit_rate, duration, issues)
+        
+        return QualityReport(
+            file_path=file_path,
+            is_valid=len(issues) == 0 and duration > 0,
+            duration=duration,
+            width=width,
+            height=height,
+            frame_rate=str(frame_rate),
+            bit_rate=bit_rate,
+            format=format_name,
+            codec=codec,
+            pixel_format=pixel_format,
+            has_audio=has_audio,
+            issues=issues,
+            confidence=confidence
+        )
+    
+    async def _ffprobe_analysis(self, file_path: Path, issues: List[str]) -> QualityReport:
+        """Fallback ffprobe analysis for quality verification"""
+        try:
+            cmd = [
+                'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                '-show_format', '-show_streams', str(file_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            
+            if result.returncode != 0:
+                issues.append(f"ffprobe failed: {result.stderr}")
+                return self._create_invalid_report(file_path, issues)
+            
+            data = json.loads(result.stdout)
+            video_stream = None
+            audio_stream = None
+            
+            for stream in data.get('streams', []):
+                if stream.get('codec_type') == 'video' and video_stream is None:
+                    video_stream = stream
+                elif stream.get('codec_type') == 'audio' and audio_stream is None:
+                    audio_stream = stream
+            
+            if not video_stream:
+                issues.append("No video stream found")
+                return self._create_invalid_report(file_path, issues)
+            
+            # Extract properties
+            duration = float(video_stream.get('duration', 0))
+            width = int(video_stream.get('width', 0))
+            height = int(video_stream.get('height', 0))
+            frame_rate = video_stream.get('r_frame_rate', '0/1')
+            bit_rate = int(video_stream.get('bit_rate', 0))
+            format_name = video_stream.get('codec_name', 'unknown')
+            codec = video_stream.get('codec_long_name', format_name)
+            pixel_format = video_stream.get('pix_fmt', 'unknown')
+            has_audio = audio_stream is not None
+            
+            confidence = self._calculate_confidence(width, height, frame_rate, bit_rate, duration, issues)
+            
+            return QualityReport(
+                file_path=file_path,
+                is_valid=len(issues) == 0 and duration > 0,
+                duration=duration,
+                width=width,
+                height=height,
+                frame_rate=frame_rate,
+                bit_rate=bit_rate,
+                format=format_name,
+                codec=codec,
+                pixel_format=pixel_format,
+                has_audio=has_audio,
+                issues=issues,
+                confidence=confidence
+            )
+            
+        except Exception as e:
+            issues.append(f"Analysis failed: {e}")
+            return self._create_invalid_report(file_path, issues)
+    
+    def _create_invalid_report(self, file_path: Path, issues: List[str]) -> QualityReport:
+        """Create invalid quality report"""
+        return QualityReport(
+            file_path=file_path,
+            is_valid=False,
+            duration=0.0,
+            width=0,
+            height=0,
+            frame_rate="0/1",
+            bit_rate=0,
+            format="error",
+            codec="error",
+            pixel_format="error",
+            has_audio=False,
+            issues=issues,
+            confidence=0.0
+        )
+    
+    def _calculate_confidence(self, width: int, height: int, frame_rate: str, 
+                            bit_rate: int, duration: float, issues: List[str]) -> float:
+        """Calculate quality confidence score based on video properties"""
+        confidence = 1.0
+        
+        # Resolution check
+        if width < 640 or height < 480:
+            confidence -= 0.2
+            issues.append("Low resolution detected")
+        elif width >= 1920 and height >= 1080:
+            confidence = min(1.0, confidence + 0.1)  # Bonus for HD+
+        
+        # Frame rate check
+        try:
+            if '/' in str(frame_rate):
+                num, den = frame_rate.split('/')
+                fps = float(num) / float(den)
+                if fps < 15:
+                    confidence -= 0.2
+                    issues.append("Low frame rate detected")
+                elif fps > 60:
+                    confidence -= 0.1
+                    issues.append("Unusual high frame rate")
+        except:
+            confidence -= 0.1
+            issues.append("Could not parse frame rate")
+        
+        # Bitrate check
+        if bit_rate > 0:
+            # Reasonable bitrate for resolution
+            expected_bitrate = width * height * 0.1  # Rough estimate
+            if bit_rate < expected_bitrate * 0.1:
+                confidence -= 0.2
+                issues.append("Very low bitrate for resolution")
+        else:
+            confidence -= 0.1
+            issues.append("No bitrate information")
+        
+        # Duration check
+        if duration <= 0:
+            confidence -= 0.3
+            issues.append("Invalid duration")
+        elif duration < 1.0:
+            confidence -= 0.1
+            issues.append("Very short duration")
+        
+        return max(0.0, confidence)
+    
+    async def analyze_technical_issues(self, video_files: List[Path]) -> Dict[str, Any]:
+        """
+        Priority #2 Implementation: Deep ffprobe analysis for timebase conflicts.
+        
+        Detects frame rate mismatches, timebase conflicts, and format inconsistencies
+        that require specific processing strategies.
+        """
+        technical_issues = {
+            "timebase_conflicts": [],
+            "framerate_mismatches": [],
+            "format_inconsistencies": [],
+            "recommended_strategy_adjustments": [],
+            "confidence_adjustments": 0.0
+        }
+        
+        if len(video_files) < 2:
+            return technical_issues
+        
+        video_properties = []
+        
+        # Gather detailed properties for each video
+        for video_file in video_files:
+            if not video_file.exists():
+                continue
+                
+            try:
+                cmd = [
+                    'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                    '-show_streams', '-select_streams', 'v:0', str(video_file)
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+                
+                if result.returncode == 0:
+                    data = json.loads(result.stdout)
+                    if data.get('streams'):
+                        stream = data['streams'][0]
+                        video_properties.append({
+                            'file': video_file.name,
+                            'time_base': stream.get('time_base', '1/25'),
+                            'r_frame_rate': stream.get('r_frame_rate', '25/1'),
+                            'avg_frame_rate': stream.get('avg_frame_rate', '25/1'),
+                            'pix_fmt': stream.get('pix_fmt', 'yuv420p'),
+                            'codec_name': stream.get('codec_name', 'h264'),
+                            'width': stream.get('width', 0),
+                            'height': stream.get('height', 0)
+                        })
+                        
+            except Exception as e:
+                logger.warning(f"⚠️ Could not analyze {video_file}: {e}")
+        
+        if len(video_properties) < 2:
+            return technical_issues
+        
+        # Analyze for conflicts
+        self._detect_timebase_conflicts(video_properties, technical_issues)
+        self._detect_framerate_mismatches(video_properties, technical_issues)
+        self._detect_format_inconsistencies(video_properties, technical_issues)
+        
+        # Generate strategy recommendations based on findings
+        self._recommend_strategy_adjustments(technical_issues)
+        
+        return technical_issues
+    
+    def _detect_timebase_conflicts(self, video_props: List[Dict], issues: Dict):
+        """Detect timebase conflicts that cause xfade failures"""
+        timebases = [prop['time_base'] for prop in video_props]
+        unique_timebases = set(timebases)
+        
+        if len(unique_timebases) > 1:
+            issues['timebase_conflicts'] = [
+                {
+                    'files': [prop['file'] for prop in video_props],
+                    'timebases': timebases,
+                    'severity': 'high',
+                    'description': 'Different timebase values will cause xfade filter failures'
+                }
+            ]
+            issues['confidence_adjustments'] -= 0.2
+            issues['recommended_strategy_adjustments'].append('Requires FPS normalization before crossfade')
+    
+    def _detect_framerate_mismatches(self, video_props: List[Dict], issues: Dict):
+        """Detect frame rate mismatches requiring normalization"""
+        framerates = []
+        for prop in video_props:
+            try:
+                r_rate = prop['r_frame_rate']
+                if '/' in r_rate:
+                    num, den = r_rate.split('/')
+                    fps = float(num) / float(den)
+                    framerates.append(fps)
+            except:
+                framerates.append(0)
+        
+        unique_fps = set(framerates)
+        if len(unique_fps) > 1 and 0 not in unique_fps:
+            issues['framerate_mismatches'] = [
+                {
+                    'files': [prop['file'] for prop in video_props],
+                    'framerates': framerates,
+                    'severity': 'medium',
+                    'description': f'Mixed frame rates: {unique_fps} - may cause stuttering'
+                }
+            ]
+            issues['confidence_adjustments'] -= 0.1
+            issues['recommended_strategy_adjustments'].append('Use fps filter for normalization')
+    
+    def _detect_format_inconsistencies(self, video_props: List[Dict], issues: Dict):
+        """Detect format/codec inconsistencies"""
+        formats = [prop['pix_fmt'] for prop in video_props]
+        codecs = [prop['codec_name'] for prop in video_props]
+        resolutions = [(prop['width'], prop['height']) for prop in video_props]
+        
+        inconsistencies = []
+        
+        if len(set(formats)) > 1:
+            inconsistencies.append(f'Mixed pixel formats: {set(formats)}')
+        
+        if len(set(codecs)) > 1:
+            inconsistencies.append(f'Mixed codecs: {set(codecs)}')
+            
+        if len(set(resolutions)) > 1:
+            inconsistencies.append(f'Mixed resolutions: {set(resolutions)}')
+        
+        if inconsistencies:
+            issues['format_inconsistencies'] = inconsistencies
+            issues['confidence_adjustments'] -= 0.1
+            issues['recommended_strategy_adjustments'].append('Consider normalization strategy')
+    
+    def _recommend_strategy_adjustments(self, issues: Dict):
+        """Generate specific strategy recommendations based on technical analysis"""
+        if issues['timebase_conflicts']:
+            issues['recommended_strategy_adjustments'].append('FORCE: Use fps normalization before any xfade operations')
+        
+        if issues['framerate_mismatches'] and issues['format_inconsistencies']:
+            issues['recommended_strategy_adjustments'].append('RECOMMEND: NORMALIZE_FIRST strategy over CROSSFADE_CONCAT')
+        
+        if len(issues['timebase_conflicts']) > 0 or len(issues['framerate_mismatches']) > 0:
+            issues['recommended_strategy_adjustments'].append('AVOID: Direct xfade without preprocessing')
+    
+    def get_creative_transitions(self) -> Dict[str, List[str]]:
+        """
+        Priority #3: Creative transition options for enhanced aesthetics.
+        
+        Returns available FFmpeg xfade transitions categorized by style.
+        EASY TO IMPLEMENT - just parameter changes!
+        """
+        return {
+            "basic": ["fade", "dissolve", "fadeblack", "fadewhite"],
+            "wipes": ["wipeleft", "wiperight", "wipeup", "wipedown", "wipetl", "wipetr", "wipebl", "wipebr"],
+            "slides": ["slideleft", "slideright", "slideup", "slidedown"],
+            "circles": ["circleopen", "circleclose", "circlecrop"],
+            "shapes": ["rectcrop", "vertopen", "vertclose", "horzopen", "horzclose"],
+            "creative": ["radial", "distance", "pixelize", "diagtl", "diagtr", "diagbl", "diagbr"],
+            "smooth": ["smoothleft", "smoothright", "smoothup", "smoothdown"],
+            "advanced": ["hlslice", "hrslice", "vuslice", "vdslice", "hblur", "squeezeh", "squeezev"],
+            "custom": ["custom"]  # Allows custom expressions
+        }
+    
+    def recommend_creative_transition(self, analysis: 'VideoAnalysis') -> str:
+        """
+        Recommend creative transition based on video content analysis.
+        
+        Uses confidence and complexity to select appropriate transition style.
+        """
+        transitions = self.get_creative_transitions()
+        
+        # High confidence = creative transitions
+        if analysis.confidence > 0.8:
+            if analysis.complexity_score > 0.7:
+                # Complex content - subtle transitions
+                return "dissolve"  
+            else:
+                # Simple content - creative transitions
+                import random
+                return random.choice(transitions["creative"])
+        
+        # Medium confidence = reliable transitions  
+        elif analysis.confidence > 0.6:
+            if analysis.has_frame_issues:
+                return "fade"  # Safe default for problematic content
+            else:
+                return "circleopen"  # Popular aesthetic choice
+        
+        # Low confidence = safe transitions
+        else:
+            return "fade"
 
 # Smart processing functions that use Haiku analysis
 

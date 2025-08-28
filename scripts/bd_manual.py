@@ -64,6 +64,7 @@ def apply_bd_patterns(logs: str, job_name: str) -> Dict[str, Any]:
     
     # YOLO-FFMPEG-MCP specific patterns
     patterns = {
+        "docker_python_not_found": r'exec: "python": executable file not found in \$PATH',
         "docker_build_missing_file": r"ERROR: failed to calculate checksum.*not found",
         "pytest_missing": r"Failed to spawn.*pytest.*No such file",
         "uv_dependency": r"uv.*not available",
@@ -77,8 +78,14 @@ def apply_bd_patterns(logs: str, job_name: str) -> Dict[str, Any]:
     error_type = "unknown"
     confidence = 5
     
-    # Check for specific patterns
-    if re.search(patterns["docker_build_missing_file"], logs):
+    # Check for specific patterns (most specific first)
+    if re.search(patterns["docker_python_not_found"], logs):
+        primary_error = "Docker container missing 'python' executable - Ubuntu uses 'python3'"
+        error_type = "docker_python_path"
+        confidence = 10
+        errors_found.append("Container has python3 but CI script uses 'python' command")
+        
+    elif re.search(patterns["docker_build_missing_file"], logs):
         primary_error = "Docker build failed - missing source files for COPY commands"
         error_type = "docker_build"
         confidence = 9
@@ -104,7 +111,9 @@ def apply_bd_patterns(logs: str, job_name: str) -> Dict[str, Any]:
     
     # Determine suggested action
     suggested_action = "Check logs manually"
-    if error_type == "docker_build":
+    if error_type == "docker_python_path":
+        suggested_action = "Change CI script from 'python' to 'python3' command in Docker exec"
+    elif error_type == "docker_build":
         suggested_action = "Add missing test files or fix Dockerfile COPY paths"
     elif error_type == "dependency":
         suggested_action = "Add --extra dev flag to uv sync commands"

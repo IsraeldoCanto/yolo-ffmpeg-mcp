@@ -180,18 +180,19 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Build Docker image with cache
+      - name: Build Docker image with Ubuntu single-stage
         run: |
-          echo "🐳 Building Docker image for MCP server using pre-built base..."
+          echo "🐳 Building Docker image for MCP server using Ubuntu single-stage (no pre-built base required)..."
           docker buildx build \
-            --cache-from=type=gha \
-            --cache-to=type=gha,mode=max \
+            --file docker/Dockerfile.ubuntu-single-stage \
+            --cache-from=type=gha,scope=ubuntu-single-stage \
+            --cache-to=type=gha,mode=max,scope=ubuntu-single-stage \
             --load \
             --tag ffmpeg-mcp:ci \
             .
-          echo "✅ Docker image built successfully with pre-built base"
+          echo "✅ Docker image built successfully with Ubuntu single-stage approach"
           docker images ffmpeg-mcp:ci
-          echo "Note: PySceneDetect warning is expected - using fallback mechanism"
+          echo "Build time target: <3 minutes (vs 2+ hours Alpine compilation)"
           
       - name: Test Docker container health
         run: |
@@ -224,11 +225,12 @@ jobs:
           echo "Debug: Container environment:"
           docker exec mcp-test-container pwd
           docker exec mcp-test-container ls -la /app
-          docker exec mcp-test-container python -c "import sys; print('Python path:', sys.path)"
+          docker exec mcp-test-container python3 -c "import sys; print('Python path:', sys.path)"
           docker exec mcp-test-container printenv | grep PYTHON || echo "No PYTHON env vars"
           
-          # Test imports with explicit PYTHONPATH
-          OUTPUT=$(docker exec -e PYTHONPATH=/app mcp-test-container python -c "
+          # Test imports with explicit PYTHONPATH - show all output for debugging
+          echo "Testing MCP imports with PYTHONPATH=/app..."
+          docker exec -e PYTHONPATH=/app mcp-test-container python3 -c "
           try:
               import src.server
               import src.file_manager  
@@ -236,18 +238,13 @@ jobs:
               print('SUCCESS: All MCP modules imported')
           except Exception as e:
               print(f'FAILED: {e}')
+              import traceback
+              traceback.print_exc()
               exit(1)
-          " 2>&1)
-          
-          # Check if imports succeeded (look for SUCCESS message)
-          if echo "$OUTPUT" | grep -q "SUCCESS: All MCP modules imported"; then
-            echo "✅ All MCP modules import successfully in Docker"
-            echo "Note: PySceneDetect warnings are expected and filtered"
-          else
-            echo "❌ MCP module imports failed"
-            echo "Output: $OUTPUT"
+          " || {
+            echo "❌ MCP module imports failed - see error above"
             exit 1
-          fi
+          }
           
       - name: Test FFmpeg in Docker
         run: |

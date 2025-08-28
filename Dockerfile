@@ -1,23 +1,38 @@
-# FFMPEG MCP Server - Production image using pre-built base
-FROM ghcr.io/stiglau/yolo-ffmpeg-mcp:base-latest
+# FFMPEG MCP Server - Stock Ubuntu image for minimal build time
+FROM python:3.13-slim
 
-# Copy dependency files first for better layer caching
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies using stock Ubuntu packages (faster, cached)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    mediainfo \
+    libsndfile1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ALPINE CONFIG MOVED ASIDE - uncomment if needed later
+# FROM python:3.13-alpine
+# RUN apk add --no-cache bash curl ffmpeg openjdk11-jre libsndfile-dev python3-dev gcc musl-dev
+
+# Standard pip for production simplicity (no UV dependency)
 COPY pyproject.toml ./
+RUN pip install --no-cache-dir -e .
 
-# Cache bust for UV dependency fix - Force rebuild after syntax fix
-RUN echo "Cache bust: $(date)" > /tmp/cache_bust_uv_fix
+# Create working directory
+WORKDIR /app
 
-# Install core Python dependencies (fast - heavy packages pre-installed in base)
-RUN uv pip install --system --no-cache \
-    "fastmcp>=2.7.1" \
-    "mcp>=1.9.3" \
-    "pydantic>=2.11.5" \
-    "pytest>=8.4.0" \
-    "pytest-asyncio>=1.0.0" \
-    "jsonschema>=4.0.0" \
-    "PyYAML>=6.0" \
-    "opencv-python-headless>=4.11.0"
-# Note: pillow, numpy, psutil should be pre-installed in base image
+# Create non-root user (Ubuntu syntax)
+RUN groupadd -g 1000 mcp && useradd -u 1000 -g mcp -m -s /bin/bash mcp
+
+# Create directories for file processing with proper permissions
+RUN mkdir -p /tmp/music/{source,temp,screenshots,metadata,finished} \
+    && chown -R mcp:mcp /app /tmp/music
 
 # Copy application code
 COPY src/ ./src/
@@ -26,17 +41,17 @@ COPY README.md ./
 
 # Set Python path for module imports  
 ENV PYTHONPATH=/app
-# Also add to shell profile for interactive sessions
-RUN echo 'export PYTHONPATH=/app' >> /etc/profile
-
-# Create directories for file processing
-RUN mkdir -p /tmp/music/source /tmp/music/temp /tmp/music/screenshots /tmp/music/metadata /tmp/music/finished \
-    && chown -R mcp:mcp /app /tmp/music
 
 # Create health check script
 RUN echo '#!/bin/bash\npython -c "import src.server; print(\"✅ MCP server OK\")" || exit 1' > /app/healthcheck.sh \
     && chmod +x /app/healthcheck.sh \
-    && chown mcp:mcp /app/healthcheck.sh
+    && chown -R mcp:mcp /app
+
+# Test that critical tools work
+RUN ffmpeg -version > /dev/null 2>&1 && \
+    java -version > /dev/null 2>&1 && \
+    python -c "import psutil; print('Python OK')" && \
+    echo "✅ Minimal production image validation passed"
 
 # Switch to non-root user
 USER mcp
@@ -53,5 +68,5 @@ CMD ["python", "-m", "src.server"]
 
 # Labels
 LABEL maintainer="Stig Lau" \
-      version="1.0.0" \
-      description="FFMPEG MCP Server - Alpine Build"
+      version="1.0.0-minimal" \
+      description="FFMPEG MCP Server - Minimal Alpine Build (FFMPEG + Java + Python only)"

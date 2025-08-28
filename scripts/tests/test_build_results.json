@@ -1,0 +1,29 @@
+[
+  {
+    "timestamp": "2025-08-21 21:19:26",
+    "project_path": "/Users/stiglau/utvikling/privat/lm-ai/mcp/yolo-ffmpeg-mcp/VideoRenderer",
+    "build_command": "mvn clean compile -DskipTests",
+    "success": false,
+    "duration_seconds": 0.09,
+    "exit_code": 1,
+    "stdout_lines": 1,
+    "stderr_lines": 3,
+    "test_results": {
+      "tests_run": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "test_classes": [],
+      "failed_tests": [],
+      "duration_seconds": 0
+    },
+    "artifact_info": {
+      "jars_created": [],
+      "target_size_mb": 0,
+      "main_artifact": null
+    },
+    "build_hash": "d41d8cd98f00",
+    "errors": [],
+    "warnings": []
+  }
+]

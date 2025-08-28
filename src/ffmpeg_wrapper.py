@@ -9,6 +9,9 @@ import time
 # Analytics service temporarily disabled - see ANALYTICS_SERVICE_DESIGN.md
 # from .analytics_service import get_analytics
 
+# Containerized FFmpeg support
+from .containerized_ffmpeg import ContainerizedFFmpeg, is_containerized_ffmpeg_available
+
 
 class FFMPEGWrapper:
     ALLOWED_OPERATIONS = {
@@ -177,8 +180,27 @@ class FFMPEGWrapper:
         }
     }
 
-    def __init__(self, ffmpeg_path: str = None):
+    def __init__(self, ffmpeg_path: str = None, use_containerized: bool = None):
         self.ffmpeg_path = ffmpeg_path or self._find_ffmpeg_path() or "ffmpeg"
+        
+        # Auto-detect containerized mode if not specified
+        if use_containerized is None:
+            use_containerized = os.getenv("USE_CONTAINERIZED_FFMPEG", "false").lower() == "true"
+        
+        self.use_containerized = use_containerized
+        self.containerized_ffmpeg = None
+        
+        if self.use_containerized:
+            try:
+                self.containerized_ffmpeg = ContainerizedFFmpeg()
+                if not self.containerized_ffmpeg.is_available():
+                    print("⚠️ Containerized FFmpeg not available, falling back to native")
+                    self.use_containerized = False
+                else:
+                    print("✅ Using containerized FFmpeg execution")
+            except Exception as e:
+                print(f"⚠️ Failed to initialize containerized FFmpeg: {e}, falling back to native")
+                self.use_containerized = False
         
     def build_command(self, operation: str, input_path: Path, output_path: Path, **params) -> List[str]:
         """Build safe FFMPEG command"""
@@ -363,6 +385,21 @@ class FFMPEGWrapper:
 
     async def execute_command(self, command: List[str], timeout: int = 300) -> Dict[str, Any]:
         """Execute FFMPEG command with timeout"""
+        from .trace_logger import get_trace_logger
+        
+        # Get operation ID from context or create one
+        op_id = getattr(asyncio.current_task(), 'trace_operation_id', None)
+        if not op_id:
+            op_id = get_trace_logger().start_operation("ffmpeg_standalone", {"command": command})
+        
+        # Use containerized FFmpeg if available
+        if self.use_containerized and self.containerized_ffmpeg:
+            get_trace_logger().log_step(op_id, "execution_mode", "containerized_ffmpeg")
+            return await self.containerized_ffmpeg.execute_command(command, timeout)
+        
+        # Native FFmpeg execution
+        get_trace_logger().log_step(op_id, "execution_mode", "native_ffmpeg")
+        
         try:
             process = await asyncio.create_subprocess_exec(
                 *command,
@@ -370,20 +407,35 @@ class FFMPEGWrapper:
                 stderr=asyncio.subprocess.PIPE
             )
             
+            # Log FFmpeg command with PID
+            get_trace_logger().log_ffmpeg_command(op_id, command, process.pid)
+            
+            start_time = time.time()
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(), 
                 timeout=timeout
             )
+            duration_ms = int((time.time() - start_time) * 1000)
+            
+            success = process.returncode == 0
+            stdout_str = stdout.decode('utf-8', errors='ignore')
+            stderr_str = stderr.decode('utf-8', errors='ignore')
+            
+            # Log FFmpeg result
+            get_trace_logger().log_ffmpeg_result(
+                op_id, success, duration_ms, stdout_str, stderr_str, process.pid
+            )
             
             return {
-                "success": process.returncode == 0,
+                "success": success,
                 "returncode": process.returncode,
-                "stdout": stdout.decode('utf-8', errors='ignore'),
-                "stderr": stderr.decode('utf-8', errors='ignore'),
+                "stdout": stdout_str,
+                "stderr": stderr_str,
                 "command": ' '.join(command)
             }
             
         except asyncio.TimeoutError:
+            get_trace_logger().log_timeout(op_id, timeout, "ffmpeg_command")
             return {
                 "success": False,
                 "error": f"Command timed out after {timeout} seconds",
