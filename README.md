@@ -204,3 +204,4 @@ aider --mcp-server localhost:8000
 - ✅ Security-first architecture with proper validation
 
 Built for creators, developers, and AI enthusiasts who want to push the boundaries of automated video editing.
+# BD Local CI Hook Test
