@@ -47,6 +47,18 @@ else:
 
 This dual approach optimizes for development speed while maintaining production reliability.
 
+## 🔍 **Build Detective Local CI Integration** ✅ **PRODUCTION READY**
+
+Complete local CI verification system preventing GitHub Actions failures:
+
+- **Implementation**: `scripts/bd_local_ci.py` with fast/Docker modes
+- **Git Integration**: Pre-push hooks automatically run BD verification  
+- **Performance**: 2-3 second fast mode, 30+ second Docker mode
+- **Team Setup**: `scripts/install-bd-hooks.sh` for hook installation
+- **Documentation**: [BD Local CI Implementation Guide](documents/BD_LOCAL_CI_IMPLEMENTATION.md)
+
+**Usage**: `python3 scripts/bd_local_ci.py [--docker]` or automatic via git push
+
 ## LLM Issue Reporting and Improvement Tracking
 
 ### Komposteur and Video Renderer Improvement Guidelines
