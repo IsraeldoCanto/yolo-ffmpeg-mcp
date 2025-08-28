@@ -6,9 +6,9 @@ RUN pip install --no-cache-dir --root-user-action=ignore \
     pytest>=8.4.0 \
     pytest-asyncio>=1.0.0
 
-# Copy existing test files from tests/ directory  
+# Copy source code and test files
+COPY src/ ./src/
 COPY tests/ci/test_unit_core.py ./
-COPY src/video_comparison_tool.py ./
 
 # Default command - run basic CI test
 CMD ["python", "-m", "pytest", "test_unit_core.py", "-v"]
