@@ -570,6 +570,79 @@ git push origin feature-branch
 - BD reports available via Build Detective subagent
 - Use BD confidence scores to validate positive changes
 
+## ⚠️ **CRITICAL: LLM OVER-ENGINEERING ANTI-PATTERNS** ⚠️
+
+### **PR 22 Case Study: The Danger of Symptom-Fixing** 🚨
+
+**LESSON LEARNED**: LLMs can create "whack-a-mole" patterns that make simple problems exponentially more complex.
+
+#### **The Symptom-Fixing Cycle**
+```
+Real Issue: Missing try/except around `import docker` (3 lines)
+↓
+LLM Fix 1: "Missing temp/ files" → Dockerfile.ci changes
+↓  
+LLM Fix 2: "Module import errors" → src/ directory restructuring
+↓
+LLM Fix 3: "Complex workflow issues" → 301-line workflow replacement
+↓
+LLM Fix 4: "Merge conflicts" → Complex resolution strategy
+↓
+LLM Fix 5: "Dependency issues" → pyproject.toml restructuring
+↓
+Real Fix: try/except ImportError (3 lines) ✅
+```
+
+#### **WARNING SIGNS of LLM Over-Engineering** 
+- ❌ **Multiple successive "fixes"** for the same core issue
+- ❌ **Each fix touches 5+ files** or adds complex configuration
+- ❌ **Local tests pass but CI fails repeatedly** 
+- ❌ **"Simple" fixes require architectural changes**
+- ❌ **Solution complexity >> problem complexity**
+
+#### **MANDATORY PROTOCOL: Root Cause Analysis First**
+```bash
+# BEFORE implementing any "fix":
+1. Ask: "Is this treating a symptom or the root cause?"
+2. Compare CI environment vs local environment EXACTLY
+3. Check: Does main branch have this issue?
+4. Look for the SIMPLEST explanation first
+5. If fix requires >10 lines, PAUSE and reconsider approach
+```
+
+#### **Success Pattern: CI Environment Comparison**
+- **What worked**: Compare CI scripts between branches
+- **What worked**: Check exact import failures in CI logs  
+- **What worked**: Make the failing import optional (try/except)
+- **What failed**: Complex dependency management, workflow rewriting, Docker restructuring
+
+#### **Key Learning**: 
+**"90% of the time CI failures are due to LLM code changes"** - The user was absolutely correct. LLMs tend to add complexity instead of finding the simple root cause.
+
+#### **Validation Protocol**:
+```python
+# Always make optional imports when dealing with CI issues:
+try:
+    import optional_heavy_dependency
+except ImportError:
+    optional_heavy_dependency = None  # Graceful degradation
+```
+
+#### **Documentation Requirement**:
+For any multi-fix PR, document:
+- What was the original simple problem?
+- How many "fixes" were attempted?  
+- What was the actual root cause?
+- Could this have been solved in 1-3 lines initially?
+
+### **Build Detective Evolution**: From Problem to Solution
+- **Problem**: CI failures recurring despite multiple fixes
+- **Root Cause Discovery**: Compare main branch vs feature branch CI
+- **Simple Solution**: Optional import pattern
+- **Learning**: Always check environment differences first, not configuration complexity
+
+This case study demonstrates that **simpler is usually correct** when dealing with import/dependency issues in CI environments.
+
 ## LLM Issue Reporting and Improvement Tracking
 
 ### Komposteur and Video Renderer Improvement Guidelines
