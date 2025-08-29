@@ -8,7 +8,10 @@ import json
 import os
 import shutil
 import time
-import docker
+try:
+    import docker
+except ImportError:
+    docker = None  # Optional dependency
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from contextlib import asynccontextmanager
