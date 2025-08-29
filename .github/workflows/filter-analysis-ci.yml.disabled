@@ -81,22 +81,16 @@ jobs:
         echo "Test files created:"
         ls -la /tmp/music/source/
 
-    - name: Run random filter tests
-      id: random_tests
+    - name: Run basic CI tests
+      id: basic_tests
       run: |
-        # Determine test count (from input or default)
-        TEST_COUNT="${{ github.event.inputs.test_count || '2' }}"
+        echo "Running basic CI tests..."
         
-        echo "Running $TEST_COUNT random filter tests..."
-        
-        # Run the test using Docker container with selective file mounting
+        # Run the test using Docker container (using default CMD from Dockerfile.ci)
         if docker run --rm \
           -v /tmp/music:/tmp/music \
-          -v ${{ github.workspace }}/test_fast_filter_ci.py:/app/test_fast_filter_ci.py \
-          -v ${{ github.workspace }}/video_comparison_test_library.py:/app/video_comparison_test_library.py \
           --workdir /app \
-          ffmpeg-mcp:ci-test \
-          python test_fast_filter_ci.py --tests "$TEST_COUNT" --duration 6; then
+          ffmpeg-mcp:ci-test; then
           echo "random_tests_result=success" >> $GITHUB_OUTPUT
         else
           echo "random_tests_result=failure" >> $GITHUB_OUTPUT
